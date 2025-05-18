@@ -1,0 +1,61 @@
+/* 虚拟列表样式
+ * 提供高效渲染大量数据的样式支持
+ */
+
+.virtual-list-container {
+  position: relative;
+  overflow: auto;
+  will-change: transform;
+  -webkit-overflow-scrolling: touch;
+}
+
+.virtual-list-inner {
+  position: relative;
+}
+
+.virtual-list-item {
+  position: absolute;
+  left: 0;
+  right: 0;
+  overflow: hidden;
+}
+
+.virtual-grid-container {
+  position: relative;
+  overflow: auto;
+  will-change: transform;
+  -webkit-overflow-scrolling: touch;
+}
+
+.virtual-grid-inner {
+  position: relative;
+}
+
+.virtual-grid-item {
+  position: absolute;
+  overflow: hidden;
+}
+
+.infinite-scroll {
+  position: relative;
+  
+  .infinite-scroll-loading {
+    padding: 16px;
+    text-align: center;
+  }
+  
+  .infinite-scroll-end {
+    padding: 16px;
+    text-align: center;
+    color: rgba(0, 0, 0, 0.45);
+  }
+}
+
+// 暗色主题适配
+[data-theme="dark"] {
+  .infinite-scroll {
+    .infinite-scroll-end {
+      color: rgba(255, 255, 255, 0.45);
+    }
+  }
+}

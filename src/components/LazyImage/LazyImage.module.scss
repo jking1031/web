@@ -1,0 +1,68 @@
+/* 懒加载图像样式
+ * 提供高效的图像懒加载样式支持
+ */
+
+.lazy-image {
+  position: relative;
+  overflow: hidden;
+  background-color: #f0f0f0;
+  
+  &.lazy-image-effect-blur {
+    .lazy-image-img {
+      filter: blur(10px);
+      transition: filter 0.3s ease-out;
+    }
+    
+    &.lazy-image-loaded .lazy-image-img {
+      filter: blur(0);
+    }
+  }
+  
+  &.lazy-image-effect-fade {
+    .lazy-image-img {
+      opacity: 0;
+      transition: opacity 0.3s ease-out;
+    }
+    
+    &.lazy-image-loaded .lazy-image-img {
+      opacity: 1;
+    }
+  }
+  
+  .lazy-image-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.lazy-bg-image {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  
+  &.lazy-bg-image-effect-blur {
+    transition: filter 0.3s ease-out;
+    filter: blur(10px);
+    
+    &.lazy-bg-image-loaded {
+      filter: blur(0);
+    }
+  }
+  
+  &.lazy-bg-image-effect-fade {
+    transition: opacity 0.3s ease-out;
+    opacity: 0.5;
+    
+    &.lazy-bg-image-loaded {
+      opacity: 1;
+    }
+  }
+}
+
+// 暗色主题适配
+[data-theme="dark"] {
+  .lazy-image {
+    background-color: #303030;
+  }
+}
