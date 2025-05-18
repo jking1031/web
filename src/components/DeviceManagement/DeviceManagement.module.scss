@@ -1,0 +1,392 @@
+/* 设备管理功能样式
+ * 提供增强的设备管理界面样式
+ */
+
+.device-management {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  
+  .device-management-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    
+    .device-management-title {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 500;
+    }
+  }
+  
+  .device-management-filters {
+    display: flex;
+    margin-bottom: 16px;
+    gap: 16px;
+    
+    .device-management-search {
+      flex: 1;
+      
+      input {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #d9d9d9;
+        border-radius: 4px;
+        transition: all 0.3s;
+        
+        &:focus {
+          border-color: var(--primaryColor, #1890ff);
+          box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+          outline: none;
+        }
+      }
+    }
+    
+    .device-management-status-filter {
+      width: 150px;
+      
+      select {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #d9d9d9;
+        border-radius: 4px;
+        transition: all 0.3s;
+        
+        &:focus {
+          border-color: var(--primaryColor, #1890ff);
+          box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+          outline: none;
+        }
+      }
+    }
+  }
+  
+  .device-management-content {
+    display: flex;
+    flex: 1;
+    gap: 16px;
+    
+    .device-list-container {
+      flex: 1;
+      min-width: 0;
+      border: 1px solid #f0f0f0;
+      border-radius: 4px;
+      
+      .device-list-loading,
+      .device-list-error {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 200px;
+        color: rgba(0, 0, 0, 0.45);
+      }
+    }
+    
+    .device-detail-container {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+}
+
+.device-list-item {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  
+  &:hover {
+    background-color: #f5f5f5;
+  }
+  
+  .device-list-item-icon {
+    margin-right: 16px;
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  
+  .device-list-item-info {
+    flex: 1;
+    min-width: 0;
+    
+    .device-list-item-name {
+      font-weight: 500;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .device-list-item-type {
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.45);
+    }
+  }
+}
+
+.device-status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  color: white;
+}
+
+.device-detail-card {
+  height: 100%;
+  
+  .device-detail-actions {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .device-detail-content {
+    .device-detail-header {
+      display: flex;
+      margin-bottom: 24px;
+      
+      .device-detail-icon {
+        margin-right: 16px;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      
+      .device-detail-header-info {
+        .device-detail-name {
+          margin: 0 0 8px 0;
+          font-size: 18px;
+        }
+        
+        .device-detail-meta {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          
+          .device-detail-type {
+            color: rgba(0, 0, 0, 0.65);
+          }
+        }
+      }
+    }
+    
+    .device-detail-section {
+      margin-bottom: 24px;
+      
+      .device-detail-section-title {
+        margin: 0 0 16px 0;
+        font-size: 16px;
+        font-weight: 500;
+        color: rgba(0, 0, 0, 0.85);
+      }
+      
+      .device-detail-info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        
+        .device-detail-info-item {
+          display: flex;
+          flex-direction: column;
+          
+          .device-detail-info-label {
+            font-size: 12px;
+            color: rgba(0, 0, 0, 0.45);
+            margin-bottom: 4px;
+          }
+          
+          .device-detail-info-value {
+            color: rgba(0, 0, 0, 0.85);
+          }
+        }
+      }
+      
+      .device-detail-description {
+        margin: 0;
+        color: rgba(0, 0, 0, 0.65);
+      }
+      
+      .device-detail-telemetry {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        
+        .device-detail-telemetry-item {
+          display: flex;
+          flex-direction: column;
+          padding: 12px;
+          background-color: #f5f5f5;
+          border-radius: 4px;
+          
+          .device-detail-telemetry-label {
+            font-size: 12px;
+            color: rgba(0, 0, 0, 0.45);
+            margin-bottom: 4px;
+          }
+          
+          .device-detail-telemetry-value {
+            font-size: 16px;
+            font-weight: 500;
+            color: rgba(0, 0, 0, 0.85);
+          }
+        }
+      }
+    }
+  }
+  
+  .device-edit-form {
+    .form-group {
+      margin-bottom: 16px;
+      
+      label {
+        display: block;
+        margin-bottom: 8px;
+        color: rgba(0, 0, 0, 0.85);
+      }
+      
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #d9d9d9;
+        border-radius: 4px;
+        transition: all 0.3s;
+        
+        &:focus {
+          border-color: var(--primaryColor, #1890ff);
+          box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+          outline: none;
+        }
+      }
+      
+      textarea {
+        resize: vertical;
+      }
+    }
+  }
+}
+
+// 暗色主题适配
+[data-theme="dark"] {
+  .device-management {
+    .device-management-filters {
+      .device-management-search {
+        input {
+          background-color: #141414;
+          border-color: #434343;
+          color: rgba(255, 255, 255, 0.85);
+          
+          &:focus {
+            border-color: var(--primaryColor, #177ddc);
+            box-shadow: 0 0 0 2px rgba(23, 125, 220, 0.2);
+          }
+        }
+      }
+      
+      .device-management-status-filter {
+        select {
+          background-color: #141414;
+          border-color: #434343;
+          color: rgba(255, 255, 255, 0.85);
+          
+          &:focus {
+            border-color: var(--primaryColor, #177ddc);
+            box-shadow: 0 0 0 2px rgba(23, 125, 220, 0.2);
+          }
+        }
+      }
+    }
+    
+    .device-management-content {
+      .device-list-container {
+        border-color: #303030;
+        
+        .device-list-loading,
+        .device-list-error {
+          color: rgba(255, 255, 255, 0.45);
+        }
+      }
+    }
+  }
+  
+  .device-list-item {
+    border-bottom-color: #303030;
+    
+    &:hover {
+      background-color: #1f1f1f;
+    }
+    
+    .device-list-item-info {
+      .device-list-item-type {
+        color: rgba(255, 255, 255, 0.45);
+      }
+    }
+  }
+  
+  .device-detail-card {
+    .device-detail-content {
+      .device-detail-section {
+        .device-detail-section-title {
+          color: rgba(255, 255, 255, 0.85);
+        }
+        
+        .device-detail-info-grid {
+          .device-detail-info-item {
+            .device-detail-info-label {
+              color: rgba(255, 255, 255, 0.45);
+            }
+            
+            .device-detail-info-value {
+              color: rgba(255, 255, 255, 0.85);
+            }
+          }
+        }
+        
+        .device-detail-description {
+          color: rgba(255, 255, 255, 0.65);
+        }
+        
+        .device-detail-telemetry {
+          .device-detail-telemetry-item {
+            background-color: #1f1f1f;
+            
+            .device-detail-telemetry-label {
+              color: rgba(255, 255, 255, 0.45);
+            }
+            
+            .device-detail-telemetry-value {
+              color: rgba(255, 255, 255, 0.85);
+            }
+          }
+        }
+      }
+    }
+    
+    .device-edit-form {
+      .form-group {
+        label {
+          color: rgba(255, 255, 255, 0.85);
+        }
+        
+        input,
+        select,
+        textarea {
+          background-color: #141414;
+          border-color: #434343;
+          color: rgba(255, 255, 255, 0.85);
+          
+          &:focus {
+            border-color: var(--primaryColor, #177ddc);
+            box-shadow: 0 0 0 2px rgba(23, 125, 220, 0.2);
+          }
+        }
+      }
+    }
+  }
+}
