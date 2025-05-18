@@ -1,0 +1,57 @@
+.userManagementContainer {
+  padding: 0;
+  width: 100%;
+
+  @media (max-width: 768px) {
+    padding: 0;
+  }
+}
+
+.userManagementCard {
+  box-shadow: none;
+  border-radius: 0;
+  border: none;
+  width: 100%;
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 0 16px;
+}
+
+.filterRow {
+  margin-bottom: 16px;
+  padding: 0 16px;
+}
+
+.settingsContainer {
+  padding: 0;
+  width: 100%;
+
+  @media (max-width: 768px) {
+    padding: 0;
+  }
+}
+
+.settingsCard {
+  box-shadow: none;
+  border-radius: 0;
+  border: none;
+  width: 100%;
+
+  :global(.ant-tabs-nav) {
+    margin-bottom: 16px;
+    padding: 0 16px;
+  }
+
+  :global(.ant-tabs-content-holder) {
+    padding: 0 16px;
+  }
+
+  :global(.ant-form) {
+    width: 100%;
+  }
+}

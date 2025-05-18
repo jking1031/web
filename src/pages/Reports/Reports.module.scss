@@ -1,0 +1,158 @@
+.reportsContainer {
+  padding: 24px;
+
+  @media (max-width: 768px) {
+    padding: 12px;
+  }
+}
+
+.pageTitle {
+  margin-bottom: 24px;
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.reportCard {
+  margin-bottom: 24px;
+}
+
+.reportTypeCard {
+  text-align: center;
+  transition: all 0.3s;
+
+  &:hover {
+    transform: translateY(-5px);
+  }
+}
+
+.reportTypeIcon {
+  font-size: 40px;
+  margin-bottom: 16px;
+  color: var(--primary);
+}
+
+.reportTypeTitle {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.reportTypeDescription {
+  font-size: 14px;
+  color: var(--text-secondary);
+  height: 40px;
+}
+
+.queryCard {
+  margin-bottom: 24px;
+}
+
+.reportFormContainer {
+  padding: 20px;
+
+  .reportCard {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+
+    .actionButtons {
+      display: flex;
+      gap: 10px;
+    }
+  }
+
+  .sectionTitle {
+    margin: 20px 0 10px;
+    font-weight: 600;
+    color: #333;
+  }
+}
+
+.reportQueryContainer {
+  padding: 20px;
+
+  .queryCard {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+
+    .filterRow {
+      margin-bottom: 20px;
+    }
+
+    .tabs {
+      margin-top: 20px;
+    }
+  }
+}
+
+.dynamicReportsContainer {
+  padding: 20px;
+
+  .reportsCard {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+
+    .filterRow {
+      margin-bottom: 20px;
+    }
+
+    .metricsRow {
+      margin-bottom: 20px;
+    }
+
+    .tableContainer {
+      position: relative;
+      min-height: 300px;
+    }
+
+    .loadingContainer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(255, 255, 255, 0.7);
+    }
+  }
+}
+
+/* 打印样式 */
+@media print {
+  .reportFormContainer {
+    padding: 0;
+
+    .reportCard {
+      box-shadow: none;
+      border: none;
+
+      :global(.ant-card-head) {
+        border-bottom: 1px solid #000;
+      }
+
+      :global(.ant-card-extra) {
+        display: none;
+      }
+    }
+  }
+
+  .sectionTitle {
+    color: #000 !important;
+  }
+
+  :global(.ant-form-item-label > label) {
+    color: #000 !important;
+  }
+
+  :global(.ant-input),
+  :global(.ant-select-selector),
+  :global(.ant-picker) {
+    border-color: #ccc !important;
+  }
+
+  :global(.ant-upload-list) {
+    display: none;
+  }
+}

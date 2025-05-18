@@ -1,0 +1,308 @@
+.homeContainer {
+  padding: 24px;
+  width: 100%;
+  min-height: calc(100vh - 64px);
+  background-color: #f5f5f5;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+
+  .welcomeSection {
+    margin-bottom: 24px;
+    padding: 24px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  .dashboardCards {
+    margin-bottom: 24px;
+
+    .dashboardCard {
+      height: 100%;
+      transition: all 0.3s;
+
+      &:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        transform: translateY(-4px);
+      }
+    }
+  }
+}
+
+// React-Admin容器
+.adminContainer {
+  width: 100%;
+  height: calc(100vh - 64px); // 减去顶部导航栏的高度
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  // 管理员头部
+  .adminHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background-color: #fff;
+    border-bottom: 1px solid #f0f0f0;
+    height: 60px;
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      color: #2E7D32;
+    }
+  }
+
+  // 管理员内容区域
+  .adminContent {
+    flex: 1;
+    overflow: auto;
+    height: calc(100% - 60px);
+  }
+
+  // 确保React-Admin组件占满整个容器
+  :global(.RaLayout-appFrame) {
+    height: 100%;
+  }
+
+  // 隐藏React-Admin的AppBar，因为我们已经有了自己的导航栏
+  :global(.RaAppBar-root) {
+    display: none !important;
+  }
+
+  // 调整React-Admin的内容区域
+  :global(.RaLayout-contentWithSidebar) {
+    height: 100%;
+    overflow: auto;
+  }
+
+  // 调整React-Admin的侧边栏
+  :global(.RaSidebar-docked) {
+    height: 100%;
+    top: 0;
+  }
+
+  // 确保React-Admin的布局正确显示
+  :global(.RaLayout-root) {
+    min-height: 100%;
+    height: 100%;
+  }
+
+  // 调整React-Admin的卡片样式
+  :global(.MuiCard-root) {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    :global(.MuiCardHeader-root) {
+      background-color: #f9f9f9;
+      border-bottom: 1px solid #f0f0f0;
+      padding: 12px 16px;
+
+      :global(.MuiCardHeader-title) {
+        font-size: 16px;
+        font-weight: 500;
+        color: #2E7D32;
+      }
+
+      :global(.MuiCardHeader-avatar) {
+        color: #2E7D32;
+      }
+    }
+
+    :global(.MuiCardContent-root) {
+      padding: 16px;
+    }
+  }
+
+  // 调整图表容器样式
+  :global(.g2-tooltip) {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+    border-radius: 4px !important;
+    padding: 8px 12px !important;
+
+    :global(.g2-tooltip-title) {
+      font-weight: 500 !important;
+      margin-bottom: 8px !important;
+    }
+
+    :global(.g2-tooltip-item) {
+      margin-bottom: 4px !important;
+
+      :global(.g2-tooltip-item-marker) {
+        margin-right: 8px !important;
+      }
+
+      :global(.g2-tooltip-item-name) {
+        margin-right: 8px !important;
+      }
+    }
+  }
+}
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60vh;
+
+  .loadingContent {
+    padding: 50px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+
+    p {
+      margin-top: 16px;
+      color: #2E7D32;
+      font-size: 16px;
+    }
+  }
+}
+
+// 错误容器
+.errorContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60vh;
+  padding: 24px;
+
+  :global(.ant-alert) {
+    max-width: 500px;
+  }
+}
+
+// 区块标题
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 0 4px;
+}
+
+.sectionIcon {
+  font-size: 20px;
+  margin-right: 12px;
+  padding: 8px;
+  background-color: rgba(24, 144, 255, 0.1);
+  border-radius: 8px;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  flex: 1;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+// 刷新按钮
+.refreshButton {
+  margin-left: auto;
+}
+
+// 添加趋势按钮
+.addTrendButton {
+  margin-left: auto;
+  background-color: #2E7D32;
+  border-color: #2E7D32;
+
+  &:hover, &:focus {
+    background-color: #388E3C;
+    border-color: #388E3C;
+  }
+}
+
+// 统计数据网格
+.statsGrid {
+  margin-bottom: 16px;
+}
+
+// 统计项
+.statItem {
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+}
+
+// 统计图标
+.statIcon {
+  font-size: 28px;
+  margin-bottom: 12px;
+}
+
+// 统计标签
+.statLabel {
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.65);
+  margin-top: 8px;
+}
+
+// 设备统计网格
+.deviceStatsGrid {
+  margin-bottom: 16px;
+}
+
+// 设备统计项
+.deviceStatItem {
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  :global(.ant-statistic-title) {
+    font-size: 14px;
+    margin-top: 8px;
+  }
+}
+
+// 设备统计图标
+.deviceStatIcon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+// 实时趋势部分
+.trendSection {
+  margin-bottom: 32px;
+
+  // 暗色主题适配
+  :global([data-theme='dark']) & {
+    background-color: transparent;
+  }
+}

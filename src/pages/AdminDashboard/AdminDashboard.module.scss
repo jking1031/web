@@ -1,0 +1,111 @@
+.adminContainer {
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+
+  // 确保React-Admin组件占满整个容器
+  :global(.RaLayout-root) {
+    min-height: 100%;
+    height: 100%;
+  }
+
+  :global(.RaLayout-appFrame) {
+    height: 100%;
+  }
+
+  // 调整React-Admin的内容区域
+  :global(.RaLayout-contentWithSidebar) {
+    height: 100%;
+    overflow: auto;
+  }
+
+  // 隐藏React-Admin的侧边栏
+  :global(.RaSidebar-docked),
+  :global(.RaSidebar-root) {
+    display: none !important;
+    width: 0 !important;
+  }
+
+  // 调整React-Admin的内容区域，使其占满整个宽度
+  :global(.RaLayout-content) {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  // 隐藏React-Admin的顶部栏
+  :global(.RaAppBar-root) {
+    display: none !important;
+    height: 0 !important;
+  }
+
+  // 调整React-Admin的内容区域，移除顶部边距
+  :global(.RaLayout-appFrame) {
+    margin-top: 0 !important;
+  }
+
+  // 调整React-Admin的卡片样式
+  :global(.MuiCard-root) {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    :global(.MuiCardHeader-root) {
+      background-color: #f9f9f9;
+      border-bottom: 1px solid #f0f0f0;
+      padding: 12px 16px;
+
+      :global(.MuiCardHeader-title) {
+        font-size: 16px;
+        font-weight: 500;
+        color: #2E7D32;
+      }
+
+      :global(.MuiCardHeader-avatar) {
+        color: #2E7D32;
+      }
+    }
+
+    :global(.MuiCardContent-root) {
+      padding: 16px;
+    }
+  }
+
+  // 调整图表容器样式
+  :global(.g2-tooltip) {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+    border-radius: 4px !important;
+    padding: 8px 12px !important;
+
+    :global(.g2-tooltip-title) {
+      font-weight: 500 !important;
+      margin-bottom: 8px !important;
+    }
+
+    :global(.g2-tooltip-item) {
+      margin-bottom: 4px !important;
+
+      :global(.g2-tooltip-item-marker) {
+        margin-right: 8px !important;
+      }
+
+      :global(.g2-tooltip-item-name) {
+        margin-right: 8px !important;
+      }
+    }
+  }
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f5f5f5;
+}

@@ -1,0 +1,94 @@
+.siteListContainer {
+  padding: 24px;
+  
+  @media (max-width: 768px) {
+    padding: 12px;
+  }
+}
+
+.pageTitle {
+  margin-bottom: 0;
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  
+  @media (max-width: 576px) {
+    flex-direction: column;
+    align-items: flex-start;
+    
+    .pageTitle {
+      margin-bottom: 16px;
+    }
+  }
+}
+
+.searchInput {
+  width: 300px;
+  
+  @media (max-width: 576px) {
+    width: 100%;
+  }
+}
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60vh;
+}
+
+.siteGrid {
+  margin-bottom: 20px;
+}
+
+.siteCard {
+  transition: all 0.3s;
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.siteContent {
+  padding: 8px 0;
+}
+
+.siteName {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.statusBadge {
+  font-size: 12px;
+}
+
+.siteLocation {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.siteStats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.alertCount {
+  color: #f5222d;
+  font-weight: 500;
+  margin-left: 4px;
+} 

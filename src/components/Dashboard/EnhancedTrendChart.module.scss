@@ -1,0 +1,151 @@
+.trendChartContainer {
+  margin-bottom: 16px;
+  
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  
+  .trendChartsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 16px;
+  }
+  
+  .trendChartItem {
+    position: relative;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+    transition: all 0.3s;
+    
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      
+      .itemActions {
+        opacity: 1;
+      }
+    }
+    
+    .itemHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid #e0e0e0;
+      background-color: #f5f5f5;
+    }
+    
+    .itemContent {
+      padding: 8px;
+      min-height: 300px;
+      position: relative;
+    }
+    
+    .itemActions {
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    
+    .itemFooter {
+      padding: 4px 12px;
+      display: flex;
+      justify-content: flex-end;
+      border-top: 1px solid #e0e0e0;
+      background-color: #f5f5f5;
+      font-size: 12px;
+      color: #666;
+    }
+  }
+  
+  .fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    background-color: #fff;
+    padding: 16px;
+    
+    .itemContent {
+      height: calc(100vh - 100px);
+    }
+  }
+  
+  .emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    border: 1px dashed #ccc;
+    
+    .emptyIcon {
+      font-size: 48px;
+      color: #ccc;
+      margin-bottom: 16px;
+    }
+  }
+  
+  .resizeHandle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: #2E7D32;
+    border-radius: 50%;
+    
+    &.bottomRight {
+      bottom: 0;
+      right: 0;
+      cursor: nwse-resize;
+    }
+  }
+}
+
+// 测试结果样式
+.successResult {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 4px;
+}
+
+.errorResult {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #fff2f0;
+  border: 1px solid #ffccc7;
+  border-radius: 4px;
+}
+
+.testResultData {
+  margin-top: 8px;
+  max-height: 200px;
+  overflow: auto;
+  
+  .resultTable {
+    width: 100%;
+    border-collapse: collapse;
+    
+    th, td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #e8e8e8;
+    }
+    
+    th {
+      background-color: #fafafa;
+      font-weight: 500;
+    }
+    
+    tr:hover {
+      background-color: #fafafa;
+    }
+  }
+}
