@@ -1,0 +1,229 @@
+.sidebar {
+  position: fixed !important;
+  left: 0;
+  top: 64px; /* 与页头高度相同 */
+  z-index: 1000;
+  height: calc(100vh - 64px); /* 减去页头高度 */
+  box-shadow: var(--shadow-md);
+  width: 240px !important; /* 固定宽度 */
+  background-color: #305680 !important; /* ThingsBoard 侧边栏颜色，与顶部导航栏一致 */
+  display: flex;
+  flex-direction: column;
+
+  &:global(.ant-layout-sider-collapsed) {
+    width: 80px !important; /* 折叠时的宽度 */
+  }
+
+  :global(.ant-layout-sider-children) {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    /* 自定义滚动条样式 */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+
+  :global(.ant-layout-sider-trigger) {
+    display: none;
+  }
+
+  :global(.ant-menu) {
+    background-color: transparent !important;
+  }
+
+  :global(.ant-menu-dark) {
+    /* 自定义滚动条样式 */
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    :global(.ant-menu-item-icon) {
+      font-size: 18px;
+      color: white; /* 纯白色，与顶部导航栏图标颜色一致 */
+      margin-right: 12px;
+      vertical-align: middle;
+    }
+
+    :global(.ant-menu-title-content) {
+      color: white; /* 纯白色，与顶部导航栏文字颜色一致 */
+      font-weight: 400;
+      letter-spacing: 0.3px;
+    }
+
+    :global(.ant-menu-submenu-arrow) {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 12px;
+    }
+
+    :global(.ant-menu-item-selected) {
+      background-color: #527dad !important; /* ThingsBoard 选中项背景色 */
+      font-weight: 500;
+
+      :global(.ant-menu-item-icon) {
+        color: white;
+      }
+
+      :global(.ant-menu-title-content) {
+        color: white;
+      }
+
+      &::after {
+        opacity: 1;
+        transform: scaleY(1);
+        transition: transform 0.15s cubic-bezier(0.645, 0.045, 0.355, 1), opacity 0.15s cubic-bezier(0.645, 0.045, 0.355, 1), background 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+      }
+    }
+
+    // 添加菜单项之间的分隔线
+    :global(.ant-menu-item), :global(.ant-menu-submenu) {
+      position: relative;
+
+      &::after {
+        content: '';
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        bottom: 0;
+        height: 1px;
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+
+      &:last-child::after {
+        display: none;
+      }
+    }
+  }
+}
+
+
+
+/* 移除侧边栏头部 */
+
+.sidebarFooter {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+
+  .collapseButton {
+    color: rgba(255, 255, 255, 0.7);
+
+    &:hover {
+      color: white;
+      background-color: #527dad; /* ThingsBoard 悬停背景色，与选中项相同 */
+    }
+  }
+}
+
+.menu {
+  flex: 1;
+  border-right: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-top: 0;
+
+  :global(.ant-menu-item) {
+    margin: 0;
+    border-radius: 0;
+    height: 48px;
+    line-height: 48px;
+    padding-left: 24px !important;
+    display: flex;
+    align-items: center;
+
+    &:hover {
+      background-color: #527dad; /* ThingsBoard 悬停背景色，与选中项相同 */
+    }
+  }
+
+  :global(.ant-menu-submenu-title) {
+    margin: 0;
+    border-radius: 0;
+    height: 48px;
+    line-height: 48px;
+    padding-left: 24px !important;
+    display: flex;
+    align-items: center;
+
+    &:hover {
+      background-color: #527dad; /* ThingsBoard 悬停背景色，与选中项相同 */
+    }
+  }
+
+  :global(.ant-menu-sub) {
+    background-color: #263e5b !important; /* ThingsBoard 子菜单背景色，稍深一点 */
+
+    :global(.ant-menu-item) {
+      padding-left: 48px !important;
+      height: 40px;
+      line-height: 40px;
+      display: flex;
+      align-items: center;
+
+      &:hover {
+        background-color: #527dad; /* ThingsBoard 悬停背景色，与选中项相同 */
+      }
+    }
+
+    :global(.ant-menu-submenu-title) {
+      padding-left: 48px !important;
+      height: 40px;
+      line-height: 40px;
+      display: flex;
+      align-items: center;
+    }
+
+    // 子菜单中的分隔线样式调整
+    :global(.ant-menu-item), :global(.ant-menu-submenu) {
+      &::after {
+        left: 24px;
+        right: 24px;
+      }
+    }
+  }
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed !important;
+    height: 100vh;
+    z-index: 1001;
+    transform: translateX(-100%);
+    transition: transform 0.3s;
+
+    &:not(:global(.ant-layout-sider-collapsed)) {
+      transform: translateX(0);
+    }
+  }
+}

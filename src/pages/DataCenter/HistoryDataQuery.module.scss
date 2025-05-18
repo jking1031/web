@@ -1,0 +1,51 @@
+.queryContainer {
+  padding: 24px;
+  
+  @media (max-width: 768px) {
+    padding: 12px;
+  }
+}
+
+.pageTitle {
+  margin-bottom: 24px;
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.queryCard {
+  margin-bottom: 24px;
+}
+
+.formActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+  margin-top: 24px;
+  
+  @media (max-width: 576px) {
+    flex-direction: column;
+    
+    button {
+      width: 100%;
+      margin-bottom: 8px;
+    }
+  }
+}
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+}
+
+.resultCard {
+  margin-top: 24px;
+}
+
+.emptyResult {
+  margin-top: 48px;
+  display: flex;
+  justify-content: center;
+} 

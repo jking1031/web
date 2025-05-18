@@ -1,0 +1,129 @@
+.calculatorContainer {
+  padding: 24px;
+  
+  @media (max-width: 768px) {
+    padding: 12px;
+  }
+}
+
+.pageTitle {
+  margin-bottom: 24px;
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.inputCard {
+  margin-bottom: 24px;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 8px;
+  
+  @media (max-width: 576px) {
+    flex-direction: column;
+    
+    button {
+      width: 100%;
+      margin-bottom: 8px;
+    }
+  }
+}
+
+.infoCard {
+  margin-bottom: 24px;
+  
+  p {
+    margin-bottom: 8px;
+  }
+}
+
+.formula {
+  background-color: rgba(0, 0, 0, 0.02);
+  padding: 12px;
+  border-radius: 4px;
+  margin: 12px 0;
+  
+  p {
+    font-family: monospace;
+    margin-bottom: 4px;
+  }
+}
+
+.resultCard {
+  height: 100%;
+}
+
+.resultContent {
+  padding: 16px 0;
+}
+
+.resultItem {
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.resultLabel {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin-right: 8px;
+}
+
+.resultValue {
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--primary);
+}
+
+.inputSummary {
+  margin-bottom: 24px;
+  
+  h4 {
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  
+  p {
+    margin-bottom: 4px;
+    color: var(--text-secondary);
+  }
+}
+
+.saveSection {
+  margin-top: 16px;
+}
+
+.historyItem {
+  padding: 12px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  margin-bottom: 12px;
+  
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+  }
+  
+  .historyHeader {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    
+    .historyName {
+      font-weight: 500;
+    }
+    
+    .historyDate {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+  }
+  
+  .historyActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 8px;
+  }
+} 

@@ -1,0 +1,151 @@
+.authContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #305680 0%, #263e5b 100%);
+  padding: 20px;
+}
+
+.authCard {
+  width: 100%;
+  max-width: 450px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logoContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.logo {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 16px;
+}
+
+.title {
+  color: white !important;
+  margin: 0 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.formCard {
+  width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  
+  :global(.ant-card-body) {
+    padding: 32px;
+  }
+}
+
+.cardTitle {
+  text-align: center;
+  margin-bottom: 24px !important;
+  color: #305680 !important;
+}
+
+.description {
+  text-align: center;
+  margin-bottom: 24px;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.form {
+  width: 100%;
+  
+  :global(.ant-form-item) {
+    margin-bottom: 20px;
+  }
+  
+  :global(.ant-input-affix-wrapper) {
+    height: 44px;
+    border-radius: 4px;
+    
+    :global(.ant-input) {
+      height: 42px;
+      font-size: 14px;
+    }
+    
+    :global(.anticon) {
+      color: rgba(0, 0, 0, 0.45);
+      margin-right: 8px;
+    }
+  }
+  
+  :global(.ant-select) {
+    width: 100%;
+    
+    :global(.ant-select-selector) {
+      height: 44px !important;
+      padding: 0 11px !important;
+      
+      :global(.ant-select-selection-item) {
+        line-height: 42px !important;
+      }
+    }
+    
+    :global(.ant-select-selection-placeholder) {
+      line-height: 42px !important;
+    }
+  }
+}
+
+.alert {
+  margin-bottom: 24px;
+}
+
+.formActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.forgotPassword {
+  color: #305680;
+  
+  &:hover {
+    color: #527dad;
+  }
+}
+
+.submitButton {
+  height: 44px;
+  font-size: 16px;
+  background-color: #305680 !important;
+  border-color: #305680 !important;
+  
+  &:hover, &:focus {
+    background-color: #527dad !important;
+    border-color: #527dad !important;
+  }
+}
+
+.registerLink, .loginLink {
+  margin-top: 16px;
+  text-align: center;
+  
+  a {
+    margin-left: 8px;
+    color: #305680;
+    font-weight: 500;
+    
+    &:hover {
+      color: #527dad;
+    }
+  }
+}
+
+// 响应式样式
+@media (max-width: 576px) {
+  .formCard {
+    :global(.ant-card-body) {
+      padding: 24px 16px;
+    }
+  }
+}

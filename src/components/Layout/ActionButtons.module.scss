@@ -1,0 +1,26 @@
+.actionButtons {
+  display: flex;
+  align-items: center;
+}
+
+.actionButton {
+  color: var(--text-secondary);
+  font-size: 16px;
+
+  &:hover {
+    color: var(--primary);
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+}
+
+/* 暗色主题适配 */
+:global([data-theme='dark']) {
+  .actionButton {
+    color: var(--text-secondary);
+
+    &:hover {
+      color: var(--primary-hover);
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+  }
+}

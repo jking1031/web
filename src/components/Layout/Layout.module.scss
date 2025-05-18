@@ -1,0 +1,99 @@
+.layout {
+  min-height: 100vh;
+  position: relative;
+  width: 100%;
+  display: flex;
+  overflow: hidden;
+}
+
+.mainLayout {
+  flex: 1;
+  min-height: 100vh;
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+  width: calc(100% - 240px);
+}
+
+.mainContent {
+  flex: 1;
+  overflow: auto;
+  padding: 0;
+  background-color: var(--background);
+  margin: 56px 0 0 0; /* 添加顶部边距，与页头高度相同 */
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.pageContent {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+
+  /* 确保内容区域内的所有直接子元素也能铺满空间 */
+  > * {
+    flex: 1;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* 确保卡片和表格等组件能够铺满空间 */
+  :global(.ant-card),
+  :global(.ant-table-wrapper),
+  :global(.ant-form),
+  :global(.ant-tabs),
+  :global(.ant-row) {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* 移除卡片的边距和圆角 */
+  :global(.ant-card) {
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+  }
+
+  /* 调整表单项的宽度 */
+  :global(.ant-form-item) {
+    width: 100%;
+  }
+
+  /* 调整表格样式 */
+  :global(.ant-table) {
+    width: 100%;
+  }
+
+  /* 调整标签页样式 */
+  :global(.ant-tabs-nav) {
+    margin-bottom: 0;
+  }
+
+  /* 调整列表样式 */
+  :global(.ant-list) {
+    width: 100%;
+  }
+}
+
+.footer {
+  text-align: center;
+  padding: 16px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  height: 70px;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .mainContent {
+    padding: 16px;
+  }
+
+  .footer {
+    padding: 12px;
+    height: 60px;
+  }
+}

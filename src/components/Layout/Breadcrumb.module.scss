@@ -1,0 +1,56 @@
+.breadcrumbContainer {
+  padding: 12px 24px;
+  background-color: var(--card);
+  border-bottom: 1px solid var(--border);
+  z-index: 1;
+  position: relative;
+
+  :global(.ant-breadcrumb) {
+    font-size: 14px;
+
+    a {
+      color: var(--text-secondary);
+
+      &:hover {
+        color: var(--primary);
+      }
+    }
+
+    span:last-child {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    :global(.anticon) {
+      margin-right: 6px;
+      font-size: 14px;
+    }
+
+    :global(.ant-breadcrumb-separator) {
+      margin: 0 8px;
+      color: var(--text-secondary);
+    }
+  }
+}
+
+/* 暗色主题适配 */
+:global([data-theme='dark']) {
+  .breadcrumbContainer {
+    background-color: var(--card);
+    border-bottom: 1px solid var(--border);
+
+    :global(.ant-breadcrumb) {
+      a {
+        color: var(--text-secondary);
+
+        &:hover {
+          color: var(--primary-hover);
+        }
+      }
+
+      span:last-child {
+        color: var(--text);
+      }
+    }
+  }
+}

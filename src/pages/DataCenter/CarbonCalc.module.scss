@@ -1,0 +1,87 @@
+.carbonCalcContainer {
+  padding: 24px;
+  
+  @media (max-width: 768px) {
+    padding: 12px;
+  }
+}
+
+.pageTitle {
+  margin-bottom: 24px;
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.inputCard {
+  margin-bottom: 24px;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 8px;
+  
+  @media (max-width: 576px) {
+    flex-direction: column;
+    
+    button {
+      width: 100%;
+      margin-bottom: 8px;
+    }
+  }
+}
+
+.infoCard {
+  margin-bottom: 24px;
+  
+  p {
+    margin-bottom: 8px;
+  }
+}
+
+.formula {
+  background-color: rgba(0, 0, 0, 0.02);
+  padding: 12px;
+  border-radius: 4px;
+  margin: 12px 0;
+  
+  p {
+    font-family: monospace;
+    margin-bottom: 4px;
+  }
+}
+
+.resultCard {
+  height: 100%;
+}
+
+.resultContent {
+  padding: 16px 0;
+}
+
+.resultDetails, 
+.inputSummary {
+  margin-bottom: 16px;
+  
+  h4 {
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  
+  p {
+    margin-bottom: 4px;
+    color: var(--text-secondary);
+  }
+}
+
+.emptyResult {
+  text-align: center;
+  padding: 48px 0;
+  color: var(--text-secondary);
+}
+
+.saveAction {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+} 
