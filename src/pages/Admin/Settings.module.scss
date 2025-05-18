@@ -1,0 +1,109 @@
+/* 系统设置页面样式 */
+.settingsContainer {
+  width: 100%;
+  padding: 20px;
+}
+
+.settingsCard {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.noPermission {
+  padding: 40px;
+  text-align: center;
+  font-size: 16px;
+  color: #ff4d4f;
+  background-color: #fff2f0;
+  border-radius: 4px;
+  margin: 20px 0;
+}
+
+.apiConfigContainer {
+  width: 100%;
+}
+
+.apiConfigCard {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.endpointsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.endpointItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  background-color: #fafafa;
+}
+
+.testResult {
+  margin-top: 20px;
+  padding: 10px;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  background-color: #fafafa;
+}
+
+.jsonResult {
+  background-color: #f5f5f5;
+  padding: 10px;
+  border-radius: 4px;
+  overflow: auto;
+  max-height: 200px;
+}
+
+.systemParamsContainer {
+  width: 100%;
+}
+
+.paramCard {
+  margin-bottom: 20px;
+}
+
+.comingSoon {
+  padding: 40px;
+  text-align: center;
+  font-size: 16px;
+  color: #1890ff;
+  background-color: #e6f7ff;
+  border-radius: 4px;
+}
+
+/* 用户管理页面样式 */
+.userManagementContainer {
+  width: 100%;
+}
+
+.userManagementCard {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.filterRow {
+  margin-bottom: 20px;
+}
+
+.roleManagementContainer {
+  width: 100%;
+}
+
+.permissionManagementContainer {
+  width: 100%;
+}
