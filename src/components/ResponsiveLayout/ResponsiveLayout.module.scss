@@ -1,0 +1,176 @@
+/* 响应式布局样式
+ * 提供自适应不同屏幕尺寸的布局样式
+ */
+
+// 容器样式
+.responsive-container {
+  width: 100%;
+  padding-right: 15px;
+  padding-left: 15px;
+  margin-right: auto;
+  margin-left: auto;
+  
+  @media (min-width: 576px) {
+    max-width: 540px;
+  }
+  
+  @media (min-width: 768px) {
+    max-width: 720px;
+  }
+  
+  @media (min-width: 992px) {
+    max-width: 960px;
+  }
+  
+  @media (min-width: 1200px) {
+    max-width: 1140px;
+  }
+  
+  @media (min-width: 1400px) {
+    max-width: 1320px;
+  }
+}
+
+.responsive-container-fluid {
+  width: 100%;
+  padding-right: 15px;
+  padding-left: 15px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+// 行样式
+.responsive-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-right: -15px;
+  margin-left: -15px;
+}
+
+// 列样式
+.responsive-col {
+  position: relative;
+  width: 100%;
+  min-height: 1px;
+  padding-right: 15px;
+  padding-left: 15px;
+}
+
+// 生成列宽度类
+@for $i from 1 through 24 {
+  .responsive-col-#{$i} {
+    flex: 0 0 percentage($i / 24);
+    max-width: percentage($i / 24);
+  }
+}
+
+// 响应式断点
+$breakpoints: (
+  xs: 0,
+  sm: 576px,
+  md: 768px,
+  lg: 992px,
+  xl: 1200px,
+  xxl: 1400px
+);
+
+// 为每个断点生成列类
+@each $breakpoint, $width in $breakpoints {
+  @media (min-width: $width) {
+    @for $i from 1 through 24 {
+      .responsive-col-#{$breakpoint}-#{$i} {
+        flex: 0 0 percentage($i / 24);
+        max-width: percentage($i / 24);
+      }
+    }
+  }
+}
+
+// 卡片样式
+.responsive-card {
+  position: relative;
+  background-color: var(--componentBackground, #fff);
+  border-radius: var(--borderRadius, 4px);
+  transition: all 0.3s;
+  
+  &.responsive-card-bordered {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  &.responsive-card-hoverable {
+    cursor: pointer;
+    
+    &:hover {
+      box-shadow: 0 1px 2px -2px rgba(0, 0, 0, 0.16),
+                  0 3px 6px 0 rgba(0, 0, 0, 0.12),
+                  0 5px 12px 4px rgba(0, 0, 0, 0.09);
+    }
+  }
+  
+  .responsive-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    
+    .responsive-card-title {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--textColor, rgba(0, 0, 0, 0.85));
+    }
+  }
+  
+  .responsive-card-body {
+    padding: 16px;
+  }
+  
+  &.responsive-card-loading {
+    .responsive-card-loading-content {
+      .responsive-loading-block {
+        height: 14px;
+        margin: 8px 0;
+        background: linear-gradient(90deg, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.06));
+        background-size: 400% 100%;
+        border-radius: 2px;
+        animation: loading 1.5s ease infinite;
+      }
+    }
+  }
+}
+
+@keyframes loading {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+// 暗色主题适配
+[data-theme="dark"] {
+  .responsive-card {
+    background-color: var(--componentBackground, #1f1f1f);
+    
+    &.responsive-card-bordered {
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .responsive-card-header {
+      border-bottom-color: rgba(255, 255, 255, 0.1);
+      
+      .responsive-card-title {
+        color: var(--textColor, rgba(255, 255, 255, 0.85));
+      }
+    }
+    
+    &.responsive-card-loading {
+      .responsive-card-loading-content {
+        .responsive-loading-block {
+          background: linear-gradient(90deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.06));
+        }
+      }
+    }
+  }
+}

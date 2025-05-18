@@ -1,0 +1,316 @@
+/* 增强交互组件样式
+ * 提供更好的用户交互体验和微动画效果的样式
+ */
+
+// 涟漪按钮样式
+.ripple-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 400;
+  white-space: nowrap;
+  text-align: center;
+  background-image: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+  user-select: none;
+  touch-action: manipulation;
+  line-height: 1.5715;
+  overflow: hidden;
+  
+  &:focus {
+    outline: 0;
+  }
+  
+  // 按钮类型
+  &.ripple-button-default {
+    background-color: #fff;
+    border-color: #d9d9d9;
+    color: rgba(0, 0, 0, 0.85);
+    
+    &:hover, &:focus {
+      color: var(--primaryColor, #1890ff);
+      border-color: var(--primaryColor, #1890ff);
+    }
+  }
+  
+  &.ripple-button-primary {
+    background-color: var(--primaryColor, #1890ff);
+    border-color: var(--primaryColor, #1890ff);
+    color: #fff;
+    
+    &:hover, &:focus {
+      background-color: var(--primaryColor, #1890ff);
+      opacity: 0.85;
+    }
+  }
+  
+  &.ripple-button-danger {
+    background-color: #ff4d4f;
+    border-color: #ff4d4f;
+    color: #fff;
+    
+    &:hover, &:focus {
+      background-color: #ff4d4f;
+      opacity: 0.85;
+    }
+  }
+  
+  // 按钮尺寸
+  &.ripple-button-small {
+    height: 24px;
+    padding: 0 7px;
+    font-size: 14px;
+    border-radius: 2px;
+  }
+  
+  &.ripple-button-medium {
+    height: 32px;
+    padding: 4px 15px;
+    font-size: 14px;
+    border-radius: 2px;
+  }
+  
+  &.ripple-button-large {
+    height: 40px;
+    padding: 6px 15px;
+    font-size: 16px;
+    border-radius: 2px;
+  }
+  
+  // 禁用状态
+  &.ripple-button-disabled {
+    color: rgba(0, 0, 0, 0.25);
+    background-color: #f5f5f5;
+    border-color: #d9d9d9;
+    cursor: not-allowed;
+    
+    &:hover, &:focus {
+      color: rgba(0, 0, 0, 0.25);
+      background-color: #f5f5f5;
+      border-color: #d9d9d9;
+    }
+  }
+  
+  // 块级按钮
+  &.ripple-button-block {
+    width: 100%;
+  }
+  
+  // 涟漪效果
+  .ripple-effect {
+    position: absolute;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.15);
+    width: 100px;
+    height: 100px;
+    margin-top: -50px;
+    margin-left: -50px;
+    opacity: 0;
+    transform: scale(0);
+    animation: ripple 0.6s linear;
+  }
+  
+  @keyframes ripple {
+    0% {
+      transform: scale(0);
+      opacity: 0.5;
+    }
+    100% {
+      transform: scale(2.5);
+      opacity: 0;
+    }
+  }
+}
+
+// 动画卡片样式
+.animated-card {
+  position: relative;
+  background-color: var(--componentBackground, #fff);
+  border-radius: var(--borderRadius, 4px);
+  transition: all 0.3s;
+  opacity: 0;
+  transform: translateY(20px);
+  
+  &.animated-card-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  // 动画类型
+  &.animated-card-fade {
+    transform: none;
+  }
+  
+  &.animated-card-slide {
+    transform: translateX(-20px);
+    
+    &.animated-card-visible {
+      transform: translateX(0);
+    }
+  }
+  
+  &.animated-card-zoom {
+    transform: scale(0.95);
+    
+    &.animated-card-visible {
+      transform: scale(1);
+    }
+  }
+  
+  &.animated-card-bordered {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  &.animated-card-hoverable {
+    cursor: pointer;
+    
+    &:hover {
+      box-shadow: 0 1px 2px -2px rgba(0, 0, 0, 0.16),
+                  0 3px 6px 0 rgba(0, 0, 0, 0.12),
+                  0 5px 12px 4px rgba(0, 0, 0, 0.09);
+    }
+  }
+  
+  .animated-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    
+    .animated-card-title {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--textColor, rgba(0, 0, 0, 0.85));
+    }
+  }
+  
+  .animated-card-body {
+    padding: 16px;
+  }
+  
+  &.animated-card-loading {
+    .animated-card-loading-content {
+      .animated-loading-block {
+        height: 14px;
+        margin: 8px 0;
+        background: linear-gradient(90deg, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.06));
+        background-size: 400% 100%;
+        border-radius: 2px;
+        animation: loading 1.5s ease infinite;
+      }
+    }
+  }
+}
+
+// 动画列表项样式
+.animated-list-item {
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: all 0.3s ease;
+  
+  &.animated-list-item-visible {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// 动画图像样式
+.animated-image {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  
+  .animated-image-skeleton {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, #f2f2f2 25%, #e6e6e6 37%, #f2f2f2 63%);
+    background-size: 400% 100%;
+    animation: loading 1.4s ease infinite;
+  }
+  
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.3s;
+  }
+}
+
+@keyframes loading {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+// 暗色主题适配
+[data-theme="dark"] {
+  .ripple-button {
+    &.ripple-button-default {
+      background-color: #141414;
+      border-color: #434343;
+      color: rgba(255, 255, 255, 0.85);
+      
+      &:hover, &:focus {
+        color: var(--primaryColor, #177ddc);
+        border-color: var(--primaryColor, #177ddc);
+      }
+    }
+    
+    &.ripple-button-disabled {
+      color: rgba(255, 255, 255, 0.3);
+      background-color: rgba(255, 255, 255, 0.08);
+      border-color: #434343;
+      
+      &:hover, &:focus {
+        color: rgba(255, 255, 255, 0.3);
+        background-color: rgba(255, 255, 255, 0.08);
+        border-color: #434343;
+      }
+    }
+    
+    .ripple-effect {
+      background-color: rgba(255, 255, 255, 0.15);
+    }
+  }
+  
+  .animated-card {
+    background-color: var(--componentBackground, #1f1f1f);
+    
+    &.animated-card-bordered {
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .animated-card-header {
+      border-bottom-color: rgba(255, 255, 255, 0.1);
+      
+      .animated-card-title {
+        color: var(--textColor, rgba(255, 255, 255, 0.85));
+      }
+    }
+    
+    &.animated-card-loading {
+      .animated-card-loading-content {
+        .animated-loading-block {
+          background: linear-gradient(90deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.06));
+        }
+      }
+    }
+  }
+  
+  .animated-image {
+    .animated-image-skeleton {
+      background: linear-gradient(90deg, #303030 25%, #383838 37%, #303030 63%);
+    }
+  }
+}
