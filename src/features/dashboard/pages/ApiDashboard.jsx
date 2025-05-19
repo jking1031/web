@@ -28,8 +28,8 @@ import {
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon
 } from '@mui/icons-material';
-import { useApis } from '../../hooks/useApi';
-import { formatApiResponse } from '../../utils/apiUtils';
+import { useApis } from '../../../hooks/useApi';
+import { formatApiResponse } from '../../../utils/apiUtils';
 
 /**
  * 设备状态卡片组件
