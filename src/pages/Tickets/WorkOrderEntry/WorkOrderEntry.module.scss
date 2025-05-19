@@ -1,0 +1,19 @@
+.workOrderEntryContainer {
+  padding: 24px;
+}
+
+.pageTitle {
+  margin-bottom: 24px;
+  color: #1890ff;
+}
+
+.formCard {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+}
