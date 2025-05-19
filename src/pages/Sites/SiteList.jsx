@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Input, Badge, Spin, Empty, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { SearchOutlined } from '@ant-design/icons';
-import api from '../../api/interceptors';
+import apiService from '../../services/apiService';
 import styles from './SiteList.module.scss';
 
 /**
@@ -19,12 +19,18 @@ const SiteList = () => {
   useEffect(() => {
     const fetchSites = async () => {
       try {
-        const response = await api.get('/api/sites');
-        setSites(response.data);
-        setFilteredSites(response.data);
+        // 通过API管理器调用获取站点列表API
+        const response = await apiService.callApi('getSites');
+        
+        if (response && response.success) {
+          setSites(response.data || []);
+          setFilteredSites(response.data || []);
+        } else {
+          throw new Error(response?.message || '获取站点列表失败');
+        }
       } catch (error) {
         console.error('获取站点列表失败', error);
-        message.error('获取站点列表失败');
+        message.error('获取站点列表失败: ' + (error.message || '未知错误'));
         // 使用模拟数据
         const mockSites = getMockSiteData();
         setSites(mockSites);

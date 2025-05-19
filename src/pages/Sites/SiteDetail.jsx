@@ -13,7 +13,7 @@ import {
   LinkOutlined,
   DisconnectOutlined
 } from '@ant-design/icons';
-import api from '../../api/interceptors';
+import apiService from '../../services/apiService';
 import { useWebSocket } from '../../context/WebSocketContext';
 import styles from './SiteDetail.module.scss';
 
@@ -36,12 +36,17 @@ const SiteDetail = () => {
   useEffect(() => {
     const fetchSiteDetail = async () => {
       try {
-        // 获取站点详情
-        const response = await api.get(`/api/sites/${id}`);
-        setSite(response.data);
+        // 通过API管理器调用获取站点详情API
+        const response = await apiService.callApi('getSiteById', { id });
+        
+        if (response && response.success) {
+          setSite(response.data);
+        } else {
+          throw new Error(response?.message || '获取站点详情失败');
+        }
       } catch (error) {
         console.error('获取站点详情失败', error);
-        message.error('获取站点详情失败');
+        message.error('获取站点详情失败: ' + (error.message || '未知错误'));
         // 使用模拟数据
         setSite(getMockSiteDetail(id));
       } finally {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Table, Button, DatePicker, Select, Input, Space, Row, Col, message, Typography, Tabs, Modal, Descriptions, Tag, Divider } from 'antd';
 import { SearchOutlined, FileExcelOutlined, FilePdfOutlined, EyeOutlined, DownloadOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import apiService from '../../services/apiService';
 import dayjs from 'dayjs';
 import styles from './Reports.module.scss';
 
@@ -31,12 +31,17 @@ const ReportQuery = () => {
   useEffect(() => {
     const fetchPumpStations = async () => {
       try {
-        const response = await axios.get('https://nodered.jzz77.cn:9003/api/pumpstations');
-        if (response.data) {
-          setPumpStations(response.data);
+        // 通过API管理器调用获取泵站列表API
+        const response = await apiService.callApi('getPumpStations');
+        
+        if (response && response.success) {
+          setPumpStations(response.data || []);
+        } else {
+          throw new Error(response?.message || '获取泵站列表失败');
         }
       } catch (error) {
         console.error('获取泵站列表失败:', error);
+        message.error('获取泵站列表失败: ' + (error.message || '未知错误'));
         // 使用模拟数据
         setPumpStations([
           { id: 1, name: '第一泵站' },
@@ -64,34 +69,37 @@ const ReportQuery = () => {
       const startDate = dateRange[0].format('YYYY-MM-DD');
       const endDate = dateRange[1].format('YYYY-MM-DD');
       
-      let url = '';
+      let apiKey = '';
       let params = { start_date: startDate, end_date: endDate };
       
       if (activeTab === '5000') {
-        url = 'https://nodered.jzz77.cn:9003/api/reports5000';
+        apiKey = 'getReports5000';
       } else if (activeTab === 'sludge') {
-        url = 'https://nodered.jzz77.cn:9003/api/reportssludge';
+        apiKey = 'getReportsSludge';
       } else if (activeTab === 'pump') {
-        url = 'https://nodered.jzz77.cn:9003/api/reportspump';
+        apiKey = 'getReportsPump';
         if (selectedPumpStation) {
           params.pump_station_id = selectedPumpStation;
         }
       }
       
-      const response = await axios.get(url, { params });
+      // 通过API管理器调用获取报告数据API
+      const response = await apiService.callApi(apiKey, params);
       
-      if (response.data) {
+      if (response && response.success) {
         if (activeTab === '5000') {
-          setReports5000(response.data);
+          setReports5000(response.data || []);
         } else if (activeTab === 'sludge') {
-          setReportsSludge(response.data);
+          setReportsSludge(response.data || []);
         } else if (activeTab === 'pump') {
-          setReportsPump(response.data);
+          setReportsPump(response.data || []);
         }
+      } else {
+        throw new Error(response?.message || '获取报告数据失败');
       }
     } catch (error) {
       console.error('获取报告数据失败:', error);
-      message.error('获取报告数据失败');
+      message.error('获取报告数据失败: ' + (error.message || '未知错误'));
     } finally {
       setLoading(false);
     }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, Form, InputNumber, Button, Row, Col, Divider, Empty, Select, message } from 'antd';
 import { CalculatorOutlined, SaveOutlined, ReloadOutlined } from '@ant-design/icons';
-import api from '../../api/interceptors';
+import apiService from '../../services/apiService';
 import styles from './DosingCalculator.module.scss';
 
 const { Option } = Select;
@@ -85,8 +85,8 @@ const DosingCalculator = () => {
     setSaveLoading(true);
     
     try {
-      // 实际项目中应调用API
-      // await api.post('/api/calculators/save', {
+      // 通过API管理器调用保存计算结果API
+      // await apiService.callApi('saveCalculatorResult', {
       //   type: 'dosing',
       //   input: result.inputValues,
       //   output: {
@@ -102,7 +102,7 @@ const DosingCalculator = () => {
       message.success('计算结果已保存');
     } catch (error) {
       console.error('保存计算结果失败', error);
-      message.error('保存失败，请重试');
+      message.error('保存失败: ' + (error.message || '请重试'));
     } finally {
       setSaveLoading(false);
     }
