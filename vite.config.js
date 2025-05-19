@@ -7,6 +7,11 @@ export default defineConfig({
   // 配置基础路径
   base: '/',
   server: {
+    // 允许公网访问的域名
+    allowedHosts: [
+      '5173-imo26kxk6bp0kcrnbu34q-22fad657.manusvm.computer',
+      '.manusvm.computer'
+    ],
     // 配置HMR WebSocket连接
     hmr: {
       // 使用默认配置，不要修改
