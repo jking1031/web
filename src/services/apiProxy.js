@@ -210,6 +210,29 @@ class ApiProxy {
         }
       }
 
+      // 标准化响应格式，确保包含success和data字段
+      if (responseData && typeof responseData === 'object') {
+        if (responseData.success === undefined) {
+          responseData = {
+            success: true,
+            data: responseData
+          };
+        } else if (responseData.data === undefined && !responseData.error) {
+          // 如果有success但没有data字段，将除success外的其他数据放入data
+          const { success, ...rest } = responseData;
+          responseData = {
+            success,
+            data: Object.keys(rest).length > 0 ? rest : null
+          };
+        }
+      } else {
+        // 如果响应不是对象，包装为标准格式
+        responseData = {
+          success: true,
+          data: responseData
+        };
+      }
+
       // 如果配置了缓存，则缓存响应数据
       if (cacheTime > 0) {
         const cacheKey = this.generateCacheKey(apiKey, params);
