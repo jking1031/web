@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Card, Table, Button, Input, Select, Tag, Space, Typography, Row, Col, Badge, Tooltip, message, DatePicker } from 'antd';
 import { PlusOutlined, SearchOutlined, FilterOutlined, ReloadOutlined, EyeOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import dayjs from 'dayjs';
 import { API_ENDPOINTS } from '../../api/config';
 import { useAuth } from '../../context/AuthContext';
+import { useApi, useApis } from '../../hooks/useApi';
 import styles from './Tickets.module.scss';
 
 const { Option } = Select;
@@ -29,64 +29,81 @@ const TicketList = () => {
   const [sites, setSites] = useState([]);
   const [siteFilter, setSiteFilter] = useState('all');
 
-  // 获取站点列表
-  useEffect(() => {
-    const fetchSites = async () => {
-      try {
-        const response = await axios.get(API_ENDPOINTS.SITES);
-        if (response.data) {
-          setSites(response.data);
-        }
-      } catch (error) {
-        console.error('获取站点列表失败:', error);
-        
-        // 使用模拟数据
-        const mockSites = [
-          { id: 1, name: '华北水厂' },
-          { id: 2, name: '东方水处理厂' },
-          { id: 3, name: '西部污水处理中心' },
-          { id: 4, name: '南方水厂' },
-        ];
-        setSites(mockSites);
-      }
-    };
-    
-    fetchSites();
-  }, []);
+  // 构建API查询参数
+  const buildTicketsQueryParams = () => {
+    const params = {};
 
-  // 获取工单列表
-  useEffect(() => {
-    fetchTickets();
-  }, []);
+    if (statusFilter !== 'all') {
+      params.status = statusFilter;
+    }
 
-  // 筛选工单
-  useEffect(() => {
-    filterTickets();
-  }, [tickets, searchText, statusFilter, priorityFilter, dateRange, siteFilter]);
+    if (priorityFilter !== 'all') {
+      params.priority = priorityFilter;
+    }
 
-  // 获取工单列表
-  const fetchTickets = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(API_ENDPOINTS.TICKETS);
-      
-      if (response.data) {
-        setTickets(response.data);
-      }
-    } catch (error) {
+    if (siteFilter !== 'all') {
+      params.site_id = siteFilter;
+    }
+
+    if (dateRange && dateRange.length === 2) {
+      params.start_date = dateRange[0].format('YYYY-MM-DD');
+      params.end_date = dateRange[1].format('YYYY-MM-DD');
+    }
+
+    if (searchText) {
+      params.search = searchText;
+    }
+
+    return params;
+  };
+
+  // 使用API Hook获取站点列表
+  const {
+    data: sitesData,
+    loading: sitesLoading,
+    error: sitesError,
+    execute: fetchSites
+  } = useApi('getSites', {}, {
+    autoLoad: true,
+    onError: (error) => {
+      console.error('获取站点列表失败:', error);
+      // 使用模拟数据
+      setSites([
+        { id: 1, name: '华北水厂' },
+        { id: 2, name: '东方水处理厂' },
+        { id: 3, name: '西部污水处理中心' },
+        { id: 4, name: '南方水厂' },
+      ]);
+    }
+  });
+
+  // 使用API Hook获取工单列表
+  const {
+    data: ticketsData,
+    loading: ticketsLoading,
+    error: ticketsError,
+    execute: fetchTickets
+  } = useApi('getTickets', buildTicketsQueryParams(), {
+    autoLoad: true,
+    dependencies: [statusFilter, priorityFilter, siteFilter, dateRange, searchText],
+    onSuccess: (data) => {
+      setTickets(data || []);
+    },
+    onError: (error) => {
       console.error('获取工单列表失败:', error);
-      
+      message.error('获取工单列表失败，请稍后重试');
+
       // 使用模拟数据
       const mockTickets = [];
       const statuses = ['pending', 'in_progress', 'completed', 'cancelled'];
       const priorities = ['high', 'medium', 'low'];
       const types = ['maintenance', 'repair', 'inspection', 'emergency'];
-      
+
       for (let i = 1; i <= 20; i++) {
         const createdAt = dayjs().subtract(Math.floor(Math.random() * 30), 'day');
         const status = statuses[Math.floor(Math.random() * statuses.length)];
         const completedAt = status === 'completed' ? createdAt.add(Math.floor(Math.random() * 5) + 1, 'day') : null;
-        
+
         mockTickets.push({
           id: `TICKET-${1000 + i}`,
           title: `工单 #${1000 + i}: ${types[Math.floor(Math.random() * types.length)]} 任务`,
@@ -101,53 +118,73 @@ const TicketList = () => {
           completed_at: completedAt ? completedAt.format('YYYY-MM-DD HH:mm:ss') : null,
         });
       }
-      
+
       setTickets(mockTickets);
-    } finally {
-      setLoading(false);
     }
-  };
+  });
+
+  // 使用API Hook获取工单统计
+  const {
+    data: statsData,
+    loading: statsLoading,
+    error: statsError,
+    execute: fetchStats
+  } = useApi('getTicketStats', {}, {
+    autoLoad: true
+  });
+
+  // 更新站点数据
+  useEffect(() => {
+    if (sitesData) {
+      setSites(sitesData);
+    }
+  }, [sitesData]);
+
+  // 筛选工单
+  useEffect(() => {
+    filterTickets();
+  }, [tickets, searchText, statusFilter, priorityFilter, dateRange, siteFilter]);
 
   // 筛选工单
   const filterTickets = () => {
     let filtered = [...tickets];
-    
+
     // 搜索文本筛选
     if (searchText) {
       const searchLower = searchText.toLowerCase();
-      filtered = filtered.filter(ticket => 
-        ticket.id.toLowerCase().includes(searchLower) || 
+      filtered = filtered.filter(ticket =>
+        ticket.id.toLowerCase().includes(searchLower) ||
         ticket.title.toLowerCase().includes(searchLower) ||
         (ticket.description && ticket.description.toLowerCase().includes(searchLower))
       );
     }
-    
+
     // 状态筛选
     if (statusFilter !== 'all') {
       filtered = filtered.filter(ticket => ticket.status === statusFilter);
     }
-    
+
     // 优先级筛选
     if (priorityFilter !== 'all') {
       filtered = filtered.filter(ticket => ticket.priority === priorityFilter);
     }
-    
+
     // 日期范围筛选
     if (dateRange && dateRange.length === 2) {
       const startDate = dateRange[0].startOf('day');
       const endDate = dateRange[1].endOf('day');
-      
+
       filtered = filtered.filter(ticket => {
         const createdAt = dayjs(ticket.created_at);
         return createdAt.isAfter(startDate) && createdAt.isBefore(endDate);
       });
     }
-    
+
     // 站点筛选
     if (siteFilter !== 'all') {
       filtered = filtered.filter(ticket => ticket.site_id.toString() === siteFilter);
     }
-    
+
     setFilteredTickets(filtered);
   };
 
@@ -183,11 +220,18 @@ const TicketList = () => {
     setPriorityFilter('all');
     setDateRange(null);
     setSiteFilter('all');
+
+    // 使用默认参数重新获取工单列表
+    fetchTickets({});
   };
 
   // 刷新工单列表
   const refreshTickets = () => {
-    fetchTickets();
+    // 使用当前筛选条件刷新工单列表
+    fetchTickets(buildTicketsQueryParams());
+
+    // 同时刷新工单统计
+    fetchStats();
   };
 
   // 创建新工单
@@ -284,9 +328,9 @@ const TicketList = () => {
       title: '操作',
       key: 'action',
       render: (_, record) => (
-        <Button 
-          type="primary" 
-          size="small" 
+        <Button
+          type="primary"
+          size="small"
           icon={<EyeOutlined />}
           onClick={() => viewTicketDetail(record.id)}
         >
@@ -301,20 +345,20 @@ const TicketList = () => {
       <Card className={styles.ticketListCard}>
         <div className={styles.headerRow}>
           <Title level={4}>工单管理</Title>
-          <Button 
-            type="primary" 
+          <Button
+            type="primary"
             icon={<PlusOutlined />}
             onClick={createNewTicket}
           >
             新建工单
           </Button>
         </div>
-        
+
         <div className={styles.filterRow}>
           <Row gutter={[16, 16]} align="middle">
             <Col xs={24} sm={12} md={6} lg={6}>
-              <Input 
-                placeholder="搜索工单..." 
+              <Input
+                placeholder="搜索工单..."
                 prefix={<SearchOutlined />}
                 value={searchText}
                 onChange={handleSearchChange}
@@ -363,19 +407,19 @@ const TicketList = () => {
             </Col>
             <Col xs={24} sm={24} md={12} lg={6}>
               <Space>
-                <RangePicker 
+                <RangePicker
                   value={dateRange}
                   onChange={handleDateRangeChange}
                 />
                 <Tooltip title="重置筛选">
-                  <Button 
-                    icon={<FilterOutlined />} 
+                  <Button
+                    icon={<FilterOutlined />}
                     onClick={resetFilters}
                   />
                 </Tooltip>
                 <Tooltip title="刷新">
-                  <Button 
-                    icon={<ReloadOutlined />} 
+                  <Button
+                    icon={<ReloadOutlined />}
                     onClick={refreshTickets}
                   />
                 </Tooltip>
@@ -383,13 +427,16 @@ const TicketList = () => {
             </Col>
           </Row>
         </div>
-        
+
         <div className={styles.statsRow}>
           <Row gutter={16}>
             <Col xs={12} sm={6} md={6} lg={6}>
               <Card className={styles.statCard}>
                 <Tooltip title="待处理工单数量">
-                  <Badge count={filteredTickets.filter(t => t.status === 'pending').length} overflowCount={999}>
+                  <Badge
+                    count={statsData?.pending || filteredTickets.filter(t => t.status === 'pending').length}
+                    overflowCount={999}
+                  >
                     <div className={styles.statLabel}>待处理</div>
                   </Badge>
                 </Tooltip>
@@ -398,7 +445,11 @@ const TicketList = () => {
             <Col xs={12} sm={6} md={6} lg={6}>
               <Card className={styles.statCard}>
                 <Tooltip title="处理中工单数量">
-                  <Badge count={filteredTickets.filter(t => t.status === 'in_progress').length} overflowCount={999} style={{ backgroundColor: '#1890ff' }}>
+                  <Badge
+                    count={statsData?.in_progress || filteredTickets.filter(t => t.status === 'in_progress').length}
+                    overflowCount={999}
+                    style={{ backgroundColor: '#1890ff' }}
+                  >
                     <div className={styles.statLabel}>处理中</div>
                   </Badge>
                 </Tooltip>
@@ -407,7 +458,11 @@ const TicketList = () => {
             <Col xs={12} sm={6} md={6} lg={6}>
               <Card className={styles.statCard}>
                 <Tooltip title="已完成工单数量">
-                  <Badge count={filteredTickets.filter(t => t.status === 'completed').length} overflowCount={999} style={{ backgroundColor: '#52c41a' }}>
+                  <Badge
+                    count={statsData?.completed || filteredTickets.filter(t => t.status === 'completed').length}
+                    overflowCount={999}
+                    style={{ backgroundColor: '#52c41a' }}
+                  >
                     <div className={styles.statLabel}>已完成</div>
                   </Badge>
                 </Tooltip>
@@ -416,7 +471,11 @@ const TicketList = () => {
             <Col xs={12} sm={6} md={6} lg={6}>
               <Card className={styles.statCard}>
                 <Tooltip title="高优先级工单数量">
-                  <Badge count={filteredTickets.filter(t => t.priority === 'high').length} overflowCount={999} style={{ backgroundColor: '#f5222d' }}>
+                  <Badge
+                    count={statsData?.high_priority || filteredTickets.filter(t => t.priority === 'high').length}
+                    overflowCount={999}
+                    style={{ backgroundColor: '#f5222d' }}
+                  >
                     <div className={styles.statLabel}>高优先级</div>
                   </Badge>
                 </Tooltip>
@@ -424,13 +483,16 @@ const TicketList = () => {
             </Col>
           </Row>
         </div>
-        
-        <Table 
-          columns={columns} 
-          dataSource={filteredTickets} 
+
+        <Table
+          columns={columns}
+          dataSource={filteredTickets}
           rowKey="id"
-          loading={loading}
-          pagination={{ pageSize: 10 }}
+          loading={ticketsLoading || sitesLoading || statsLoading}
+          pagination={{
+            pageSize: 10,
+            showTotal: (total) => `共 ${total} 条记录`
+          }}
         />
       </Card>
     </div>

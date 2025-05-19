@@ -95,6 +95,11 @@ const Sidebar = ({ collapsed, onMenuClick }) => {
     if (path.startsWith('/db-test')) return ['db-test'];
     if (path.startsWith('/profile')) return ['profile'];
 
+    // API 示例页面
+    if (path.startsWith('/api-example')) return ['api-examples', 'api-example'];
+    if (path.startsWith('/api-class-example')) return ['api-examples', 'api-class-example'];
+    if (path.startsWith('/api-dashboard')) return ['api-examples', 'api-dashboard'];
+
     return [];
   };
 
@@ -265,6 +270,30 @@ const Sidebar = ({ collapsed, onMenuClick }) => {
       onClick: () => handleNavigate('/file-upload'),
     },
   ];
+
+  // API 示例菜单项
+  menuItems.push({
+    key: 'api-examples',
+    icon: <ApiOutlined />,
+    label: 'API 示例',
+    children: [
+      {
+        key: 'api-example',
+        label: '函数组件示例',
+        onClick: () => handleNavigate('/api-example'),
+      },
+      {
+        key: 'api-class-example',
+        label: '类组件示例',
+        onClick: () => handleNavigate('/api-class-example'),
+      },
+      {
+        key: 'api-dashboard',
+        label: 'API 仪表盘',
+        onClick: () => handleNavigate('/api-dashboard'),
+      },
+    ],
+  });
 
   // 管理员菜单项
   if (isAdmin) {

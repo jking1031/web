@@ -33,24 +33,72 @@
 .apiConfigCard {
   width: 100%;
   margin-bottom: 20px;
+
+  :global {
+    .ant-tabs-nav {
+      margin-bottom: 16px;
+    }
+
+    .ant-tabs-tab {
+      padding: 8px 16px;
+
+      .anticon {
+        margin-right: 8px;
+      }
+    }
+
+    .ant-alert {
+      margin-bottom: 16px;
+    }
+
+    .ant-table {
+      margin-top: 16px;
+    }
+  }
 }
 
 .endpointsHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 20px 0;
+  margin: 16px 0;
+
+  :global {
+    .ant-typography {
+      margin-bottom: 0;
+    }
+  }
 }
 
 .endpointItem {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 10px;
-  border: 1px solid #f0f0f0;
-  border-radius: 4px;
-  margin-bottom: 10px;
-  background-color: #fafafa;
+  margin-bottom: 16px;
+
+  :global {
+    .ant-card-head {
+      min-height: 40px;
+      padding: 0 12px;
+
+      .ant-card-head-title {
+        padding: 8px 0;
+      }
+
+      .ant-card-extra {
+        padding: 8px 0;
+      }
+    }
+
+    .ant-card-body {
+      padding: 16px;
+    }
+
+    .ant-form-item {
+      margin-bottom: 12px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
 }
 
 .testResult {
@@ -61,12 +109,43 @@
   background-color: #fafafa;
 }
 
+.testResultStatus {
+  margin: 10px 0;
+}
+
+.testInfoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.testParamsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.testParamsList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.testParamItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .jsonResult {
   background-color: #f5f5f5;
   padding: 10px;
   border-radius: 4px;
   overflow: auto;
-  max-height: 200px;
+  max-height: 300px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
 }
 
 .systemParamsContainer {

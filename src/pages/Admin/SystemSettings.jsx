@@ -3,11 +3,11 @@
  * 集成用户管理、角色权限管理和API配置功能
  */
 import React, { useState } from 'react';
-import { Card, Tabs, Typography, Row, Col } from 'antd';
+import { Card, Tabs, Typography, Row, Col, Button } from 'antd';
 import { UserOutlined, TeamOutlined, ApiOutlined, SettingOutlined } from '@ant-design/icons';
 import { usePermission, PermissionGuard } from '../../context/PermissionContext';
 import EnhancedUserManagement from './EnhancedUserManagement';
-import ApiConfigManager from './components/ApiConfigManager';
+import { useNavigate } from 'react-router-dom';
 import styles from './Settings.module.scss';
 
 const { Title, Paragraph } = Typography;
@@ -19,6 +19,7 @@ const { TabPane } = Tabs;
  */
 const SystemSettings = () => {
   const { hasPermission } = usePermission();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('users');
 
   return (
@@ -28,35 +29,49 @@ const SystemSettings = () => {
         <Paragraph>
           在这里管理系统的用户、角色、权限和API配置。请注意，某些功能可能需要管理员权限。
         </Paragraph>
-        
+
         <Tabs activeKey={activeTab} onChange={setActiveTab}>
-          <TabPane 
-            tab={<span><UserOutlined /> 用户管理</span>} 
+          <TabPane
+            tab={<span><UserOutlined /> 用户管理</span>}
             key="users"
             disabled={!hasPermission(['user_manage', 'role_manage'])}
           >
-            <PermissionGuard 
-              permission={['user_manage', 'role_manage']} 
+            <PermissionGuard
+              permission={['user_manage', 'role_manage']}
               fallback={<div className={styles.noPermission}>您没有权限访问用户管理功能</div>}
             >
               <EnhancedUserManagement />
             </PermissionGuard>
           </TabPane>
-          
-          <TabPane 
-            tab={<span><ApiOutlined /> API配置</span>} 
+
+          <TabPane
+            tab={<span><ApiOutlined /> API管理</span>}
             key="api"
           >
-            <ApiConfigManager />
+            <div className={styles.apiManagementContainer}>
+              <Title level={4}>API管理系统</Title>
+              <Paragraph>
+                API管理系统已升级为独立模块，提供更强大的API管理、测试和监控功能。
+              </Paragraph>
+
+              <Button
+                type="primary"
+                icon={<ApiOutlined />}
+                size="large"
+                onClick={() => navigate('/api-management')}
+              >
+                前往API管理系统
+              </Button>
+            </div>
           </TabPane>
-          
-          <TabPane 
-            tab={<span><SettingOutlined /> 系统参数</span>} 
+
+          <TabPane
+            tab={<span><SettingOutlined /> 系统参数</span>}
             key="params"
             disabled={!hasPermission('system_config')}
           >
-            <PermissionGuard 
-              permission="system_config" 
+            <PermissionGuard
+              permission="system_config"
               fallback={<div className={styles.noPermission}>您没有权限访问系统参数配置</div>}
             >
               <div className={styles.systemParamsContainer}>
@@ -64,7 +79,7 @@ const SystemSettings = () => {
                 <Paragraph>
                   在这里配置系统的全局参数，包括系统名称、主题、日志级别等。
                 </Paragraph>
-                
+
                 <Row gutter={[16, 16]}>
                   <Col span={24}>
                     <Card title="基本设置" className={styles.paramCard}>

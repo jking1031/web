@@ -9,6 +9,9 @@ import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
 const EnhancedDashboard = lazy(() => import('./components/Dashboard/EnhancedDashboard'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard/AdminDashboard'));
 const DatabaseTest = lazy(() => import('./components/DatabaseTest/DatabaseTest'));
+const ApiExample = lazy(() => import('./components/Examples/ApiExample'));
+const ApiClassExample = lazy(() => import('./components/Examples/ApiClassExample'));
+const ApiDashboard = lazy(() => import('./pages/Dashboard/ApiDashboard'));
 
 // 认证页面
 const Login = lazy(() => import('./pages/Auth/Login'));
@@ -85,6 +88,10 @@ const router = createHashRouter(
       { path: 'settings', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><Settings /></Suspense></AdminRoute> },
       { path: 'api-management', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><ErrorBoundary showDetails={false}><ApiManagement /></ErrorBoundary></Suspense></AdminRoute> },
       { path: 'db-test', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><ErrorBoundary showDetails={true}><DatabaseTest /></ErrorBoundary></Suspense></AdminRoute> },
+      // API 示例页面
+      { path: 'api-example', element: <Suspense fallback={<LoadingFallback />}><ErrorBoundary showDetails={true}><ApiExample /></ErrorBoundary></Suspense> },
+      { path: 'api-class-example', element: <Suspense fallback={<LoadingFallback />}><ErrorBoundary showDetails={true}><ApiClassExample /></ErrorBoundary></Suspense> },
+      { path: 'api-dashboard', element: <Suspense fallback={<LoadingFallback />}><ErrorBoundary showDetails={true}><ApiDashboard /></ErrorBoundary></Suspense> },
       // 404页面
       { path: '404', element: <Suspense fallback={<LoadingFallback />}><NotFound /></Suspense> },
       { path: '*', element: <Navigate to="/404" replace /> }

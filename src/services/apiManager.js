@@ -277,6 +277,234 @@ class ApiManager {
       }
     });
 
+    // 注册站点相关 API
+    this.registry.register('getSites', {
+      name: '获取站点列表',
+      url: '/api/sites',
+      method: API_METHODS.GET,
+      category: API_CATEGORIES.SYSTEM,
+      status: API_STATUS.ENABLED,
+      description: '获取站点列表',
+      timeout: 10000,
+      retries: 1,
+      cacheTime: 300000, // 5分钟缓存
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    this.registry.register('getSiteById', {
+      name: '获取站点详情',
+      url: '/api/sites/{id}',
+      method: API_METHODS.GET,
+      category: API_CATEGORIES.SYSTEM,
+      status: API_STATUS.ENABLED,
+      description: '根据ID获取站点详情',
+      timeout: 8000,
+      retries: 1,
+      cacheTime: 60000,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    // 注册工单相关 API
+    this.registry.register('getTickets', {
+      name: '获取工单列表',
+      url: '/api/tickets',
+      method: API_METHODS.GET,
+      category: API_CATEGORIES.SYSTEM,
+      status: API_STATUS.ENABLED,
+      description: '获取工单列表，支持分页和筛选',
+      timeout: 10000,
+      retries: 1,
+      cacheTime: 60000,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    this.registry.register('getTicketById', {
+      name: '获取工单详情',
+      url: '/api/tickets/{id}',
+      method: API_METHODS.GET,
+      category: API_CATEGORIES.SYSTEM,
+      status: API_STATUS.ENABLED,
+      description: '根据ID获取工单详情',
+      timeout: 8000,
+      retries: 1,
+      cacheTime: 30000,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    this.registry.register('updateTicket', {
+      name: '更新工单',
+      url: '/api/tickets/{id}',
+      method: API_METHODS.PUT,
+      category: API_CATEGORIES.SYSTEM,
+      status: API_STATUS.ENABLED,
+      description: '更新工单信息',
+      timeout: 10000,
+      retries: 0,
+      cacheTime: 0,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    this.registry.register('createTicket', {
+      name: '创建工单',
+      url: '/api/tickets',
+      method: API_METHODS.POST,
+      category: API_CATEGORIES.SYSTEM,
+      status: API_STATUS.ENABLED,
+      description: '创建新工单',
+      timeout: 10000,
+      retries: 0,
+      cacheTime: 0,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    this.registry.register('updateTicketStatus', {
+      name: '更新工单状态',
+      url: '/api/tickets/{id}/status',
+      method: API_METHODS.PATCH,
+      category: API_CATEGORIES.SYSTEM,
+      status: API_STATUS.ENABLED,
+      description: '更新工单状态',
+      timeout: 8000,
+      retries: 1,
+      cacheTime: 0,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    this.registry.register('assignTicket', {
+      name: '分配工单',
+      url: '/api/tickets/{id}/assign',
+      method: API_METHODS.POST,
+      category: API_CATEGORIES.SYSTEM,
+      status: API_STATUS.ENABLED,
+      description: '将工单分配给指定用户',
+      timeout: 8000,
+      retries: 1,
+      cacheTime: 0,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    this.registry.register('addTicketComment', {
+      name: '添加工单评论',
+      url: '/api/tickets/{id}/comments',
+      method: API_METHODS.POST,
+      category: API_CATEGORIES.SYSTEM,
+      status: API_STATUS.ENABLED,
+      description: '为工单添加评论',
+      timeout: 8000,
+      retries: 1,
+      cacheTime: 0,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    this.registry.register('getTicketComments', {
+      name: '获取工单评论',
+      url: '/api/tickets/{id}/comments',
+      method: API_METHODS.GET,
+      category: API_CATEGORIES.SYSTEM,
+      status: API_STATUS.ENABLED,
+      description: '获取工单的评论列表',
+      timeout: 8000,
+      retries: 1,
+      cacheTime: 30000,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    this.registry.register('uploadTicketImages', {
+      name: '上传工单图片',
+      url: '/api/tickets/{id}/images',
+      method: API_METHODS.POST,
+      category: API_CATEGORIES.SYSTEM,
+      status: API_STATUS.ENABLED,
+      description: '为工单上传图片',
+      timeout: 15000,
+      retries: 0,
+      cacheTime: 0,
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+
+    this.registry.register('getTicketStats', {
+      name: '获取工单统计',
+      url: '/api/tickets/stats',
+      method: API_METHODS.GET,
+      category: API_CATEGORIES.SYSTEM,
+      status: API_STATUS.ENABLED,
+      description: '获取工单统计信息',
+      timeout: 10000,
+      retries: 1,
+      cacheTime: 300000, // 5分钟缓存
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    // 注册用户相关 API
+    this.registry.register('getUsers', {
+      name: '获取用户列表',
+      url: '/api/users',
+      method: API_METHODS.GET,
+      category: API_CATEGORIES.SYSTEM,
+      status: API_STATUS.ENABLED,
+      description: '获取用户列表',
+      timeout: 10000,
+      retries: 1,
+      cacheTime: 300000, // 5分钟缓存
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    this.registry.register('getUserById', {
+      name: '获取用户详情',
+      url: '/api/users/{id}',
+      method: API_METHODS.GET,
+      category: API_CATEGORIES.SYSTEM,
+      status: API_STATUS.ENABLED,
+      description: '根据ID获取用户详情',
+      timeout: 8000,
+      retries: 1,
+      cacheTime: 60000,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    this.registry.register('updateUser', {
+      name: '更新用户信息',
+      url: '/api/users/{id}',
+      method: API_METHODS.PUT,
+      category: API_CATEGORIES.SYSTEM,
+      status: API_STATUS.ENABLED,
+      description: '更新用户信息',
+      timeout: 10000,
+      retries: 0,
+      cacheTime: 0,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
     // 注册趋势数据相关API
     this.registerTrendApis();
   }

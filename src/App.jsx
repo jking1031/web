@@ -3,6 +3,7 @@ import { RouterProvider } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/auth';
 import { WebSocketProvider } from './context/WebSocketContext';
+import { ApiProvider } from './context/ApiContext';
 import router from './router';
 
 /**
@@ -12,11 +13,13 @@ import router from './router';
 function App() {
   return (
     <AuthProvider>
-      <ThemeProvider>
-        <WebSocketProvider>
-          <RouterProvider router={router} />
-        </WebSocketProvider>
-      </ThemeProvider>
+      <ApiProvider cacheSize={200}>
+        <ThemeProvider>
+          <WebSocketProvider>
+            <RouterProvider router={router} />
+          </WebSocketProvider>
+        </ThemeProvider>
+      </ApiProvider>
     </AuthProvider>
   );
 }

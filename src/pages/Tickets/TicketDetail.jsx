@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Card, Button, Tag, Typography, Row, Col, Descriptions, Timeline, Input, Select, Form, Upload, message, Space, Divider, Modal, Spin } from 'antd';
 import { ArrowLeftOutlined, EditOutlined, CheckOutlined, CloseOutlined, MessageOutlined, UserOutlined, PaperClipOutlined, UploadOutlined, PlusOutlined } from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import dayjs from 'dayjs';
 import { API_ENDPOINTS } from '../../api/config';
 import { useAuth } from '../../context/AuthContext';
+import { useApi, useApis } from '../../hooks/useApi';
 import styles from './Tickets.module.scss';
 
 const { Title, Text, Paragraph } = Typography;
@@ -35,26 +35,21 @@ const TicketDetail = () => {
   const [previewImage, setPreviewImage] = useState('');
   const [previewTitle, setPreviewTitle] = useState('');
 
-  // 获取工单详情
-  useEffect(() => {
-    fetchTicketDetail();
-    fetchSites();
-    fetchUsers();
-  }, [id]);
-
-  // 获取工单详情
-  const fetchTicketDetail = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(`${API_ENDPOINTS.TICKET_BY_ID(id)}`);
-      
-      if (response.data) {
-        setTicket(response.data);
-        fetchComments(response.data.id);
-      }
-    } catch (error) {
+  // 使用API Hook获取工单详情
+  const {
+    data: ticketData,
+    loading: ticketLoading,
+    error: ticketError,
+    execute: fetchTicketDetail
+  } = useApi('getTicketById', { id }, {
+    autoLoad: true,
+    onSuccess: (data) => {
+      setTicket(data);
+    },
+    onError: (error) => {
       console.error('获取工单详情失败:', error);
-      
+      message.error('获取工单详情失败，请稍后重试');
+
       // 使用模拟数据
       const mockTicket = {
         id,
@@ -73,9 +68,26 @@ const TicketDetail = () => {
         location: '生化池A区',
         expected_completion_date: dayjs().add(2, 'day').format('YYYY-MM-DD'),
       };
-      
+
       setTicket(mockTicket);
-      
+    }
+  });
+
+  // 使用API Hook获取工单评论
+  const {
+    data: commentsData,
+    loading: commentsLoading,
+    error: commentsError,
+    execute: fetchComments
+  } = useApi('getTicketComments', { id }, {
+    autoLoad: true,
+    dependencies: [id, ticket],
+    onSuccess: (data) => {
+      setComments(data || []);
+    },
+    onError: (error) => {
+      console.error('获取评论列表失败:', error);
+
       // 模拟评论数据
       const mockComments = [
         {
@@ -103,37 +115,25 @@ const TicketDetail = () => {
           attachments: [],
         },
       ];
-      
+
       setComments(mockComments);
-    } finally {
-      setLoading(false);
     }
-  };
+  });
 
-  // 获取评论列表
-  const fetchComments = async (ticketId) => {
-    try {
-      const response = await axios.get(`${API_ENDPOINTS.TICKET_COMMENTS(ticketId)}`);
-      
-      if (response.data) {
-        setComments(response.data);
-      }
-    } catch (error) {
-      console.error('获取评论列表失败:', error);
-    }
-  };
-
-  // 获取站点列表
-  const fetchSites = async () => {
-    try {
-      const response = await axios.get(API_ENDPOINTS.SITES);
-      
-      if (response.data) {
-        setSites(response.data);
-      }
-    } catch (error) {
+  // 使用API Hook获取站点列表
+  const {
+    data: sitesData,
+    loading: sitesLoading,
+    error: sitesError,
+    execute: fetchSites
+  } = useApi('getSites', {}, {
+    autoLoad: true,
+    onSuccess: (data) => {
+      setSites(data || []);
+    },
+    onError: (error) => {
       console.error('获取站点列表失败:', error);
-      
+
       // 使用模拟数据
       const mockSites = [
         { id: 1, name: '华北水厂' },
@@ -141,22 +141,25 @@ const TicketDetail = () => {
         { id: 3, name: '西部污水处理中心' },
         { id: 4, name: '南方水厂' },
       ];
-      
+
       setSites(mockSites);
     }
-  };
+  });
 
-  // 获取用户列表
-  const fetchUsers = async () => {
-    try {
-      const response = await axios.get(API_ENDPOINTS.USERS);
-      
-      if (response.data) {
-        setUsers(response.data);
-      }
-    } catch (error) {
+  // 使用API Hook获取用户列表
+  const {
+    data: usersData,
+    loading: usersLoading,
+    error: usersError,
+    execute: fetchUsers
+  } = useApi('getUsers', {}, {
+    autoLoad: true,
+    onSuccess: (data) => {
+      setUsers(data || []);
+    },
+    onError: (error) => {
       console.error('获取用户列表失败:', error);
-      
+
       // 使用模拟数据
       const mockUsers = [
         { id: 1, name: '张工' },
@@ -164,10 +167,38 @@ const TicketDetail = () => {
         { id: 3, name: '王工' },
         { id: 4, name: '赵工' },
       ];
-      
+
       setUsers(mockUsers);
     }
-  };
+  });
+
+  // 更新工单数据
+  useEffect(() => {
+    if (ticketData) {
+      setTicket(ticketData);
+    }
+  }, [ticketData]);
+
+  // 更新评论数据
+  useEffect(() => {
+    if (commentsData) {
+      setComments(commentsData);
+    }
+  }, [commentsData]);
+
+  // 更新站点数据
+  useEffect(() => {
+    if (sitesData) {
+      setSites(sitesData);
+    }
+  }, [sitesData]);
+
+  // 更新用户数据
+  useEffect(() => {
+    if (usersData) {
+      setUsers(usersData);
+    }
+  }, [usersData]);
 
   // 返回工单列表
   const goBack = () => {
@@ -189,97 +220,117 @@ const TicketDetail = () => {
         expected_completion_date: ticket.expected_completion_date ? dayjs(ticket.expected_completion_date) : null,
       });
     }
-    
+
     setEditMode(!editMode);
   };
 
-  // 更新工单
-  const updateTicket = async (values) => {
-    try {
-      setSubmitting(true);
-      
-      // 格式化日期
-      const formattedValues = {
-        ...values,
-        expected_completion_date: values.expected_completion_date ? values.expected_completion_date.format('YYYY-MM-DD') : null,
-      };
-      
-      const response = await axios.put(`${API_ENDPOINTS.TICKET_BY_ID(id)}`, formattedValues);
-      
-      if (response.data) {
-        message.success('工单更新成功');
-        setTicket(response.data);
-        setEditMode(false);
-      }
-    } catch (error) {
+  // 使用API Hook更新工单
+  const {
+    loading: updateLoading,
+    error: updateError,
+    execute: executeUpdateTicket
+  } = useApi('updateTicket', {}, {
+    autoLoad: false,
+    onSuccess: (data) => {
+      message.success('工单更新成功');
+      setTicket(data);
+      setEditMode(false);
+    },
+    onError: (error) => {
       console.error('更新工单失败:', error);
       message.error('更新工单失败，请重试');
-      
-      // 模拟成功更新
+
+      // 模拟成功更新（仅用于演示）
       const updatedTicket = {
         ...ticket,
-        ...values,
-        expected_completion_date: values.expected_completion_date ? values.expected_completion_date.format('YYYY-MM-DD') : null,
+        ...form.getFieldsValue(),
+        expected_completion_date: form.getFieldValue('expected_completion_date') ?
+          form.getFieldValue('expected_completion_date').format('YYYY-MM-DD') : null,
         updated_at: dayjs().format('YYYY-MM-DD HH:mm:ss'),
       };
-      
+
       setTicket(updatedTicket);
       setEditMode(false);
       message.success('工单更新成功');
-    } finally {
-      setSubmitting(false);
     }
+  });
+
+  // 更新工单
+  const updateTicket = (values) => {
+    setSubmitting(true);
+
+    // 格式化日期
+    const formattedValues = {
+      ...values,
+      id,
+      expected_completion_date: values.expected_completion_date ?
+        values.expected_completion_date.format('YYYY-MM-DD') : null,
+    };
+
+    executeUpdateTicket(formattedValues)
+      .finally(() => {
+        setSubmitting(false);
+      });
   };
 
-  // 添加评论
-  const addComment = async (values) => {
-    try {
-      setCommentSubmitting(true);
-      
-      // 处理附件
-      let attachments = [];
-      if (fileList.length > 0) {
-        // 这里应该实现附件上传逻辑
-        message.info('附件上传功能正在开发中');
-      }
-      
-      const commentData = {
-        ticket_id: id,
-        user: user?.name || 'admin',
-        content: values.content,
-        attachments,
-        created_at: dayjs().format('YYYY-MM-DD HH:mm:ss'),
-      };
-      
-      const response = await axios.post(`${API_ENDPOINTS.TICKET_COMMENTS(id)}`, commentData);
-      
-      if (response.data) {
-        message.success('评论添加成功');
-        fetchComments(id);
-        commentForm.resetFields();
-        setFileList([]);
-      }
-    } catch (error) {
+  // 使用API Hook添加评论
+  const {
+    loading: addCommentLoading,
+    error: addCommentError,
+    execute: executeAddComment
+  } = useApi('addTicketComment', {}, {
+    autoLoad: false,
+    onSuccess: (data) => {
+      message.success('评论添加成功');
+      fetchComments();
+      commentForm.resetFields();
+      setFileList([]);
+    },
+    onError: (error) => {
       console.error('添加评论失败:', error);
       message.error('添加评论失败，请重试');
-      
-      // 模拟成功添加
+
+      // 模拟成功添加（仅用于演示）
       const newComment = {
         id: comments.length + 1,
         ticket_id: id,
         user: user?.name || 'admin',
-        content: values.content,
+        content: commentForm.getFieldValue('content'),
         attachments: [],
         created_at: dayjs().format('YYYY-MM-DD HH:mm:ss'),
       };
-      
+
       setComments([...comments, newComment]);
       commentForm.resetFields();
       setFileList([]);
       message.success('评论添加成功');
-    } finally {
-      setCommentSubmitting(false);
     }
+  });
+
+  // 添加评论
+  const addComment = (values) => {
+    setCommentSubmitting(true);
+
+    // 处理附件
+    let attachments = [];
+    if (fileList.length > 0) {
+      // 这里应该实现附件上传逻辑
+      message.info('附件上传功能正在开发中');
+    }
+
+    const commentData = {
+      id,
+      ticket_id: id,
+      user: user?.name || 'admin',
+      content: values.content,
+      attachments,
+      created_at: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+    };
+
+    executeAddComment(commentData)
+      .finally(() => {
+        setCommentSubmitting(false);
+      });
   };
 
   // 获取状态标签
@@ -323,7 +374,7 @@ const TicketDetail = () => {
     if (!file.url && !file.preview) {
       file.preview = await getBase64(file.originFileObj);
     }
-    
+
     setPreviewImage(file.url || file.preview);
     setPreviewVisible(true);
     setPreviewTitle(file.name || file.url.substring(file.url.lastIndexOf('/') + 1));
@@ -338,12 +389,12 @@ const TicketDetail = () => {
     if (!isImage) {
       message.error('只能上传图片文件!');
     }
-    
+
     const isLt5M = file.size / 1024 / 1024 < 5;
     if (!isLt5M) {
       message.error('图片大小不能超过5MB!');
     }
-    
+
     return isImage && isLt5M;
   };
 
@@ -365,7 +416,10 @@ const TicketDetail = () => {
     </div>
   );
 
-  if (loading) {
+  // 计算总体加载状态
+  const isLoading = ticketLoading || commentsLoading || sitesLoading || usersLoading;
+
+  if (isLoading && !ticket) {
     return (
       <div className={styles.loadingContainer}>
         <Spin size="large" />
@@ -373,7 +427,7 @@ const TicketDetail = () => {
     );
   }
 
-  if (!ticket) {
+  if (!ticket && !isLoading) {
     return (
       <div className={styles.notFoundContainer}>
         <Title level={4}>未找到工单</Title>
@@ -386,8 +440,8 @@ const TicketDetail = () => {
     <div className={styles.ticketDetailContainer}>
       <Card className={styles.ticketDetailCard}>
         <div className={styles.headerRow}>
-          <Button 
-            icon={<ArrowLeftOutlined />} 
+          <Button
+            icon={<ArrowLeftOutlined />}
             onClick={goBack}
           >
             返回
@@ -395,25 +449,25 @@ const TicketDetail = () => {
           <Space>
             {editMode ? (
               <>
-                <Button 
-                  type="primary" 
-                  icon={<CheckOutlined />} 
+                <Button
+                  type="primary"
+                  icon={<CheckOutlined />}
                   onClick={() => form.submit()}
                   loading={submitting}
                 >
                   保存
                 </Button>
-                <Button 
-                  icon={<CloseOutlined />} 
+                <Button
+                  icon={<CloseOutlined />}
                   onClick={toggleEditMode}
                 >
                   取消
                 </Button>
               </>
             ) : (
-              <Button 
-                type="primary" 
-                icon={<EditOutlined />} 
+              <Button
+                type="primary"
+                icon={<EditOutlined />}
                 onClick={toggleEditMode}
               >
                 编辑
@@ -421,7 +475,7 @@ const TicketDetail = () => {
             )}
           </Space>
         </div>
-        
+
         {editMode ? (
           <Form
             form={form}
@@ -463,7 +517,7 @@ const TicketDetail = () => {
                 </Form.Item>
               </Col>
             </Row>
-            
+
             <Form.Item
               name="description"
               label="描述"
@@ -471,7 +525,7 @@ const TicketDetail = () => {
             >
               <TextArea rows={4} placeholder="请输入工单描述" />
             </Form.Item>
-            
+
             <Row gutter={16}>
               <Col span={8}>
                 <Form.Item
@@ -513,7 +567,7 @@ const TicketDetail = () => {
                 </Form.Item>
               </Col>
             </Row>
-            
+
             <Row gutter={16}>
               <Col span={8}>
                 <Form.Item
@@ -553,7 +607,7 @@ const TicketDetail = () => {
                 </Space>
               </div>
             </div>
-            
+
             <Descriptions bordered column={2} className={styles.ticketInfo}>
               <Descriptions.Item label="站点">{getSiteName(ticket.site_id)}</Descriptions.Item>
               <Descriptions.Item label="创建时间">{ticket.created_at}</Descriptions.Item>
@@ -572,15 +626,15 @@ const TicketDetail = () => {
             </Descriptions>
           </>
         )}
-        
+
         <Divider orientation="left">工单记录</Divider>
-        
+
         <Timeline className={styles.ticketTimeline}>
           <Timeline.Item>
             <Text strong>{ticket.created_by}</Text> 创建了工单
             <div className={styles.timelineTime}>{ticket.created_at}</div>
           </Timeline.Item>
-          
+
           {comments.map(comment => (
             <Timeline.Item key={comment.id}>
               <div className={styles.comment}>
@@ -604,9 +658,9 @@ const TicketDetail = () => {
             </Timeline.Item>
           ))}
         </Timeline>
-        
+
         <Divider orientation="left">添加评论</Divider>
-        
+
         <Form
           form={commentForm}
           layout="vertical"
@@ -618,7 +672,7 @@ const TicketDetail = () => {
           >
             <TextArea rows={4} placeholder="请输入评论内容..." />
           </Form.Item>
-          
+
           <Form.Item label="附件">
             <Upload
               listType="picture-card"
@@ -630,11 +684,11 @@ const TicketDetail = () => {
               {fileList.length >= 8 ? null : uploadButton}
             </Upload>
           </Form.Item>
-          
+
           <Form.Item>
-            <Button 
-              type="primary" 
-              htmlType="submit" 
+            <Button
+              type="primary"
+              htmlType="submit"
               icon={<MessageOutlined />}
               loading={commentSubmitting}
             >
@@ -642,7 +696,7 @@ const TicketDetail = () => {
             </Button>
           </Form.Item>
         </Form>
-        
+
         <Modal
           open={previewVisible}
           title={previewTitle}
