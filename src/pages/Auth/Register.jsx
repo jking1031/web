@@ -3,8 +3,7 @@ import { Form, Input, Button, Card, Typography, Alert, Select, Spin } from 'antd
 import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, BankOutlined, TeamOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import authApi from '../../api/auth';
-import { API_ENDPOINTS } from '../../api/config';
+import apiService from '../../services/apiService';
 import styles from './Auth.module.scss';
 
 const { Title, Text } = Typography;
@@ -60,19 +59,14 @@ const Register = () => {
         throw new Error('两次输入的密码不一致');
       }
 
-      // 调用注册API，与移动端保持一致的数据结构
-      const response = await authApi.post(API_ENDPOINTS.REGISTER, {
+      // 调用注册API，通过API管理器调用
+      const response = await apiService.callApi('register', {
         username: values.username,
         password: values.password,
         email: values.email,
         phone: values.phone,
         company: values.company,
         department: values.department
-      }, {
-        timeout: 15000, // 增加超时时间到15秒，与移动端一致
-        headers: {
-          'Content-Type': 'application/json'
-        }
       });
 
       // 检查响应数据

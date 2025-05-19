@@ -15,7 +15,7 @@ class ApiService {
   async callApi(apiKey, params = {}, options = {}) {
     try {
       // 检查API是否存在
-      if (!apiManager.registry.exists(apiKey)) {
+      if (apiManager.registry.get(apiKey) === null) {
         throw new Error(`API不存在: ${apiKey}`);
       }
       
@@ -94,7 +94,7 @@ class ApiService {
    */
   getApiConfig(apiKey) {
     try {
-      if (!apiManager.registry.exists(apiKey)) {
+      if (apiManager.registry.get(apiKey) === null) {
         return null;
       }
       return apiManager.registry.get(apiKey);

@@ -34,9 +34,9 @@ export const CACHE_KEYS = {
 
 // API端点
 export const API_ENDPOINTS = {
-  // 认证相关 - 与移动端保持一致
-  LOGIN: '/auth-api/api/login',
-  REGISTER: '/auth-api/api/register',
+  // 认证相关 - 直接使用指定的完整URL
+  LOGIN: 'https://zziot.jzz77.cn:9003/api/login',
+  REGISTER: 'https://zziot.jzz77.cn:9003/api/register',
   LOGOUT: '/auth-api/api/logout',
   USER_INFO: '/auth-api/api/user',
 

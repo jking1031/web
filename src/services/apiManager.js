@@ -63,7 +63,7 @@ class ApiManager {
     // 注册认证相关 API
     this.registry.register('login', {
       name: '用户登录',
-      url: '/auth-api/api/login',
+      url: 'https://zziot.jzz77.cn:9003/api/login',
       method: API_METHODS.POST,
       category: API_CATEGORIES.AUTH,
       status: API_STATUS.ENABLED,
@@ -93,7 +93,7 @@ class ApiManager {
 
     this.registry.register('register', {
       name: '用户注册',
-      url: '/auth-api/api/register',
+      url: 'https://zziot.jzz77.cn:9003/api/register',
       method: API_METHODS.POST,
       category: API_CATEGORIES.AUTH,
       status: API_STATUS.ENABLED,

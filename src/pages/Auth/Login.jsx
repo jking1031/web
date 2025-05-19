@@ -3,8 +3,7 @@ import { Form, Input, Button, Checkbox, Card, Typography, Alert, Spin } from 'an
 import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import authApi from '../../api/auth';
-import { API_ENDPOINTS } from '../../api/config';
+import apiService from '../../services/apiService';
 import styles from './Auth.module.scss';
 
 const { Title, Text } = Typography;
@@ -90,19 +89,14 @@ const Login = () => {
     }
 
     try {
-      // 调用登录API，与移动端保持完全一致的数据结构和请求方式
+      // 调用登录API，通过API管理器调用
       console.log('第一步：调用登录API获取用户基本信息');
-      const response = await authApi.post(API_ENDPOINTS.LOGIN, {
+      const response = await apiService.callApi('login', {
         email: values.email,
         password: values.password
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        timeout: 10000
       });
 
-      const loginResponse = response.data;
+      const loginResponse = response;
 
       if (!loginResponse || !loginResponse.user) {
         throw new Error(loginResponse?.message || '登录响应数据无效');
