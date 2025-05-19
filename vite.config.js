@@ -1,9 +1,35 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import history from 'connect-history-api-fallback'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      name: 'configure-server',
+      configureServer(server) {
+        // 添加history API fallback中间件
+        return () => {
+          server.middlewares.use(
+            history({
+              // 不处理API请求
+              rewrites: [
+                {
+                  from: /^\/api\/.*$/,
+                  to: function(context) {
+                    return context.parsedUrl.pathname;
+                  }
+                }
+              ],
+              // 调试日志
+              verbose: true
+            })
+          );
+        };
+      }
+    }
+  ],
   // 配置基础路径
   base: '/',
   server: {
@@ -45,6 +71,17 @@ export default defineConfig({
         ws: true,
         changeOrigin: true,
         secure: false,
+      }
+    }
+  },
+  // 添加history fallback配置，确保SPA路由在刷新时不会404
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: ['antd', '@ant-design/icons'],
+        }
       }
     }
   }

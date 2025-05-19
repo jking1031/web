@@ -1,4 +1,4 @@
-import { createHashRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import MainLayout from './components/Layout/MainLayout';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
@@ -47,7 +47,7 @@ const NotFound = lazy(() => import('./pages/NotFound/NotFound'));
 const LoadingFallback = () => <div className="loading-container">加载中...</div>;
 
 // 创建路由配置
-const router = createHashRouter(
+const router = createBrowserRouter(
   [
   {
     path: '/',
