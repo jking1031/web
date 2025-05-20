@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Box, Typography, Button, Grid } from '@mui/material';
 import { AppstoreOutlined, UserOutlined } from '@ant-design/icons';
 import ProductionStats from './ProductionStats';
-import EnhancedTrendChart from './EnhancedTrendChart';
+import TrendDataStats from './TrendDataStats';
 import DeviceStatus from './DeviceStatus';
 
 /**
@@ -36,8 +36,8 @@ const EnhancedDashboard = () => {
       {/* 生产数据统计 */}
       <ProductionStats />
 
-      {/* 趋势图 - 移到设备状态上面 */}
-      <EnhancedTrendChart />
+      {/* 实时趋势数据 */}
+      <TrendDataStats />
 
       {/* 设备状态 */}
       <DeviceStatus />
