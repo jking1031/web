@@ -345,11 +345,11 @@ const ApiDataPage = ({ apiKey, onBack }) => {
       <Paper sx={{ p: 2, mb: 3 }}>
         <Typography variant="h6" gutterBottom>API信息</Typography>
         <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6', md: 'span 3' } }}>
             <Typography variant="body2" color="textSecondary">URL:</Typography>
             <Typography variant="body1">{api.url}</Typography>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6', md: 'span 3' } }}>
             <Typography variant="body2" color="textSecondary">方法:</Typography>
             <Chip
               label={api.method}
@@ -362,7 +362,7 @@ const ApiDataPage = ({ apiKey, onBack }) => {
               size="small"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6', md: 'span 3' } }}>
             <Typography variant="body2" color="textSecondary">状态:</Typography>
             <Chip
               label={api.enabled ? '启用' : '禁用'}
@@ -370,7 +370,7 @@ const ApiDataPage = ({ apiKey, onBack }) => {
               size="small"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6', md: 'span 3' } }}>
             <Typography variant="body2" color="textSecondary">描述:</Typography>
             <Typography variant="body1">{api.description || '无描述'}</Typography>
           </Grid>
@@ -458,7 +458,7 @@ const ApiDataPage = ({ apiKey, onBack }) => {
         ) : (
           <Grid container spacing={2}>
             {fields.map(field => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={field.id}>
+              <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6', md: 'span 4', lg: 'span 3' } }} key={field.id}>
                 <Card sx={{
                   bgcolor: field.visible ? '#fff' : '#f5f5f5',
                   borderLeft: `4px solid ${field.color}`
@@ -509,7 +509,7 @@ const ApiDataPage = ({ apiKey, onBack }) => {
         <DialogContent>
           {selectedField && (
             <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12} sm={6}>
+              <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
                 <TextField
                   label="字段键名"
                   fullWidth
@@ -518,7 +518,7 @@ const ApiDataPage = ({ apiKey, onBack }) => {
                   required
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
                 <TextField
                   label="显示名称"
                   fullWidth
@@ -527,7 +527,7 @@ const ApiDataPage = ({ apiKey, onBack }) => {
                   required
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
                 <FormControl fullWidth>
                   <InputLabel>类型</InputLabel>
                   <Select
@@ -542,7 +542,7 @@ const ApiDataPage = ({ apiKey, onBack }) => {
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
                 <TextField
                   label="单位"
                   fullWidth
@@ -550,7 +550,7 @@ const ApiDataPage = ({ apiKey, onBack }) => {
                   onChange={(e) => handleFieldFormChange('unit', e.target.value)}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
                 <FormControl fullWidth>
                   <InputLabel>颜色</InputLabel>
                   <Select
@@ -571,7 +571,7 @@ const ApiDataPage = ({ apiKey, onBack }) => {
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12}>
+              <Grid sx={{ gridColumn: 'span 12' }}>
                 <FormControlLabel
                   control={
                     <Checkbox

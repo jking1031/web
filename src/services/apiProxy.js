@@ -152,9 +152,38 @@ class ApiProxy {
     // 获取 axios 实例
     const axiosInstance = apiRegistry.getAxiosInstance(apiConfig.axiosInstance);
 
+    // 处理URL参数替换和自定义参数处理
+    let processedUrl = apiConfig.url;
+    let processedRequestParams = { ...params };
+
+    // 如果配置了参数处理函数，则使用参数处理函数
+    if (apiConfig.paramsProcessor && typeof apiConfig.paramsProcessor === 'function') {
+      try {
+        const result = apiConfig.paramsProcessor(params);
+        if (result && result.url) {
+          processedUrl = result.url;
+        }
+        if (result && result.params) {
+          processedRequestParams = result.params;
+        }
+      } catch (error) {
+        console.error('参数处理函数执行失败:', error);
+      }
+    } else {
+      // 替换URL中的参数占位符
+      // 支持两种格式: :param 和 {param}
+      Object.keys(params).forEach(key => {
+        // 替换 :param 格式
+        processedUrl = processedUrl.replace(new RegExp(`:${key}\\b`, 'g'), params[key]);
+
+        // 替换 {param} 格式
+        processedUrl = processedUrl.replace(new RegExp(`\\{${key}\\}`, 'g'), params[key]);
+      });
+    }
+
     // 构建请求配置
     const requestConfig = {
-      url: apiConfig.url,
+      url: processedUrl,
       method: apiConfig.method,
       timeout: requestOptions.timeout,
       headers: {
@@ -167,12 +196,12 @@ class ApiProxy {
     if (['GET', 'DELETE'].includes(apiConfig.method.toUpperCase())) {
       requestConfig.params = {
         ...apiConfig.params,
-        ...params
+        ...processedRequestParams
       };
     } else {
       requestConfig.data = {
         ...apiConfig.data,
-        ...params
+        ...processedRequestParams
       };
     }
 
@@ -298,44 +327,84 @@ class ApiProxy {
     // 获取 API 配置
     const apiConfig = apiRegistry.get(apiKey);
     if (!apiConfig) {
-      return Promise.reject(new Error(`API 配置不存在: ${apiKey}`));
+      const errorMsg = `API 配置不存在: ${apiKey}`;
+      console.error(`[API测试] ${errorMsg}`);
+      return Promise.reject(new Error(errorMsg));
     }
+
+    // 创建测试日志
+    const testLog = {
+      timestamp: new Date().toISOString(),
+      apiKey,
+      apiName: apiConfig.name,
+      method: apiConfig.method,
+      url: apiConfig.url,
+      params: JSON.parse(JSON.stringify(params)), // 深拷贝参数
+      startTime: Date.now(),
+      logs: [`[${new Date().toLocaleTimeString()}] 开始测试 API: ${apiKey} (${apiConfig.name})`]
+    };
 
     // 记录开始时间
     const startTime = Date.now();
 
     // 如果配置了自定义处理函数，则使用自定义处理函数
     if (apiConfig.handler && typeof apiConfig.handler === 'function') {
+      testLog.logs.push(`[${new Date().toLocaleTimeString()}] 使用自定义处理函数`);
       try {
         // 执行自定义处理函数
+        testLog.logs.push(`[${new Date().toLocaleTimeString()}] 执行自定义处理函数，参数: ${JSON.stringify(params)}`);
         const result = await apiConfig.handler(params, { timeout: apiConfig.timeout });
 
         // 计算响应时间
         const responseTime = Date.now() - startTime;
+        testLog.endTime = Date.now();
+        testLog.duration = responseTime;
+        testLog.success = true;
+        testLog.logs.push(`[${new Date().toLocaleTimeString()}] 自定义处理函数执行成功，耗时: ${responseTime}ms`);
 
-        return {
+        const response = {
           success: true,
           data: result,
           responseTime,
           message: '自定义处理函数执行成功',
-          isCustomHandler: true
+          isCustomHandler: true,
+          testLog // 添加测试日志
         };
+
+        // 记录响应结果
+        testLog.response = response;
+        console.log('[API测试日志]', testLog);
+
+        return response;
       } catch (error) {
         // 计算响应时间
         const responseTime = Date.now() - startTime;
+        testLog.endTime = Date.now();
+        testLog.duration = responseTime;
+        testLog.success = false;
+        testLog.error = error.message;
+        testLog.logs.push(`[${new Date().toLocaleTimeString()}] 自定义处理函数执行失败: ${error.message}，耗时: ${responseTime}ms`);
 
-        return {
+        const response = {
           success: false,
           error: error.message,
           responseTime,
           message: '自定义处理函数执行失败',
-          isCustomHandler: true
+          isCustomHandler: true,
+          testLog // 添加测试日志
         };
+
+        // 记录响应结果
+        testLog.response = response;
+        console.error('[API测试日志]', testLog);
+
+        return response;
       }
     }
 
     // 获取 axios 实例
     const axiosInstance = apiRegistry.getAxiosInstance(apiConfig.axiosInstance);
+    testLog.logs.push(`[${new Date().toLocaleTimeString()}] 使用 axios 实例: ${apiConfig.axiosInstance || 'default'}`);
 
     // 构建请求配置
     const requestConfig = {
@@ -353,29 +422,46 @@ class ApiProxy {
         ...apiConfig.params,
         ...params
       };
+      testLog.logs.push(`[${new Date().toLocaleTimeString()}] 设置请求参数 (params): ${JSON.stringify(requestConfig.params)}`);
     } else {
       requestConfig.data = {
         ...apiConfig.data,
         ...params
       };
+      testLog.logs.push(`[${new Date().toLocaleTimeString()}] 设置请求数据 (data): ${JSON.stringify(requestConfig.data)}`);
     }
+
+    // 记录请求配置
+    testLog.requestConfig = { ...requestConfig };
+    testLog.logs.push(`[${new Date().toLocaleTimeString()}] 请求URL: ${requestConfig.url}`);
+    testLog.logs.push(`[${new Date().toLocaleTimeString()}] 请求方法: ${requestConfig.method}`);
+    testLog.logs.push(`[${new Date().toLocaleTimeString()}] 超时设置: ${requestConfig.timeout}ms`);
 
     try {
       // 发送请求
+      testLog.logs.push(`[${new Date().toLocaleTimeString()}] 开始发送请求...`);
       const response = await axiosInstance(requestConfig);
+      testLog.logs.push(`[${new Date().toLocaleTimeString()}] 请求成功，状态码: ${response.status} ${response.statusText}`);
 
       // 计算响应时间
       const responseTime = Date.now() - startTime;
+      testLog.endTime = Date.now();
+      testLog.duration = responseTime;
+      testLog.success = true;
+      testLog.logs.push(`[${new Date().toLocaleTimeString()}] 请求完成，耗时: ${responseTime}ms`);
 
       // 处理响应数据
       let responseData = response.data;
+      testLog.logs.push(`[${new Date().toLocaleTimeString()}] 原始响应数据: ${JSON.stringify(response.data).substring(0, 500)}${JSON.stringify(response.data).length > 500 ? '...(已截断)' : ''}`);
 
       // 如果配置了转换函数，则转换响应数据
       if (apiConfig.transform && typeof apiConfig.transform === 'function') {
+        testLog.logs.push(`[${new Date().toLocaleTimeString()}] 使用转换函数处理响应数据`);
         responseData = apiConfig.transform(responseData, params);
+        testLog.logs.push(`[${new Date().toLocaleTimeString()}] 转换后的响应数据: ${JSON.stringify(responseData).substring(0, 500)}${JSON.stringify(responseData).length > 500 ? '...(已截断)' : ''}`);
       }
 
-      return {
+      const result = {
         success: true,
         status: response.status,
         statusText: response.statusText,
@@ -383,21 +469,46 @@ class ApiProxy {
         originalData: response.data,
         responseTime,
         headers: response.headers,
-        config: requestConfig
+        config: requestConfig,
+        testLog // 添加测试日志
       };
+
+      // 记录响应结果
+      testLog.response = result;
+      console.log('[API测试日志]', testLog);
+
+      return result;
     } catch (error) {
       // 计算响应时间
       const responseTime = Date.now() - startTime;
+      testLog.endTime = Date.now();
+      testLog.duration = responseTime;
+      testLog.success = false;
+      testLog.error = error.message;
 
-      return {
+      testLog.logs.push(`[${new Date().toLocaleTimeString()}] 请求失败: ${error.message}`);
+      if (error.response) {
+        testLog.logs.push(`[${new Date().toLocaleTimeString()}] 响应状态码: ${error.response.status} ${error.response.statusText}`);
+        testLog.logs.push(`[${new Date().toLocaleTimeString()}] 响应数据: ${JSON.stringify(error.response.data).substring(0, 500)}${JSON.stringify(error.response.data).length > 500 ? '...(已截断)' : ''}`);
+      }
+      testLog.logs.push(`[${new Date().toLocaleTimeString()}] 请求完成，耗时: ${responseTime}ms`);
+
+      const result = {
         success: false,
         error: error.message,
         status: error.response?.status,
         statusText: error.response?.statusText,
         data: error.response?.data,
         responseTime,
-        config: requestConfig
+        config: requestConfig,
+        testLog // 添加测试日志
       };
+
+      // 记录响应结果
+      testLog.response = result;
+      console.error('[API测试日志]', testLog);
+
+      return result;
     }
   }
 }

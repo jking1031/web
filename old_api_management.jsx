@@ -68,8 +68,6 @@ import { useAuth } from '../../context/AuthContext';
 
 import ApiDataPage from './ApiDataPage';
 import BaseUrlManager from './components/BaseUrlManager';
-import ApiSyncTool from '../../components/ApiSyncTool/ApiSyncTool';
-import ApiDbSyncTool from '../../components/ApiDbSyncTool/ApiDbSyncTool';
 
 /**
  * API管理组件
@@ -143,30 +141,12 @@ const ApiManagement = () => {
     try {
       const allApis = apiManager.registry.getAll();
 
-      // 验证返回的数据
-      if (allApis) {
-        if (Array.isArray(allApis)) {
-          // 如果是数组格式，转换为对象格式
-          const apisObject = {};
-          allApis.forEach(api => {
-            if (api && api.key) {
-              const { key, ...config } = api;
-              apisObject[key] = config;
-            }
-          });
-          setApis(apisObject);
-          console.log(`成功加载 ${Object.keys(apisObject).length} 个API配置`);
-        } else if (typeof allApis === 'object') {
-          // 如果已经是对象格式，直接使用
-          setApis(allApis);
-          console.log(`成功加载 ${Object.keys(allApis).length} 个API配置`);
-        } else {
-          console.error('API配置格式无效', allApis);
-          // 设置为空对象，避免页面崩溃
-          setApis({});
-        }
+      // 验证返回的数据是否为有效对象
+      if (allApis && typeof allApis === 'object' && !Array.isArray(allApis)) {
+        setApis(allApis);
+        console.log(`成功加载 ${Object.keys(allApis).length} 个API配置`);
       } else {
-        console.error('API配置为空');
+        console.error('API配置格式无效', allApis);
         // 设置为空对象，避免页面崩溃
         setApis({});
       }
@@ -186,7 +166,7 @@ const ApiManagement = () => {
       let filtered = {};
 
       // 确保apis是有效对象
-      if (apis && typeof apis === 'object') {
+      if (apis && typeof apis === 'object' && !Array.isArray(apis)) {
         Object.keys(apis).forEach(key => {
           try {
             const api = apis[key];
@@ -579,23 +559,6 @@ const ApiManagement = () => {
             <Typography variant="body1">
               集中管理、测试和监控系统中的所有API，提高开发效率和代码质量
             </Typography>
-            <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                提示: 使用 Hash 模式 URL 访问此页面:
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{
-                  fontFamily: 'monospace',
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  px: 1,
-                  py: 0.5,
-                  borderRadius: 1
-                }}
-              >
-                /#/api-management
-              </Typography>
-            </Box>
           </Paper>
 
           <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
@@ -708,18 +671,11 @@ const ApiManagement = () => {
               <Tab label="用户自定义API" icon={<DataObjectIcon sx={{ fontSize: 18 }} />} iconPosition="start" />
               <Tab label="全部API" icon={<ApiOutlined sx={{ fontSize: 18 }} />} iconPosition="start" />
               <Tab label="基础URL管理" icon={<LinkIcon sx={{ fontSize: 18 }} />} iconPosition="start" />
-              <Tab label="API同步工具" icon={<RefreshIcon sx={{ fontSize: 18 }} />} iconPosition="start" />
             </Tabs>
           </Paper>
 
           {activeTab === 5 ? (
             <BaseUrlManager />
-          ) : activeTab === 6 ? (
-            <Box sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>系统工具</Typography>
-              <ApiDbSyncTool onApiUpdated={loadApis} />
-              <ApiSyncTool />
-            </Box>
           ) : (
             <Paper sx={{ borderRadius: 2, overflow: 'hidden' }}>
               <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', bgcolor: '#f9f9f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

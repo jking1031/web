@@ -1,0 +1,157 @@
+[
+    {
+        "id": "api-configs-flow",
+        "type": "tab",
+        "label": "API配置管理",
+        "disabled": false,
+        "info": "用于管理API配置的Node-RED流程",
+        "env": []
+    },
+    {
+        "id": "api-configs-save",
+        "type": "http in",
+        "z": "api-configs-flow",
+        "name": "保存API配置",
+        "url": "/api/api-configs/save",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 80,
+        "wires": [
+            [
+                "api-configs-save-function"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-save-function",
+        "type": "function",
+        "z": "api-configs-flow",
+        "name": "处理保存请求",
+        "func": "// 获取API配置\nconst apiConfigs = msg.payload.apiConfigs;\n\nif (!apiConfigs) {\n    msg.payload = {\n        success: false,\n        message: '未提供API配置'\n    };\n    return msg;\n}\n\n// 保存到全局上下文\nconst timestamp = new Date().toISOString();\nconst saveData = {\n    apiConfigs: apiConfigs,\n    timestamp: timestamp,\n    count: Object.keys(apiConfigs).length\n};\n\nglobal.set('apiConfigs', saveData);\n\n// 返回成功响应\nmsg.payload = {\n    success: true,\n    message: `成功保存 ${Object.keys(apiConfigs).length} 个API配置`,\n    timestamp: timestamp\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 80,
+        "wires": [
+            [
+                "api-configs-save-response"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-save-response",
+        "type": "http response",
+        "z": "api-configs-flow",
+        "name": "返回保存结果",
+        "statusCode": "",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 530,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "api-configs-get",
+        "type": "http in",
+        "z": "api-configs-flow",
+        "name": "获取API配置",
+        "url": "/api/api-configs/get",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 140,
+        "wires": [
+            [
+                "api-configs-get-function"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-get-function",
+        "type": "function",
+        "z": "api-configs-flow",
+        "name": "处理获取请求",
+        "func": "// 从全局上下文获取API配置\nconst saveData = global.get('apiConfigs');\n\nif (!saveData || !saveData.apiConfigs) {\n    msg.payload = {\n        success: false,\n        message: '未找到API配置'\n    };\n    return msg;\n}\n\n// 返回API配置\nmsg.payload = {\n    success: true,\n    message: `成功获取 ${Object.keys(saveData.apiConfigs).length} 个API配置`,\n    timestamp: saveData.timestamp,\n    data: saveData.apiConfigs\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 140,
+        "wires": [
+            [
+                "api-configs-get-response"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-get-response",
+        "type": "http response",
+        "z": "api-configs-flow",
+        "name": "返回API配置",
+        "statusCode": "",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 520,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "api-configs-delete",
+        "type": "http in",
+        "z": "api-configs-flow",
+        "name": "删除API配置",
+        "url": "/api/api-configs/delete",
+        "method": "delete",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 200,
+        "wires": [
+            [
+                "api-configs-delete-function"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-delete-function",
+        "type": "function",
+        "z": "api-configs-flow",
+        "name": "处理删除请求",
+        "func": "// 从全局上下文删除API配置\nconst saveData = global.get('apiConfigs');\nconst hadData = saveData && saveData.apiConfigs;\n\nglobal.set('apiConfigs', null);\n\n// 返回成功响应\nmsg.payload = {\n    success: true,\n    message: hadData ? '成功删除API配置' : '没有API配置可删除',\n    timestamp: new Date().toISOString()\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 200,
+        "wires": [
+            [
+                "api-configs-delete-response"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-delete-response",
+        "type": "http response",
+        "z": "api-configs-flow",
+        "name": "返回删除结果",
+        "statusCode": "",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 530,
+        "y": 200,
+        "wires": []
+    }
+]

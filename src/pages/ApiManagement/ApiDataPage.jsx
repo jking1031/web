@@ -52,6 +52,7 @@ const ApiDataPage = ({ apiKey, onBack }) => {
   const [testParams, setTestParams] = useState('{}');
   const [testResult, setTestResult] = useState(null);
   const [fields, setFields] = useState([]);
+  const [fieldValues, setFieldValues] = useState({});
   const [selectedField, setSelectedField] = useState(null);
   const [isFieldDialogOpen, setIsFieldDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -68,6 +69,8 @@ const ApiDataPage = ({ apiKey, onBack }) => {
     try {
       setLoading(true);
       setError(null);
+      setFieldValues({}); // 清除字段值
+      setTestResult(null); // 清除测试结果
 
       // 获取API配置
       const apiConfig = apiManager.registry.get(apiKey);
@@ -125,9 +128,15 @@ const ApiDataPage = ({ apiKey, onBack }) => {
       const result = await apiManager.test(apiKey, params);
       setTestResult(result);
 
-      // 如果测试成功且启用了自动检测字段
-      if (result.success && autoDetectFields) {
-        detectFields(result.data);
+      // 如果测试成功
+      if (result.success) {
+        // 提取字段值
+        extractFieldValues(result.data);
+
+        // 如果启用了自动检测字段
+        if (autoDetectFields) {
+          detectFields(result.data);
+        }
       }
     } catch (error) {
       setTestResult({
@@ -136,6 +145,64 @@ const ApiDataPage = ({ apiKey, onBack }) => {
       });
     } finally {
       setIsTestingApi(false);
+    }
+  };
+
+  // 提取字段值
+  const extractFieldValues = (data) => {
+    try {
+      const newFieldValues = {};
+
+      // 处理不同的数据结构
+      let sampleData = data;
+
+      // 如果数据是数组，使用第一个元素
+      if (Array.isArray(data)) {
+        sampleData = data[0] || {};
+      }
+
+      // 如果数据有嵌套结构，尝试提取
+      if (sampleData && typeof sampleData === 'object') {
+        // 1. 直接从响应中获取
+        let dataToExtract = sampleData;
+
+        // 2. 如果响应中有data字段，尝试从data字段中获取
+        if (sampleData.data && typeof sampleData.data === 'object') {
+          dataToExtract = sampleData.data;
+        }
+        // 3. 如果响应中有result字段，尝试从result字段中获取
+        else if (sampleData.result && typeof sampleData.result === 'object') {
+          dataToExtract = sampleData.result;
+        }
+        // 4. 如果响应中有response字段，尝试从response字段中获取
+        else if (sampleData.response && typeof sampleData.response === 'object') {
+          dataToExtract = sampleData.response;
+        }
+
+        // 遍历所有字段，提取值
+        fields.forEach(field => {
+          // 尝试从不同位置获取值
+          let value = dataToExtract[field.key];
+
+          // 如果没有找到值，尝试从原始数据中获取
+          if (value === undefined && dataToExtract !== sampleData) {
+            value = sampleData[field.key];
+          }
+
+          // 格式化值
+          if (value !== undefined) {
+            if (typeof value === 'object') {
+              newFieldValues[field.key] = JSON.stringify(value);
+            } else {
+              newFieldValues[field.key] = String(value);
+            }
+          }
+        });
+
+        setFieldValues(newFieldValues);
+      }
+    } catch (error) {
+      console.error('提取字段值失败:', error);
     }
   };
 
@@ -149,6 +216,9 @@ const ApiDataPage = ({ apiKey, onBack }) => {
       if (detectedFields && detectedFields.length > 0) {
         // 更新字段列表
         saveFields(detectedFields);
+
+        // 在检测到新字段后，重新提取字段值
+        setTimeout(() => extractFieldValues(data), 100);
         return;
       }
 
@@ -186,6 +256,9 @@ const ApiDataPage = ({ apiKey, onBack }) => {
 
       // 更新字段列表
       saveFields(manualDetectedFields);
+
+      // 在检测到新字段后，重新提取字段值
+      setTimeout(() => extractFieldValues(data), 100);
     } catch (error) {
       console.error('检测字段失败:', error);
     }
@@ -345,11 +418,11 @@ const ApiDataPage = ({ apiKey, onBack }) => {
       <Paper sx={{ p: 2, mb: 3 }}>
         <Typography variant="h6" gutterBottom>API信息</Typography>
         <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6', md: 'span 3' } }}>
             <Typography variant="body2" color="textSecondary">URL:</Typography>
             <Typography variant="body1">{api.url}</Typography>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6', md: 'span 3' } }}>
             <Typography variant="body2" color="textSecondary">方法:</Typography>
             <Chip
               label={api.method}
@@ -362,7 +435,7 @@ const ApiDataPage = ({ apiKey, onBack }) => {
               size="small"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6', md: 'span 3' } }}>
             <Typography variant="body2" color="textSecondary">状态:</Typography>
             <Chip
               label={api.enabled ? '启用' : '禁用'}
@@ -370,7 +443,7 @@ const ApiDataPage = ({ apiKey, onBack }) => {
               size="small"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6', md: 'span 3' } }}>
             <Typography variant="body2" color="textSecondary">描述:</Typography>
             <Typography variant="body1">{api.description || '无描述'}</Typography>
           </Grid>
@@ -458,7 +531,7 @@ const ApiDataPage = ({ apiKey, onBack }) => {
         ) : (
           <Grid container spacing={2}>
             {fields.map(field => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={field.id}>
+              <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6', md: 'span 4', lg: 'span 3' } }} key={field.id}>
                 <Card sx={{
                   bgcolor: field.visible ? '#fff' : '#f5f5f5',
                   borderLeft: `4px solid ${field.color}`
@@ -478,9 +551,31 @@ const ApiDataPage = ({ apiKey, onBack }) => {
                       字段键名: {field.key}
                     </Typography>
                     {field.unit && (
-                      <Typography variant="body2" color="textSecondary">
+                      <Typography variant="body2" color="textSecondary" gutterBottom>
                         单位: {field.unit}
                       </Typography>
+                    )}
+
+                    {/* 显示识别到的值 */}
+                    {fieldValues[field.key] !== undefined && (
+                      <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed #eee' }}>
+                        <Typography variant="body2" color="textSecondary" gutterBottom>
+                          识别到的值:
+                        </Typography>
+                        <Paper
+                          variant="outlined"
+                          sx={{
+                            p: 1,
+                            bgcolor: '#f9f9f9',
+                            maxHeight: '60px',
+                            overflow: 'auto',
+                            fontSize: '0.75rem',
+                            wordBreak: 'break-all'
+                          }}
+                        >
+                          {fieldValues[field.key]}
+                        </Paper>
+                      </Box>
                     )}
                   </CardContent>
                   <CardActions>
@@ -509,7 +604,7 @@ const ApiDataPage = ({ apiKey, onBack }) => {
         <DialogContent>
           {selectedField && (
             <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12} sm={6}>
+              <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
                 <TextField
                   label="字段键名"
                   fullWidth
@@ -518,7 +613,7 @@ const ApiDataPage = ({ apiKey, onBack }) => {
                   required
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
                 <TextField
                   label="显示名称"
                   fullWidth
@@ -527,7 +622,7 @@ const ApiDataPage = ({ apiKey, onBack }) => {
                   required
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
                 <FormControl fullWidth>
                   <InputLabel>类型</InputLabel>
                   <Select
@@ -542,7 +637,7 @@ const ApiDataPage = ({ apiKey, onBack }) => {
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
                 <TextField
                   label="单位"
                   fullWidth
@@ -550,7 +645,7 @@ const ApiDataPage = ({ apiKey, onBack }) => {
                   onChange={(e) => handleFieldFormChange('unit', e.target.value)}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
                 <FormControl fullWidth>
                   <InputLabel>颜色</InputLabel>
                   <Select
@@ -571,7 +666,7 @@ const ApiDataPage = ({ apiKey, onBack }) => {
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12}>
+              <Grid sx={{ gridColumn: 'span 12' }}>
                 <FormControlLabel
                   control={
                     <Checkbox

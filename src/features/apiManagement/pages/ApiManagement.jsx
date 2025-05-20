@@ -38,9 +38,20 @@ import {
   Card,
   CardContent,
   CardActions,
-  Snackbar
+  Snackbar,
+  Stepper,
+  Step,
+  StepLabel,
+  StepContent,
+  Fade,
+  Zoom,
+  Collapse,
+  InputAdornment,
+  Autocomplete,
+  Badge,
+  LinearProgress
 } from '@mui/material';
-import { ApiOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { ApiOutlined } from '@ant-design/icons';
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -58,7 +69,26 @@ import {
   CloudUpload as CloudUploadIcon,
   CloudDownload as CloudDownloadIcon,
   Settings as SettingsIcon,
-  ContentCopy as ContentCopyIcon
+  ContentCopy as ContentCopyIcon,
+  AdminPanelSettings as AdminPanelSettingsIcon,
+  Lock as LockIcon,
+  Assessment as AssessmentIcon,
+  ArrowForward as ArrowForwardIcon,
+  ArrowBack as ArrowBackIcon,
+  Description as DescriptionIcon,
+  Category as CategoryIcon,
+  Timer as TimerIcon,
+  Http as HttpIcon,
+  Tune as TuneIcon,
+  Info as InfoIcon,
+  Help as HelpIcon,
+  CheckCircle as CheckCircleIcon,
+  Error as ErrorIcon,
+  Warning as WarningIcon,
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
+  KeyboardArrowRight as KeyboardArrowRightIcon,
+  KeyboardArrowDown as KeyboardArrowDownIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import apiManager from '../../services/apiManager';
@@ -115,8 +145,12 @@ const ApiManagement = () => {
 
   // 加载API配置
   useEffect(() => {
-    loadApis();
-    loadBaseUrls();
+    const initializeData = async () => {
+      await loadApis();
+      loadBaseUrls();
+    };
+
+    initializeData();
   }, []);
 
   // 根据搜索词和当前标签过滤API
@@ -137,8 +171,11 @@ const ApiManagement = () => {
   };
 
   // 加载API配置
-  const loadApis = () => {
+  const loadApis = async () => {
     try {
+      // 确保API管理器已初始化
+      await apiManager.waitForReady();
+
       const allApis = apiManager.registry.getAll();
 
       // 验证返回的数据是否为有效对象
@@ -160,7 +197,7 @@ const ApiManagement = () => {
   // 过滤API
   const filterApis = () => {
     try {
-      const categories = ['system', 'data', 'device', 'custom'];
+      const categories = ['system', 'data', 'device', 'custom', 'admin', 'auth', 'report'];
       const currentCategory = activeTab < categories.length ? categories[activeTab] : null;
 
       let filtered = {};
@@ -258,7 +295,7 @@ const ApiManagement = () => {
       });
     } else {
       // 创建新API
-      const categories = ['system', 'data', 'device', 'custom'];
+      const categories = ['system', 'data', 'device', 'custom', 'admin', 'auth', 'report'];
       const currentCategory = activeTab < categories.length ? categories[activeTab] : 'custom';
 
       // 获取默认基础URL
@@ -356,6 +393,61 @@ const ApiManagement = () => {
         [field]: null
       }));
     }
+  };
+
+  // 处理步骤变更
+  const [activeStep, setActiveStep] = useState(0);
+
+  const handleNext = () => {
+    // 验证当前步骤的字段
+    const errors = {};
+
+    if (activeStep === 0) {
+      // 验证基本信息
+      if (!selectedApi.key) {
+        errors.key = 'API键名不能为空';
+      } else if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(selectedApi.key)) {
+        errors.key = 'API键名只能包含字母、数字和下划线，且必须以字母开头';
+      }
+
+      if (!selectedApi.name) {
+        errors.name = 'API名称不能为空';
+      }
+    } else if (activeStep === 1) {
+      // 验证URL信息
+      if (!selectedApi.url) {
+        errors.url = 'API URL不能为空';
+      }
+
+      if (!selectedApi.baseUrl) {
+        errors.baseUrl = '基础URL不能为空';
+      }
+
+      // 验证URL格式
+      if (selectedApi.url && !selectedApi.url.match(/^https?:\/\/.+/i)) {
+        errors.url = 'URL必须以http://或https://开头';
+      }
+    } else if (activeStep === 2) {
+      // 验证请求配置
+      if (!selectedApi.method) {
+        errors.method = 'API方法不能为空';
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
+    setActiveStep((prevActiveStep) => prevActiveStep + 1);
+  };
+
+  const handleBack = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep - 1);
+  };
+
+  const handleStepChange = (step) => {
+    setActiveStep(step);
   };
 
   // 验证API表单
@@ -606,7 +698,7 @@ const ApiManagement = () => {
               <Button
                 variant="outlined"
                 startIcon={<LinkIcon />}
-                onClick={() => setActiveTab(5)}
+                onClick={() => setActiveTab(8)}
                 sx={{
                   borderRadius: 2,
                   borderColor: '#2E7D32',
@@ -622,7 +714,13 @@ const ApiManagement = () => {
               <Button
                 variant="outlined"
                 startIcon={<RefreshIcon />}
-                onClick={loadApis}
+                onClick={() => {
+                  // 异步加载API配置
+                  const refreshApis = async () => {
+                    await loadApis();
+                  };
+                  refreshApis();
+                }}
                 sx={{
                   borderRadius: 2,
                   borderColor: '#2E7D32',
@@ -669,12 +767,15 @@ const ApiManagement = () => {
               <Tab label="数据查询API" icon={<StorageIcon sx={{ fontSize: 18 }} />} iconPosition="start" />
               <Tab label="设备控制API" icon={<SettingsIcon sx={{ fontSize: 18 }} />} iconPosition="start" />
               <Tab label="用户自定义API" icon={<DataObjectIcon sx={{ fontSize: 18 }} />} iconPosition="start" />
+              <Tab label="管理员API" icon={<AdminPanelSettingsIcon sx={{ fontSize: 18 }} />} iconPosition="start" />
+              <Tab label="认证API" icon={<LockIcon sx={{ fontSize: 18 }} />} iconPosition="start" />
+              <Tab label="报表API" icon={<AssessmentIcon sx={{ fontSize: 18 }} />} iconPosition="start" />
               <Tab label="全部API" icon={<ApiOutlined sx={{ fontSize: 18 }} />} iconPosition="start" />
               <Tab label="基础URL管理" icon={<LinkIcon sx={{ fontSize: 18 }} />} iconPosition="start" />
             </Tabs>
           </Paper>
 
-          {activeTab === 5 ? (
+          {activeTab === 8 ? (
             <BaseUrlManager />
           ) : (
             <Paper sx={{ borderRadius: 2, overflow: 'hidden' }}>
@@ -684,7 +785,10 @@ const ApiManagement = () => {
                   {activeTab === 1 && "数据查询API列表"}
                   {activeTab === 2 && "设备控制API列表"}
                   {activeTab === 3 && "用户自定义API列表"}
-                  {activeTab === 4 && "全部API列表"}
+                  {activeTab === 4 && "管理员API列表"}
+                  {activeTab === 5 && "认证API列表"}
+                  {activeTab === 6 && "报表API列表"}
+                  {activeTab === 7 && "全部API列表"}
                 </Typography>
                 <Chip
                   label={`${Object.keys(filteredApis).length} 个API`}
@@ -896,198 +1000,501 @@ const ApiManagement = () => {
       )}
 
       {/* API编辑对话框 */}
-      <Dialog open={isDialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+      <Dialog
+        open={isDialogOpen}
+        onClose={handleCloseDialog}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            overflow: 'hidden'
+          }
+        }}
+      >
         <DialogTitle sx={{
           borderBottom: '1px solid #e0e0e0',
           bgcolor: '#f9f9f9',
           display: 'flex',
           alignItems: 'center',
-          gap: 1
+          justifyContent: 'space-between',
+          p: 2
         }}>
-          {selectedApi && apis[selectedApi.key] ? (
-            <>
-              <EditIcon sx={{ color: '#ff9800' }} />
-              编辑API: {selectedApi.name}
-            </>
-          ) : (
-            <>
-              <AddIcon sx={{ color: '#2E7D32' }} />
-              添加新API
-            </>
-          )}
-        </DialogTitle>
-        <DialogContent sx={{ p: 3 }}>
-          {selectedApi && (
-            <>
-              <Alert
-                severity="info"
-                sx={{ mb: 3 }}
-                icon={<InfoCircleOutlined />}
-              >
-                <Typography variant="subtitle2">API配置说明</Typography>
-                <ul style={{ margin: '4px 0 0 0', paddingLeft: 16 }}>
-                  <li>API键名是唯一标识符，用于在代码中引用此API</li>
-                  <li>基础URL可以从下拉列表中选择，也可以直接输入完整URL</li>
-                  <li>请求方法决定了API的调用方式，GET用于获取数据，POST用于提交数据</li>
-                  <li>分类用于组织和管理API，便于查找和使用</li>
-                </ul>
-              </Alert>
-
-              <Paper variant="outlined" sx={{ p: 3, mb: 3, borderRadius: 2 }}>
-                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium', color: '#2E7D32', mb: 2 }}>
-                  基本信息
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {selectedApi && apis[selectedApi.key] ? (
+              <>
+                <EditIcon sx={{ color: '#ff9800' }} />
+                <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
+                  编辑API: {selectedApi.name}
                 </Typography>
-                <Grid container spacing={3}>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      label="API键名"
-                      fullWidth
-                      value={selectedApi.key}
-                      onChange={(e) => handleApiFormChange('key', e.target.value)}
-                      error={!!formErrors.key}
-                      helperText={formErrors.key || "唯一标识符，用于在代码中引用此API"}
-                      disabled={!!apis[selectedApi.key]} // 禁止编辑已存在的API键名
-                      InputProps={{
-                        startAdornment: (
-                          <Box component="span" sx={{ color: 'action.active', mr: 1 }}>
-                            <CodeIcon fontSize="small" />
-                          </Box>
-                        ),
+              </>
+            ) : (
+              <>
+                <AddIcon sx={{ color: '#2E7D32' }} />
+                <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
+                  添加新API
+                </Typography>
+              </>
+            )}
+          </Box>
+          <Chip
+            label={`步骤 ${activeStep + 1}/4`}
+            size="small"
+            color="primary"
+            sx={{
+              bgcolor: '#e8f5e9',
+              color: '#2E7D32',
+              fontWeight: 'medium',
+              borderRadius: '16px'
+            }}
+          />
+        </DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          {selectedApi && (
+            <Box sx={{ display: 'flex', height: '100%' }}>
+              {/* 左侧步骤导航 */}
+              <Box sx={{
+                width: 240,
+                borderRight: '1px solid #e0e0e0',
+                bgcolor: '#fafafa',
+                p: 2
+              }}>
+                <Stepper
+                  activeStep={activeStep}
+                  orientation="vertical"
+                  nonLinear
+                  sx={{
+                    '& .MuiStepLabel-root': {
+                      cursor: 'pointer',
+                      py: 1
+                    },
+                    '& .MuiStepLabel-iconContainer': {
+                      pr: 1
+                    },
+                    '& .MuiStepConnector-line': {
+                      minHeight: 12,
+                      ml: 1.25
+                    }
+                  }}
+                >
+                  <Step completed={activeStep > 0}>
+                    <StepLabel
+                      onClick={() => handleStepChange(0)}
+                      StepIconProps={{
+                        icon: <CodeIcon fontSize="small" />,
                       }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      label="API名称"
-                      fullWidth
-                      value={selectedApi.name}
-                      onChange={(e) => handleApiFormChange('name', e.target.value)}
-                      error={!!formErrors.name}
-                      helperText={formErrors.name || "API的显示名称，便于识别"}
-                      InputProps={{
-                        startAdornment: (
-                          <Box component="span" sx={{ color: 'action.active', mr: 1 }}>
-                            <ApiOutlined fontSize="small" />
-                          </Box>
-                        ),
+                    >
+                      <Typography
+                        variant="subtitle2"
+                        sx={{
+                          fontWeight: activeStep === 0 ? 'bold' : 'medium',
+                          color: activeStep === 0 ? '#2E7D32' : 'text.primary'
+                        }}
+                      >
+                        基本信息
+                      </Typography>
+                    </StepLabel>
+                  </Step>
+                  <Step completed={activeStep > 1}>
+                    <StepLabel
+                      onClick={() => handleStepChange(1)}
+                      StepIconProps={{
+                        icon: <LinkIcon fontSize="small" />,
                       }}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                      API URL 构建
+                    >
+                      <Typography
+                        variant="subtitle2"
+                        sx={{
+                          fontWeight: activeStep === 1 ? 'bold' : 'medium',
+                          color: activeStep === 1 ? '#2E7D32' : 'text.primary'
+                        }}
+                      >
+                        URL配置
+                      </Typography>
+                    </StepLabel>
+                  </Step>
+                  <Step completed={activeStep > 2}>
+                    <StepLabel
+                      onClick={() => handleStepChange(2)}
+                      StepIconProps={{
+                        icon: <HttpIcon fontSize="small" />,
+                      }}
+                    >
+                      <Typography
+                        variant="subtitle2"
+                        sx={{
+                          fontWeight: activeStep === 2 ? 'bold' : 'medium',
+                          color: activeStep === 2 ? '#2E7D32' : 'text.primary'
+                        }}
+                      >
+                        请求配置
+                      </Typography>
+                    </StepLabel>
+                  </Step>
+                  <Step completed={activeStep > 3}>
+                    <StepLabel
+                      onClick={() => handleStepChange(3)}
+                      StepIconProps={{
+                        icon: <TuneIcon fontSize="small" />,
+                      }}
+                    >
+                      <Typography
+                        variant="subtitle2"
+                        sx={{
+                          fontWeight: activeStep === 3 ? 'bold' : 'medium',
+                          color: activeStep === 3 ? '#2E7D32' : 'text.primary'
+                        }}
+                      >
+                        高级设置
+                      </Typography>
+                    </StepLabel>
+                  </Step>
+                </Stepper>
+
+                <Box sx={{ mt: 4 }}>
+                  <Alert
+                    severity="info"
+                    variant="outlined"
+                    icon={<InfoIcon />}
+                    sx={{
+                      borderRadius: 2,
+                      '& .MuiAlert-icon': {
+                        alignItems: 'flex-start',
+                        pt: 1
+                      }
+                    }}
+                  >
+                    <Typography variant="subtitle2" sx={{ fontWeight: 'medium', mb: 1 }}>
+                      配置提示
                     </Typography>
+                    {activeStep === 0 && (
+                      <Typography variant="body2">
+                        API键名是唯一标识符，用于在代码中引用此API。名称应该简洁明了，便于识别。
+                      </Typography>
+                    )}
+                    {activeStep === 1 && (
+                      <Typography variant="body2">
+                        基础URL可以从下拉列表中选择，也可以直接输入完整URL。路径部分可以包含参数占位符，如 <code>{'{id}'}</code>。
+                      </Typography>
+                    )}
+                    {activeStep === 2 && (
+                      <Typography variant="body2">
+                        请求方法决定了API的调用方式，GET用于获取数据，POST用于提交数据。分类用于组织和管理API，便于查找和使用。
+                      </Typography>
+                    )}
+                    {activeStep === 3 && (
+                      <Typography variant="body2">
+                        高级设置可以配置API的超时时间、重试次数和缓存时间等参数，以及是否启用此API。
+                      </Typography>
+                    )}
+                  </Alert>
+                </Box>
+              </Box>
 
-                    <Paper variant="outlined" sx={{ p: 2, mb: 2, borderRadius: 1 }}>
-                      <Grid container spacing={2}>
-                        <Grid item xs={12}>
-                          <FormControl fullWidth error={!!formErrors.baseUrl}>
-                            <InputLabel>基础URL</InputLabel>
-                            <Select
-                              value={selectedApi.baseUrl || ""}
-                              onChange={(e) => {
-                                const newBaseUrl = e.target.value;
-                                if (newBaseUrl) {
-                                  // 更新基础URL
-                                  const updates = { baseUrl: newBaseUrl };
+              {/* 右侧内容区 */}
+              <Box sx={{ flexGrow: 1, p: 3, overflowY: 'auto' }}>
+                {/* 步骤1: 基本信息 */}
+                <Fade in={activeStep === 0} timeout={500}>
+                  <Box sx={{ display: activeStep === 0 ? 'block' : 'none' }}>
+                    <Box sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
+                      <CodeIcon sx={{ color: '#2E7D32', mr: 1 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 'medium', color: '#2E7D32' }}>
+                        基本信息
+                      </Typography>
+                    </Box>
 
-                                  // 保持现有路径或设置为空路径
-                                  const currentPath = selectedApi.path || '';
+                    <Paper
+                      elevation={0}
+                      variant="outlined"
+                      sx={{
+                        p: 3,
+                        mb: 3,
+                        borderRadius: 2,
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                          borderColor: '#2E7D32'
+                        }
+                      }}
+                    >
+                      <Grid container spacing={3}>
+                        <Grid sx={{ gridColumn: 'span 12' }}>
+                          <TextField
+                            label="API键名"
+                            fullWidth
+                            value={selectedApi.key}
+                            onChange={(e) => handleApiFormChange('key', e.target.value)}
+                            error={!!formErrors.key}
+                            helperText={formErrors.key || "唯一标识符，用于在代码中引用此API"}
+                            disabled={!!apis[selectedApi.key]} // 禁止编辑已存在的API键名
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <CodeIcon fontSize="small" sx={{ color: formErrors.key ? 'error.main' : '#2E7D32' }} />
+                                </InputAdornment>
+                              ),
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: '#2E7D32',
+                                  borderWidth: 2
+                                }
+                              },
+                              '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#2E7D32'
+                              }
+                            }}
+                          />
+                          {!apis[selectedApi.key] && (
+                            <Box sx={{ mt: 1, display: 'flex', alignItems: 'center' }}>
+                              <InfoIcon fontSize="small" sx={{ color: 'text.secondary', mr: 0.5 }} />
+                              <Typography variant="caption" color="text.secondary">
+                                键名一旦创建后不可修改，请谨慎命名
+                              </Typography>
+                            </Box>
+                          )}
+                        </Grid>
 
-                                  // 同时更新完整URL
-                                  updates.url = newBaseUrl + currentPath;
+                        <Grid sx={{ gridColumn: 'span 12' }}>
+                          <TextField
+                            label="API名称"
+                            fullWidth
+                            value={selectedApi.name}
+                            onChange={(e) => handleApiFormChange('name', e.target.value)}
+                            error={!!formErrors.name}
+                            helperText={formErrors.name || "API的显示名称，便于识别"}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <ApiOutlined style={{ color: formErrors.name ? '#f44336' : '#2E7D32', fontSize: '1.25rem' }} />
+                                </InputAdornment>
+                              ),
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: '#2E7D32',
+                                  borderWidth: 2
+                                }
+                              },
+                              '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#2E7D32'
+                              }
+                            }}
+                          />
+                        </Grid>
 
-                                  // 批量更新状态，确保一致性
-                                  setSelectedApi(prev => ({
+                        <Grid sx={{ gridColumn: 'span 12' }}>
+                          <TextField
+                            label="描述"
+                            fullWidth
+                            multiline
+                            rows={3}
+                            value={selectedApi.description || ''}
+                            onChange={(e) => handleApiFormChange('description', e.target.value)}
+                            placeholder="简要描述此API的用途和功能..."
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start" sx={{ mt: 1.5, alignSelf: 'flex-start' }}>
+                                  <DescriptionIcon fontSize="small" sx={{ color: '#2E7D32' }} />
+                                </InputAdornment>
+                              ),
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: '#2E7D32',
+                                  borderWidth: 2
+                                }
+                              },
+                              '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#2E7D32'
+                              }
+                            }}
+                          />
+                        </Grid>
+                      </Grid>
+                    </Paper>
+
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={handleNext}
+                        endIcon={<ArrowForwardIcon />}
+                        sx={{
+                          borderRadius: 2,
+                          backgroundColor: '#2E7D32',
+                          '&:hover': {
+                            backgroundColor: '#388E3C',
+                          },
+                          px: 3
+                        }}
+                      >
+                        下一步
+                      </Button>
+                    </Box>
+                  </Box>
+                </Fade>
+
+                {/* 步骤2: URL配置 */}
+                <Fade in={activeStep === 1} timeout={500}>
+                  <Box sx={{ display: activeStep === 1 ? 'block' : 'none' }}>
+                    <Box sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
+                      <LinkIcon sx={{ color: '#2E7D32', mr: 1 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 'medium', color: '#2E7D32' }}>
+                        URL配置
+                      </Typography>
+                    </Box>
+                    <Paper
+                      elevation={0}
+                      variant="outlined"
+                      sx={{
+                        p: 3,
+                        mb: 3,
+                        borderRadius: 2,
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                          borderColor: '#2E7D32'
+                        }
+                      }}
+                    >
+                      <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 'medium', color: '#2E7D32' }}>
+                        API URL 构建
+                      </Typography>
+
+                      <Grid container spacing={3}>
+                        <Grid sx={{ gridColumn: 'span 12' }}>
+                          <Autocomplete
+                            value={selectedApi.baseUrl || null}
+                            onChange={(event, newValue) => {
+                              if (newValue) {
+                                // 更新基础URL
+                                const updates = { baseUrl: newValue };
+
+                                // 获取当前路径或设置默认路径
+                                let currentPath = selectedApi.path || '';
+
+                                // 如果路径为空，自动添加默认路径 /api/
+                                if (!currentPath) {
+                                  currentPath = '/api/';
+                                  updates.path = currentPath;
+                                }
+
+                                // 同时更新完整URL
+                                updates.url = newValue + currentPath;
+
+                                // 批量更新状态，确保一致性
+                                setSelectedApi(prev => ({
+                                  ...prev,
+                                  ...updates
+                                }));
+
+                                // 清除相关错误
+                                if (formErrors.baseUrl || formErrors.url) {
+                                  setFormErrors(prev => ({
                                     ...prev,
-                                    ...updates
+                                    baseUrl: null,
+                                    url: null
                                   }));
-
-                                  // 清除相关错误
-                                  if (formErrors.baseUrl || formErrors.url) {
-                                    setFormErrors(prev => ({
-                                      ...prev,
-                                      baseUrl: null,
-                                      url: null
-                                    }));
-                                  }
                                 }
-                              }}
-                              label="基础URL"
-                              displayEmpty
-                              renderValue={(selected) => {
-                                if (!selected) {
-                                  return <em>选择基础URL</em>;
-                                }
-
-                                const selectedBaseUrl = baseUrls.find(url => url.url === selected);
-                                if (selectedBaseUrl) {
-                                  return (
-                                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                      <Typography variant="body2" sx={{ mr: 1 }}>{selectedBaseUrl.name}:</Typography>
-                                      <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
-                                        {selected}
+                              }
+                            }}
+                            options={baseUrls.map(url => url.url)}
+                            getOptionLabel={(option) => {
+                              const baseUrl = baseUrls.find(url => url.url === option);
+                              return baseUrl ? `${baseUrl.name}` : option;
+                            }}
+                            renderOption={(props, option) => {
+                              const baseUrl = baseUrls.find(url => url.url === option);
+                              return (
+                                <li {...props}>
+                                  <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                      <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                                        {baseUrl?.name || '未命名'}
                                       </Typography>
-                                    </Box>
-                                  );
-                                }
-
-                                return selected;
-                              }}
-                              MenuProps={{
-                                PaperProps: {
-                                  style: {
-                                    maxHeight: 300
-                                  }
-                                }
-                              }}
-                            >
-                              <MenuItem value="" disabled>
-                                <em>选择基础URL</em>
-                              </MenuItem>
-                              {baseUrls.map((baseUrl) => (
-                                <MenuItem key={baseUrl.id} value={baseUrl.url}>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
-                                    <Typography variant="body2">{baseUrl.name}</Typography>
-                                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                      <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'monospace' }}>
-                                        {baseUrl.url}
-                                      </Typography>
-                                      {baseUrl.isDefault && (
+                                      {baseUrl?.isDefault && (
                                         <Chip
                                           label="默认"
                                           size="small"
                                           color="success"
-                                          sx={{ ml: 1, height: 20, fontSize: '0.7rem' }}
+                                          sx={{ height: 20, fontSize: '0.7rem' }}
                                         />
                                       )}
                                     </Box>
+                                    <Typography
+                                      variant="caption"
+                                      sx={{
+                                        color: 'text.secondary',
+                                        fontFamily: 'monospace',
+                                        display: 'block',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap'
+                                      }}
+                                    >
+                                      {option}
+                                    </Typography>
                                   </Box>
-                                </MenuItem>
-                              ))}
-                              <Divider />
-                              <Box sx={{ p: 1 }}>
-                                <Button
-                                  size="small"
-                                  startIcon={<AddIcon />}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setActiveTab(5);
-                                    handleCloseDialog();
-                                  }}
-                                  fullWidth
-                                >
-                                  管理基础URL
-                                </Button>
-                              </Box>
-                            </Select>
-                            <FormHelperText>
-                              {formErrors.baseUrl || "选择一个基础URL作为API的根地址"}
-                            </FormHelperText>
-                          </FormControl>
+                                </li>
+                              );
+                            }}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="基础URL"
+                                error={!!formErrors.baseUrl}
+                                helperText={formErrors.baseUrl || "选择一个基础URL作为API的根地址"}
+                                InputProps={{
+                                  ...params.InputProps,
+                                  startAdornment: (
+                                    <InputAdornment position="start">
+                                      <LinkIcon fontSize="small" sx={{ color: formErrors.baseUrl ? 'error.main' : '#2E7D32' }} />
+                                    </InputAdornment>
+                                  ),
+                                }}
+                                sx={{
+                                  '& .MuiOutlinedInput-root': {
+                                    borderRadius: 1.5,
+                                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                      borderColor: '#2E7D32',
+                                      borderWidth: 2
+                                    }
+                                  },
+                                  '& .MuiInputLabel-root.Mui-focused': {
+                                    color: '#2E7D32'
+                                  }
+                                }}
+                              />
+                            )}
+                          />
+                          <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                            <Button
+                              size="small"
+                              startIcon={<AddIcon />}
+                              onClick={() => {
+                                setActiveTab(8);
+                                handleCloseDialog();
+                              }}
+                              sx={{
+                                color: '#2E7D32',
+                                '&:hover': {
+                                  backgroundColor: 'rgba(46, 125, 50, 0.04)',
+                                }
+                              }}
+                            >
+                              管理基础URL
+                            </Button>
+                          </Box>
                         </Grid>
 
-                        <Grid item xs={12}>
+                        <Grid sx={{ gridColumn: 'span 12' }}>
                           <TextField
                             label="API路径"
                             fullWidth
@@ -1118,467 +1525,942 @@ const ApiManagement = () => {
                             placeholder="/api/resource/{id}"
                             helperText="API路径，以/开头，可包含路径参数如 {id}"
                             InputProps={{
-                              startAdornment: (
-                                <Box component="span" sx={{ color: 'action.active', mr: 1 }}>
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-                                  </svg>
-                                </Box>
-                              ),
-                            }}
-                          />
-                        </Grid>
-
-                        <Grid item xs={12}>
-                          <Box sx={{ mt: 1 }}>
-                            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                              完整URL预览
-                            </Typography>
-                            <Paper
-                              sx={{
-                                p: 2,
-                                bgcolor: '#f5f5f5',
-                                borderRadius: 1,
-                                fontFamily: 'monospace',
-                                fontSize: '0.875rem',
-                                position: 'relative',
-                                minHeight: '56px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                overflow: 'hidden'
-                              }}
-                            >
-                              <Box sx={{
-                                width: 'calc(100% - 40px)',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis'
-                              }}>
-                                {selectedApi.baseUrl ? (
-                                  <>
-                                    <Box
-                                      component="span"
+                              startAdornment: selectedApi.baseUrl ? (
+                                // 如果有基础URL，在输入框前显示它
+                                <InputAdornment position="start" sx={{ maxWidth: '40%' }}>
+                                  <Box sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    mr: 1
+                                  }}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#2E7D32', flexShrink: 0, marginRight: '4px' }}>
+                                      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                                    </svg>
+                                    <Typography
+                                      variant="caption"
                                       sx={{
-                                        color: '#2E7D32',
-                                        fontWeight: 'medium',
-                                        display: 'inline'
+                                        color: 'text.secondary',
+                                        fontFamily: 'monospace',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                        maxWidth: '120px',
+                                        display: 'inline-block'
                                       }}
                                     >
                                       {selectedApi.baseUrl}
-                                    </Box>
-                                    <Box
-                                      component="span"
-                                      sx={{
-                                        color: '#0D47A1',
-                                        fontWeight: 'medium',
-                                        display: 'inline'
-                                      }}
-                                    >
-                                      {selectedApi.path || ''}
-                                    </Box>
-                                  </>
-                                ) : (
-                                  <Box component="span" sx={{ color: 'text.secondary' }}>
-                                    请先选择基础URL并输入API路径
+                                    </Typography>
                                   </Box>
-                                )}
-                              </Box>
-                              <Tooltip title="复制完整URL">
-                                <span>
-                                  <IconButton
-                                    size="small"
-                                    sx={{
-                                      position: 'absolute',
-                                      right: 8,
-                                      color: 'action.active'
-                                    }}
-                                    onClick={() => {
-                                      if (selectedApi.url) {
-                                        navigator.clipboard.writeText(selectedApi.url);
-                                        showSnackbar('URL已复制到剪贴板', 'success');
-                                      }
-                                    }}
-                                    disabled={!selectedApi.url}
-                                  >
-                                    <ContentCopyIcon fontSize="small" />
-                                  </IconButton>
-                                </span>
-                              </Tooltip>
-                            </Paper>
-                            {selectedApi.url && (
-                              <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <Typography variant="caption" color="text.secondary" sx={{
-                                  display: 'block',
-                                  maxWidth: 'calc(100% - 100px)',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap'
-                                }}>
-                                  完整URL: {selectedApi.url}
-                                </Typography>
-                                <Button
-                                  size="small"
-                                  variant="text"
-                                  color="primary"
-                                  onClick={() => {
-                                    if (selectedApi.url) {
-                                      navigator.clipboard.writeText(selectedApi.url);
-                                      showSnackbar('URL已复制到剪贴板', 'success');
-                                    }
+                                </InputAdornment>
+                              ) : (
+                                // 如果没有基础URL，只显示图标
+                                <InputAdornment position="start">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#2E7D32' }}>
+                                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                                  </svg>
+                                </InputAdornment>
+                              )
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: '#2E7D32',
+                                  borderWidth: 2
+                                }
+                              },
+                              '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#2E7D32'
+                              }
+                            }}
+                          />
+                          {selectedApi.baseUrl && (
+                            <Box sx={{ mt: 1, display: 'flex', alignItems: 'center' }}>
+                              <InfoIcon fontSize="small" sx={{ color: 'text.secondary', mr: 0.5 }} />
+                              <Typography variant="caption" color="text.secondary">
+                                路径将自动附加到基础URL后面，形成完整的API地址
+                              </Typography>
+                            </Box>
+                          )}
+                        </Grid>
+                      </Grid>
+
+                      <Box sx={{ mt: 3 }}>
+                        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'medium', color: '#2E7D32' }}>
+                          完整URL预览
+                        </Typography>
+                        <Paper
+                          elevation={0}
+                          sx={{
+                            p: 2,
+                            bgcolor: '#f8f9fa',
+                            borderRadius: 1.5,
+                            border: '1px dashed #2E7D32',
+                            fontFamily: 'monospace',
+                            fontSize: '0.875rem',
+                            position: 'relative',
+                            minHeight: '56px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            overflow: 'hidden',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          <Box sx={{
+                            width: 'calc(100% - 40px)',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}>
+                            {selectedApi.baseUrl ? (
+                              <>
+                                <Box
+                                  component="span"
+                                  sx={{
+                                    color: '#2E7D32',
+                                    fontWeight: 'medium',
+                                    display: 'inline'
                                   }}
-                                  startIcon={<ContentCopyIcon fontSize="small" />}
                                 >
-                                  复制
-                                </Button>
+                                  {selectedApi.baseUrl}
+                                </Box>
+                                <Box
+                                  component="span"
+                                  sx={{
+                                    color: '#0D47A1',
+                                    fontWeight: 'medium',
+                                    display: 'inline'
+                                  }}
+                                >
+                                  {selectedApi.path || ''}
+                                </Box>
+                              </>
+                            ) : (
+                              <Box component="span" sx={{ color: 'text.secondary' }}>
+                                请先选择基础URL并输入API路径
                               </Box>
                             )}
                           </Box>
-                        </Grid>
-                      </Grid>
+                          <Tooltip title="复制完整URL">
+                            <span>
+                              <IconButton
+                                size="small"
+                                sx={{
+                                  position: 'absolute',
+                                  right: 8,
+                                  color: 'action.active',
+                                  '&:hover': {
+                                    color: '#2E7D32',
+                                    backgroundColor: 'rgba(46, 125, 50, 0.04)'
+                                  }
+                                }}
+                                onClick={() => {
+                                  if (selectedApi.url) {
+                                    navigator.clipboard.writeText(selectedApi.url);
+                                    showSnackbar('URL已复制到剪贴板', 'success');
+                                  }
+                                }}
+                                disabled={!selectedApi.url}
+                              >
+                                <ContentCopyIcon fontSize="small" />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                        </Paper>
+                      </Box>
                     </Paper>
 
-                    <TextField
-                      label="完整API URL"
-                      fullWidth
-                      value={selectedApi.url || ""}
-                      onChange={(e) => {
-                        const newUrl = e.target.value;
+                    <Paper
+                      elevation={0}
+                      variant="outlined"
+                      sx={{
+                        p: 3,
+                        mb: 3,
+                        borderRadius: 2,
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                          borderColor: '#2E7D32'
+                        }
+                      }}
+                    >
+                      <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 'medium', color: '#2E7D32' }}>
+                        手动输入完整URL
+                      </Typography>
 
-                        // 创建更新对象
-                        const updates = { url: newUrl };
+                      <TextField
+                        label="完整API URL"
+                        fullWidth
+                        value={selectedApi.url || ""}
+                        onChange={(e) => {
+                          const newUrl = e.target.value;
 
-                        // 尝试从URL中提取baseUrl和path
-                        try {
-                          // 尝试匹配基础URL
-                          const foundBaseUrl = baseUrls.find(base => newUrl.startsWith(base.url));
-                          if (foundBaseUrl) {
-                            updates.baseUrl = foundBaseUrl.url;
-                            updates.path = newUrl.substring(foundBaseUrl.url.length);
+                          // 创建更新对象
+                          const updates = { url: newUrl };
 
-                            // 确保路径始终以/开头
-                            if (updates.path && !updates.path.startsWith('/')) {
-                              updates.path = `/${updates.path}`;
-                            }
-                          } else {
-                            // 尝试从URL中提取域名部分作为baseUrl
-                            const urlMatch = newUrl.match(/^(https?:\/\/[^/]+)/i);
-                            if (urlMatch) {
-                              updates.baseUrl = urlMatch[1];
-                              updates.path = newUrl.substring(urlMatch[1].length);
+                          // 尝试从URL中提取baseUrl和path
+                          try {
+                            // 尝试匹配基础URL
+                            const foundBaseUrl = baseUrls.find(base => newUrl.startsWith(base.url));
+                            if (foundBaseUrl) {
+                              updates.baseUrl = foundBaseUrl.url;
+                              updates.path = newUrl.substring(foundBaseUrl.url.length);
 
                               // 确保路径始终以/开头
                               if (updates.path && !updates.path.startsWith('/')) {
                                 updates.path = `/${updates.path}`;
                               }
                             } else {
-                              // 如果无法解析为有效URL，则清除baseUrl和path
-                              updates.baseUrl = '';
-                              updates.path = '';
+                              // 尝试从URL中提取域名部分作为baseUrl
+                              const urlMatch = newUrl.match(/^(https?:\/\/[^/]+)/i);
+                              if (urlMatch) {
+                                updates.baseUrl = urlMatch[1];
+                                updates.path = newUrl.substring(urlMatch[1].length);
+
+                                // 确保路径始终以/开头
+                                if (updates.path && !updates.path.startsWith('/')) {
+                                  updates.path = `/${updates.path}`;
+                                }
+                              } else {
+                                // 如果无法解析为有效URL，则清除baseUrl和path
+                                updates.baseUrl = '';
+                                updates.path = '';
+                              }
                             }
+                          } catch (error) {
+                            console.error('解析URL失败:', error);
                           }
-                        } catch (error) {
-                          console.error('解析URL失败:', error);
-                        }
 
-                        // 批量更新状态，确保一致性
-                        setSelectedApi(prev => ({
-                          ...prev,
-                          ...updates
-                        }));
-
-                        // 清除URL相关错误
-                        if (formErrors.url) {
-                          setFormErrors(prev => ({
+                          // 批量更新状态，确保一致性
+                          setSelectedApi(prev => ({
                             ...prev,
-                            url: null
+                            ...updates
                           }));
+
+                          // 清除URL相关错误
+                          if (formErrors.url) {
+                            setFormErrors(prev => ({
+                              ...prev,
+                              url: null
+                            }));
+                          }
+                        }}
+                        error={!!formErrors.url}
+                        helperText={formErrors.url || "完整的API请求地址，包含协议、主机名和路径"}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <LinkIcon fontSize="small" sx={{ color: formErrors.url ? 'error.main' : '#2E7D32' }} />
+                            </InputAdornment>
+                          ),
+                        }}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 1.5,
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: '#2E7D32',
+                              borderWidth: 2
+                            }
+                          },
+                          '& .MuiInputLabel-root.Mui-focused': {
+                            color: '#2E7D32'
+                          }
+                        }}
+                      />
+
+                      <Box sx={{ mt: 1, display: 'flex', alignItems: 'center' }}>
+                        <InfoIcon fontSize="small" sx={{ color: 'text.secondary', mr: 0.5 }} />
+                        <Typography variant="caption" color="text.secondary">
+                          输入完整URL后，系统会自动识别基础URL和路径部分
+                        </Typography>
+                      </Box>
+                    </Paper>
+
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={handleBack}
+                        startIcon={<ArrowBackIcon />}
+                        sx={{
+                          borderRadius: 2,
+                          borderColor: '#2E7D32',
+                          color: '#2E7D32',
+                          '&:hover': {
+                            borderColor: '#388E3C',
+                            backgroundColor: 'rgba(56, 142, 60, 0.04)',
+                          },
+                          px: 3
+                        }}
+                      >
+                        上一步
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={handleNext}
+                        endIcon={<ArrowForwardIcon />}
+                        sx={{
+                          borderRadius: 2,
+                          backgroundColor: '#2E7D32',
+                          '&:hover': {
+                            backgroundColor: '#388E3C',
+                          },
+                          px: 3
+                        }}
+                      >
+                        下一步
+                      </Button>
+                    </Box>
+                  </Box>
+                </Fade>
+
+                {/* 步骤3: 请求配置 */}
+                <Fade in={activeStep === 2} timeout={500}>
+                  <Box sx={{ display: activeStep === 2 ? 'block' : 'none' }}>
+                    <Box sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
+                      <HttpIcon sx={{ color: '#2E7D32', mr: 1 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 'medium', color: '#2E7D32' }}>
+                        请求配置
+                      </Typography>
+                    </Box>
+                    <Paper
+                      elevation={0}
+                      variant="outlined"
+                      sx={{
+                        p: 3,
+                        mb: 3,
+                        borderRadius: 2,
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                          borderColor: '#2E7D32'
                         }
                       }}
-                      error={!!formErrors.url}
-                      helperText={formErrors.url || "完整的API请求地址，包含协议、主机名和路径"}
-                      InputProps={{
-                        startAdornment: (
-                          <Box component="span" sx={{ color: 'action.active', mr: 1 }}>
-                            <LinkIcon fontSize="small" />
-                          </Box>
-                        ),
-                      }}
-                    />
-                  </Grid>
-                </Grid>
-              </Paper>
+                    >
+                      <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 'medium', color: '#2E7D32' }}>
+                        请求方法与分类
+                      </Typography>
 
-              <Paper variant="outlined" sx={{ p: 3, mb: 3, borderRadius: 2 }}>
-                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium', color: '#2E7D32', mb: 2 }}>
-                  请求配置
-                </Typography>
-                <Grid container spacing={3}>
-                  <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth error={!!formErrors.method}>
-                      <InputLabel>请求方法</InputLabel>
-                      <Select
-                        value={selectedApi.method}
-                        onChange={(e) => handleApiFormChange('method', e.target.value)}
-                        label="请求方法"
-                      >
-                        <MenuItem value="GET">
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Chip
-                              label="GET"
-                              size="small"
-                              sx={{
-                                mr: 1,
-                                bgcolor: '#e3f2fd',
-                                color: '#0d47a1',
-                                fontWeight: 'bold'
+                      <Grid container spacing={3}>
+                        <Grid sx={{ gridColumn: 'span 12' }}>
+                          <FormControl
+                            fullWidth
+                            error={!!formErrors.method}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: '#2E7D32',
+                                  borderWidth: 2
+                                }
+                              },
+                              '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#2E7D32'
+                              }
+                            }}
+                          >
+                            <InputLabel>请求方法</InputLabel>
+                            <Select
+                              value={selectedApi.method}
+                              onChange={(e) => handleApiFormChange('method', e.target.value)}
+                              label="请求方法"
+                              MenuProps={{
+                                PaperProps: {
+                                  sx: {
+                                    maxHeight: 300,
+                                    borderRadius: 2,
+                                    boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+                                  }
+                                }
                               }}
-                            />
-                            <Typography variant="body2">获取数据</Typography>
-                          </Box>
-                        </MenuItem>
-                        <MenuItem value="POST">
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Chip
-                              label="POST"
-                              size="small"
-                              sx={{
-                                mr: 1,
-                                bgcolor: '#e8f5e9',
-                                color: '#2e7d32',
-                                fontWeight: 'bold'
-                              }}
-                            />
-                            <Typography variant="body2">提交数据</Typography>
-                          </Box>
-                        </MenuItem>
-                        <MenuItem value="PUT">
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Chip
-                              label="PUT"
-                              size="small"
-                              sx={{
-                                mr: 1,
-                                bgcolor: '#fff8e1',
-                                color: '#ff8f00',
-                                fontWeight: 'bold'
-                              }}
-                            />
-                            <Typography variant="body2">更新数据</Typography>
-                          </Box>
-                        </MenuItem>
-                        <MenuItem value="DELETE">
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Chip
-                              label="DELETE"
-                              size="small"
-                              sx={{
-                                mr: 1,
-                                bgcolor: '#ffebee',
-                                color: '#c62828',
-                                fontWeight: 'bold'
-                              }}
-                            />
-                            <Typography variant="body2">删除数据</Typography>
-                          </Box>
-                        </MenuItem>
-                        <MenuItem value="PATCH">
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Chip
-                              label="PATCH"
-                              size="small"
-                              sx={{
-                                mr: 1,
-                                bgcolor: '#e0f7fa',
-                                color: '#0097a7',
-                                fontWeight: 'bold'
-                              }}
-                            />
-                            <Typography variant="body2">部分更新</Typography>
-                          </Box>
-                        </MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth>
-                      <InputLabel>分类</InputLabel>
-                      <Select
-                        value={selectedApi.category}
-                        onChange={(e) => handleApiFormChange('category', e.target.value)}
-                        label="分类"
-                      >
-                        <MenuItem value="system">
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <CodeIcon fontSize="small" sx={{ mr: 1, color: '#0d47a1' }} />
-                            <Typography variant="body2">系统API</Typography>
-                          </Box>
-                        </MenuItem>
-                        <MenuItem value="data">
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <StorageIcon fontSize="small" sx={{ mr: 1, color: '#2e7d32' }} />
-                            <Typography variant="body2">数据查询API</Typography>
-                          </Box>
-                        </MenuItem>
-                        <MenuItem value="device">
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <SettingsIcon fontSize="small" sx={{ mr: 1, color: '#ff8f00' }} />
-                            <Typography variant="body2">设备控制API</Typography>
-                          </Box>
-                        </MenuItem>
-                        <MenuItem value="custom">
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <DataObjectIcon fontSize="small" sx={{ mr: 1, color: '#9c27b0' }} />
-                            <Typography variant="body2">用户自定义API</Typography>
-                          </Box>
-                        </MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                </Grid>
-              </Paper>
+                            >
+                              <MenuItem value="GET">
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                  <Chip
+                                    label="GET"
+                                    size="small"
+                                    sx={{
+                                      mr: 1,
+                                      bgcolor: '#e3f2fd',
+                                      color: '#0d47a1',
+                                      fontWeight: 'bold',
+                                      borderRadius: '4px'
+                                    }}
+                                  />
+                                  <Typography variant="body2">获取数据</Typography>
+                                </Box>
+                              </MenuItem>
+                              <MenuItem value="POST">
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                  <Chip
+                                    label="POST"
+                                    size="small"
+                                    sx={{
+                                      mr: 1,
+                                      bgcolor: '#e8f5e9',
+                                      color: '#2e7d32',
+                                      fontWeight: 'bold',
+                                      borderRadius: '4px'
+                                    }}
+                                  />
+                                  <Typography variant="body2">提交数据</Typography>
+                                </Box>
+                              </MenuItem>
+                              <MenuItem value="PUT">
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                  <Chip
+                                    label="PUT"
+                                    size="small"
+                                    sx={{
+                                      mr: 1,
+                                      bgcolor: '#fff8e1',
+                                      color: '#ff8f00',
+                                      fontWeight: 'bold',
+                                      borderRadius: '4px'
+                                    }}
+                                  />
+                                  <Typography variant="body2">更新数据</Typography>
+                                </Box>
+                              </MenuItem>
+                              <MenuItem value="DELETE">
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                  <Chip
+                                    label="DELETE"
+                                    size="small"
+                                    sx={{
+                                      mr: 1,
+                                      bgcolor: '#ffebee',
+                                      color: '#c62828',
+                                      fontWeight: 'bold',
+                                      borderRadius: '4px'
+                                    }}
+                                  />
+                                  <Typography variant="body2">删除数据</Typography>
+                                </Box>
+                              </MenuItem>
+                              <MenuItem value="PATCH">
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                  <Chip
+                                    label="PATCH"
+                                    size="small"
+                                    sx={{
+                                      mr: 1,
+                                      bgcolor: '#e0f7fa',
+                                      color: '#0097a7',
+                                      fontWeight: 'bold',
+                                      borderRadius: '4px'
+                                    }}
+                                  />
+                                  <Typography variant="body2">部分更新</Typography>
+                                </Box>
+                              </MenuItem>
+                            </Select>
+                            {formErrors.method && (
+                              <FormHelperText error>{formErrors.method}</FormHelperText>
+                            )}
+                          </FormControl>
 
-              <Paper variant="outlined" sx={{ p: 3, mb: 3, borderRadius: 2 }}>
-                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium', color: '#2E7D32', mb: 2 }}>
-                  高级设置
-                </Typography>
-                <Grid container spacing={3}>
-                  <Grid item xs={12} sm={4}>
-                    <TextField
-                      label="超时时间 (毫秒)"
-                      fullWidth
-                      type="number"
-                      value={selectedApi.timeout}
-                      onChange={(e) => handleApiFormChange('timeout', parseInt(e.target.value) || 0)}
-                      helperText="请求超时时间，默认15000毫秒"
-                      InputProps={{
-                        startAdornment: (
-                          <Box component="span" sx={{ color: 'action.active', mr: 1 }}>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <circle cx="12" cy="12" r="10"></circle>
-                              <polyline points="12 6 12 12 16 14"></polyline>
-                            </svg>
+                          <Box sx={{ mt: 1, display: 'flex', alignItems: 'center' }}>
+                            <InfoIcon fontSize="small" sx={{ color: 'text.secondary', mr: 0.5 }} />
+                            <Typography variant="caption" color="text.secondary">
+                              选择适合您API操作类型的HTTP方法
+                            </Typography>
                           </Box>
-                        ),
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <TextField
-                      label="重试次数"
-                      fullWidth
-                      type="number"
-                      value={selectedApi.retries}
-                      onChange={(e) => handleApiFormChange('retries', parseInt(e.target.value) || 0)}
-                      helperText="请求失败后的重试次数"
-                      InputProps={{
-                        startAdornment: (
-                          <Box component="span" sx={{ color: 'action.active', mr: 1 }}>
-                            <RefreshIcon fontSize="small" />
+                        </Grid>
+
+                        <Grid sx={{ gridColumn: 'span 12', mt: 2 }}>
+                          <FormControl
+                            fullWidth
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: '#2E7D32',
+                                  borderWidth: 2
+                                }
+                              },
+                              '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#2E7D32'
+                              }
+                            }}
+                          >
+                            <InputLabel>API分类</InputLabel>
+                            <Select
+                              value={selectedApi.category}
+                              onChange={(e) => handleApiFormChange('category', e.target.value)}
+                              label="API分类"
+                              MenuProps={{
+                                PaperProps: {
+                                  sx: {
+                                    maxHeight: 300,
+                                    borderRadius: 2,
+                                    boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+                                  }
+                                }
+                              }}
+                            >
+                              <MenuItem value="system">
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                  <CodeIcon fontSize="small" sx={{ mr: 1, color: '#0d47a1' }} />
+                                  <Typography variant="body2">系统API</Typography>
+                                </Box>
+                              </MenuItem>
+                              <MenuItem value="data">
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                  <StorageIcon fontSize="small" sx={{ mr: 1, color: '#2e7d32' }} />
+                                  <Typography variant="body2">数据查询API</Typography>
+                                </Box>
+                              </MenuItem>
+                              <MenuItem value="device">
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                  <SettingsIcon fontSize="small" sx={{ mr: 1, color: '#ff8f00' }} />
+                                  <Typography variant="body2">设备控制API</Typography>
+                                </Box>
+                              </MenuItem>
+                              <MenuItem value="custom">
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                  <DataObjectIcon fontSize="small" sx={{ mr: 1, color: '#9c27b0' }} />
+                                  <Typography variant="body2">用户自定义API</Typography>
+                                </Box>
+                              </MenuItem>
+                              <MenuItem value="admin">
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                  <AdminPanelSettingsIcon fontSize="small" sx={{ mr: 1, color: '#d32f2f' }} />
+                                  <Typography variant="body2">管理员API</Typography>
+                                </Box>
+                              </MenuItem>
+                              <MenuItem value="auth">
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                  <LockIcon fontSize="small" sx={{ mr: 1, color: '#1976d2' }} />
+                                  <Typography variant="body2">认证API</Typography>
+                                </Box>
+                              </MenuItem>
+                              <MenuItem value="report">
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                  <AssessmentIcon fontSize="small" sx={{ mr: 1, color: '#00796b' }} />
+                                  <Typography variant="body2">报表API</Typography>
+                                </Box>
+                              </MenuItem>
+                            </Select>
+                          </FormControl>
+
+                          <Box sx={{ mt: 1, display: 'flex', alignItems: 'center' }}>
+                            <InfoIcon fontSize="small" sx={{ color: 'text.secondary', mr: 0.5 }} />
+                            <Typography variant="caption" color="text.secondary">
+                              分类用于组织和管理API，便于查找和使用
+                            </Typography>
                           </Box>
-                        ),
+                        </Grid>
+                      </Grid>
+                    </Paper>
+
+                    <Paper
+                      elevation={0}
+                      variant="outlined"
+                      sx={{
+                        p: 3,
+                        mb: 3,
+                        borderRadius: 2,
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                          borderColor: '#2E7D32'
+                        }
                       }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <TextField
-                      label="缓存时间 (秒)"
-                      fullWidth
-                      type="number"
-                      value={selectedApi.cacheTime}
-                      onChange={(e) => handleApiFormChange('cacheTime', parseInt(e.target.value) || 0)}
-                      helperText="响应数据的缓存时间，0表示不缓存"
-                      InputProps={{
-                        startAdornment: (
-                          <Box component="span" sx={{ color: 'action.active', mr: 1 }}>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-                              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-                            </svg>
-                          </Box>
-                        ),
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <TextField
-                      label="描述"
-                      fullWidth
-                      multiline
-                      rows={2}
-                      value={selectedApi.description}
-                      onChange={(e) => handleApiFormChange('description', e.target.value)}
-                      helperText="API的详细描述，包括用途、参数说明等"
-                      InputProps={{
-                        startAdornment: (
-                          <Box component="span" sx={{ color: 'action.active', mr: 1, mt: 1 }}>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <line x1="21" y1="10" x2="3" y2="10"></line>
-                              <line x1="21" y1="6" x2="3" y2="6"></line>
-                              <line x1="21" y1="14" x2="3" y2="14"></line>
-                              <line x1="21" y1="18" x2="3" y2="18"></line>
-                            </svg>
-                          </Box>
-                        ),
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={selectedApi.enabled}
-                          onChange={(e) => handleApiFormChange('enabled', e.target.checked)}
-                          color="success"
+                    >
+                      <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 'medium', color: '#2E7D32' }}>
+                        请求头设置
+                      </Typography>
+
+                      <Box sx={{ mb: 2 }}>
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={selectedApi.useDefaultHeaders !== false}
+                              onChange={(e) => handleApiFormChange('useDefaultHeaders', e.target.checked)}
+                              color="success"
+                            />
+                          }
+                          label={
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Typography variant="body2" sx={{ mr: 1 }}>使用默认请求头</Typography>
+                              <Chip
+                                label={selectedApi.useDefaultHeaders !== false ? "已启用" : "已禁用"}
+                                size="small"
+                                color={selectedApi.useDefaultHeaders !== false ? "success" : "default"}
+                                sx={{ fontWeight: 'medium', height: 20 }}
+                              />
+                            </Box>
+                          }
                         />
-                      }
-                      label={
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Typography variant="body1" sx={{ mr: 1 }}>启用API</Typography>
-                          <Chip
-                            label={selectedApi.enabled ? "已启用" : "已禁用"}
-                            size="small"
-                            color={selectedApi.enabled ? "success" : "default"}
-                            sx={{ fontWeight: 'medium' }}
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, ml: 4 }}>
+                          默认请求头包含Content-Type和Authorization等常用头信息
+                        </Typography>
+                      </Box>
+
+                      <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+                        <Button
+                          variant="outlined"
+                          color="primary"
+                          startIcon={<TuneIcon />}
+                          sx={{
+                            borderRadius: 2,
+                            borderColor: '#2E7D32',
+                            color: '#2E7D32',
+                            '&:hover': {
+                              borderColor: '#388E3C',
+                              backgroundColor: 'rgba(56, 142, 60, 0.04)',
+                            }
+                          }}
+                        >
+                          自定义请求头
+                        </Button>
+                      </Box>
+                    </Paper>
+
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={handleBack}
+                        startIcon={<ArrowBackIcon />}
+                        sx={{
+                          borderRadius: 2,
+                          borderColor: '#2E7D32',
+                          color: '#2E7D32',
+                          '&:hover': {
+                            borderColor: '#388E3C',
+                            backgroundColor: 'rgba(56, 142, 60, 0.04)',
+                          },
+                          px: 3
+                        }}
+                      >
+                        上一步
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={handleNext}
+                        endIcon={<ArrowForwardIcon />}
+                        sx={{
+                          borderRadius: 2,
+                          backgroundColor: '#2E7D32',
+                          '&:hover': {
+                            backgroundColor: '#388E3C',
+                          },
+                          px: 3
+                        }}
+                      >
+                        下一步
+                      </Button>
+                    </Box>
+                  </Box>
+                </Fade>
+
+                {/* 步骤4: 高级设置 */}
+                <Fade in={activeStep === 3} timeout={500}>
+                  <Box sx={{ display: activeStep === 3 ? 'block' : 'none' }}>
+                    <Box sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
+                      <TuneIcon sx={{ color: '#2E7D32', mr: 1 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 'medium', color: '#2E7D32' }}>
+                        高级设置
+                      </Typography>
+                    </Box>
+
+                    <Paper
+                      elevation={0}
+                      variant="outlined"
+                      sx={{
+                        p: 3,
+                        mb: 3,
+                        borderRadius: 2,
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                          borderColor: '#2E7D32'
+                        }
+                      }}
+                    >
+                      <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 'medium', color: '#2E7D32' }}>
+                        API状态与性能设置
+                      </Typography>
+
+                      <Grid container spacing={3}>
+                        <Grid sx={{ gridColumn: 'span 12' }}>
+                          <Box sx={{
+                            p: 2,
+                            borderRadius: 2,
+                            bgcolor: selectedApi.enabled ? 'rgba(46, 125, 50, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+                            border: '1px solid',
+                            borderColor: selectedApi.enabled ? 'rgba(46, 125, 50, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+                            transition: 'all 0.3s ease',
+                            mb: 3
+                          }}>
+                            <FormControlLabel
+                              control={
+                                <Switch
+                                  checked={selectedApi.enabled}
+                                  onChange={(e) => handleApiFormChange('enabled', e.target.checked)}
+                                  color="success"
+                                  sx={{
+                                    '& .MuiSwitch-switchBase.Mui-checked': {
+                                      color: '#2E7D32',
+                                      '&:hover': {
+                                        backgroundColor: 'rgba(46, 125, 50, 0.08)',
+                                      },
+                                    },
+                                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                                      backgroundColor: '#2E7D32',
+                                    },
+                                  }}
+                                />
+                              }
+                              label={
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                  <Typography variant="body1" sx={{ fontWeight: 'medium', mr: 1 }}>
+                                    API状态
+                                  </Typography>
+                                  <Chip
+                                    label={selectedApi.enabled ? "已启用" : "已禁用"}
+                                    size="small"
+                                    color={selectedApi.enabled ? "success" : "default"}
+                                    sx={{ fontWeight: 'medium' }}
+                                  />
+                                </Box>
+                              }
+                            />
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 1, ml: 4 }}>
+                              {selectedApi.enabled
+                                ? "此API当前处于启用状态，可以被系统调用"
+                                : "此API当前处于禁用状态，不会被系统调用"}
+                            </Typography>
+                          </Box>
+                        </Grid>
+
+                        <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
+                          <TextField
+                            label="超时时间 (毫秒)"
+                            fullWidth
+                            type="number"
+                            value={selectedApi.timeout}
+                            onChange={(e) => handleApiFormChange('timeout', parseInt(e.target.value) || 0)}
+                            helperText="请求超时时间，超过此时间将自动取消请求"
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <TimerIcon fontSize="small" sx={{ color: '#2E7D32' }} />
+                                </InputAdornment>
+                              ),
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: '#2E7D32',
+                                  borderWidth: 2
+                                }
+                              },
+                              '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#2E7D32'
+                              }
+                            }}
                           />
-                        </Box>
-                      }
-                    />
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, ml: 4 }}>
-                      禁用的API将不会被系统调用，但配置仍会保留
-                    </Typography>
-                  </Grid>
-                </Grid>
-              </Paper>
-            </>
+                        </Grid>
+
+                        <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
+                          <TextField
+                            label="重试次数"
+                            fullWidth
+                            type="number"
+                            value={selectedApi.retries}
+                            onChange={(e) => handleApiFormChange('retries', parseInt(e.target.value) || 0)}
+                            helperText="请求失败时的自动重试次数"
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <RefreshIcon fontSize="small" sx={{ color: '#2E7D32' }} />
+                                </InputAdornment>
+                              ),
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: '#2E7D32',
+                                  borderWidth: 2
+                                }
+                              },
+                              '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#2E7D32'
+                              }
+                            }}
+                          />
+                        </Grid>
+
+                        <Grid sx={{ gridColumn: 'span 12', mt: 2 }}>
+                          <TextField
+                            label="缓存时间 (秒)"
+                            fullWidth
+                            type="number"
+                            value={selectedApi.cacheTime}
+                            onChange={(e) => handleApiFormChange('cacheTime', parseInt(e.target.value) || 0)}
+                            helperText="API响应的缓存时间，0表示不缓存，适用于不常变化的数据"
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#2E7D32' }}>
+                                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                                  </svg>
+                                </InputAdornment>
+                              ),
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: '#2E7D32',
+                                  borderWidth: 2
+                                }
+                              },
+                              '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#2E7D32'
+                              }
+                            }}
+                          />
+                        </Grid>
+                      </Grid>
+                    </Paper>
+
+                    <Paper
+                      elevation={0}
+                      variant="outlined"
+                      sx={{
+                        p: 3,
+                        mb: 3,
+                        borderRadius: 2,
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                          borderColor: '#2E7D32'
+                        }
+                      }}
+                    >
+                      <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 'medium', color: '#2E7D32' }}>
+                        备注信息
+                      </Typography>
+
+                      <TextField
+                        label="备注"
+                        fullWidth
+                        multiline
+                        rows={3}
+                        value={selectedApi.description}
+                        onChange={(e) => handleApiFormChange('description', e.target.value)}
+                        placeholder="添加关于此API的备注信息，如使用场景、注意事项等..."
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1.5 }}>
+                              <DescriptionIcon fontSize="small" sx={{ color: '#2E7D32' }} />
+                            </InputAdornment>
+                          ),
+                        }}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 1.5,
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: '#2E7D32',
+                              borderWidth: 2
+                            }
+                          },
+                          '& .MuiInputLabel-root.Mui-focused': {
+                            color: '#2E7D32'
+                          }
+                        }}
+                      />
+                    </Paper>
+                  </Box>
+                </Fade>
+              </Box>
+            </Box>
           )}
         </DialogContent>
-        <DialogActions sx={{ borderTop: '1px solid #e0e0e0', p: 2 }}>
-          <Button
-            onClick={handleCloseDialog}
-            sx={{
-              borderRadius: 2,
-              color: '#2E7D32',
-              '&:hover': {
-                backgroundColor: 'rgba(46, 125, 50, 0.04)',
-              }
-            }}
-          >
-            取消
-          </Button>
-          <Button
-            onClick={handleSaveApi}
-            variant="contained"
-            color="primary"
-            startIcon={<SaveIcon />}
-            sx={{
-              borderRadius: 2,
-              backgroundColor: '#2E7D32',
-              '&:hover': {
-                backgroundColor: '#388E3C',
-              }
-            }}
-          >
-            保存
-          </Button>
+        <DialogActions sx={{
+          p: 2,
+          borderTop: '1px solid #e0e0e0',
+          bgcolor: '#f9f9f9',
+          display: 'flex',
+          justifyContent: 'space-between'
+        }}>
+          <Box>
+            <Button
+              onClick={handleCloseDialog}
+              color="inherit"
+              startIcon={<CancelIcon />}
+              sx={{
+                borderRadius: 2,
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                }
+              }}
+            >
+              取消
+            </Button>
+          </Box>
+
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {activeStep > 0 && (
+              <Button
+                onClick={handleBack}
+                color="inherit"
+                startIcon={<ArrowBackIcon />}
+                sx={{
+                  borderRadius: 2,
+                  mr: 1,
+                  '&:hover': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                  }
+                }}
+              >
+                上一步
+              </Button>
+            )}
+
+            {activeStep < 3 ? (
+              <Button
+                onClick={handleNext}
+                color="primary"
+                variant="contained"
+                endIcon={<ArrowForwardIcon />}
+                sx={{
+                  borderRadius: 2,
+                  backgroundColor: '#2E7D32',
+                  '&:hover': {
+                    backgroundColor: '#388E3C',
+                  }
+                }}
+              >
+                下一步
+              </Button>
+            ) : (
+              <Button
+                onClick={handleSaveApi}
+                color="primary"
+                variant="contained"
+                startIcon={<SaveIcon />}
+                disabled={isSaving}
+                sx={{
+                  borderRadius: 2,
+                  backgroundColor: '#2E7D32',
+                  '&:hover': {
+                    backgroundColor: '#388E3C',
+                  }
+                }}
+              >
+                {isSaving ? '保存中...' : '保存API'}
+              </Button>
+            )}
+          </Box>
         </DialogActions>
       </Dialog>
 
@@ -1599,7 +2481,7 @@ const ApiManagement = () => {
             <Box>
               <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 2 }}>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} md={8}>
+                  <Grid sx={{ gridColumn: { xs: 'span 12', md: 'span 8' } }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                       请求URL
                     </Typography>
@@ -1616,7 +2498,7 @@ const ApiManagement = () => {
                       {selectedApi.url}
                     </Typography>
                   </Grid>
-                  <Grid item xs={12} md={4}>
+                  <Grid sx={{ gridColumn: { xs: 'span 12', md: 'span 4' } }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                       请求方法
                     </Typography>
@@ -1708,7 +2590,7 @@ const ApiManagement = () => {
                     }}
                   >
                     <Grid container spacing={2}>
-                      <Grid item xs={12}>
+                      <Grid sx={{ gridColumn: 'span 12' }}>
                         <Alert
                           severity={testResult.success ? 'success' : 'error'}
                           sx={{ mb: 2 }}
@@ -1717,7 +2599,7 @@ const ApiManagement = () => {
                           {testResult.success ? '请求成功' : `请求失败: ${testResult.error || '未知错误'}`}
                         </Alert>
                       </Grid>
-                      <Grid item xs={12} sm={6}>
+                      <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
                         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                           响应时间
                         </Typography>
@@ -1728,7 +2610,7 @@ const ApiManagement = () => {
                         />
                       </Grid>
                       {testResult.status && (
-                        <Grid item xs={12} sm={6}>
+                        <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
                           <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                             状态码
                           </Typography>
@@ -1750,6 +2632,41 @@ const ApiManagement = () => {
                       </Typography>
                       <Paper sx={{ p: 2, bgcolor: '#f5f5f5', maxHeight: '300px', overflow: 'auto', borderRadius: 1 }}>
                         <pre style={{ margin: 0 }}>{JSON.stringify(testResult.data, null, 2)}</pre>
+                      </Paper>
+                    </Paper>
+                  )}
+
+                  {/* 测试日志 */}
+                  {testResult.testLog && (
+                    <Paper variant="outlined" sx={{ p: 2, mb: 2, borderRadius: 2 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                          测试日志
+                        </Typography>
+                        <Chip
+                          label={`耗时: ${testResult.testLog.duration}ms`}
+                          size="small"
+                          color={testResult.testLog.duration < 500 ? "success" : testResult.testLog.duration < 2000 ? "warning" : "error"}
+                          sx={{ fontWeight: 'medium' }}
+                        />
+                      </Box>
+                      <Paper sx={{ p: 2, bgcolor: '#f5f5f5', maxHeight: '300px', overflow: 'auto', borderRadius: 1 }}>
+                        {testResult.testLog.logs.map((log, index) => (
+                          <Typography
+                            key={index}
+                            variant="body2"
+                            sx={{
+                              fontFamily: 'monospace',
+                              fontSize: '0.85rem',
+                              mb: 0.5,
+                              color: log.includes('失败') || log.includes('错误') ? '#c62828' :
+                                     log.includes('成功') ? '#2e7d32' :
+                                     log.includes('开始') ? '#0d47a1' : 'text.primary'
+                            }}
+                          >
+                            {log}
+                          </Typography>
+                        ))}
                       </Paper>
                     </Paper>
                   )}
@@ -1819,7 +2736,7 @@ const ApiManagement = () => {
             {selectedApi && (
               <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
                     <Typography variant="subtitle2" color="text.secondary">
                       API键名
                     </Typography>
@@ -1827,7 +2744,7 @@ const ApiManagement = () => {
                       {selectedApi.key}
                     </Typography>
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
                     <Typography variant="subtitle2" color="text.secondary">
                       API名称
                     </Typography>
@@ -1835,7 +2752,7 @@ const ApiManagement = () => {
                       {selectedApi.name}
                     </Typography>
                   </Grid>
-                  <Grid item xs={12}>
+                  <Grid sx={{ gridColumn: 'span 12' }}>
                     <Typography variant="subtitle2" color="text.secondary">
                       URL
                     </Typography>

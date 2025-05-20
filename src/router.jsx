@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createHashRouter, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import MainLayout from './components/Layout/MainLayout';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
@@ -16,8 +16,9 @@ const ApiDashboard = lazy(() => import('./features/dashboard/pages/ApiDashboard'
 const Login = lazy(() => import('./pages/Auth/Login'));
 const Register = lazy(() => import('./pages/Auth/Register'));
 const ForgotPassword = lazy(() => import('./pages/Auth/ForgotPassword'));
-const SiteList = lazy(() => import('./pages/Sites/SiteList'));
-const SiteDetail = lazy(() => import('./pages/Sites/SiteDetail'));
+const SiteList = lazy(() => import('./features/sites/pages/SiteList'));
+const SiteDetail = lazy(() => import('./features/sites/pages/SiteDetail'));
+const SiteDetailNew = lazy(() => import('./features/sites/pages/SiteDetailNew'));
 const DataQuery = lazy(() => import('./pages/DataCenter/DataQuery'));
 const HistoryDataQuery = lazy(() => import('./pages/DataCenter/HistoryDataQuery'));
 const CarbonCalc = lazy(() => import('./pages/DataCenter/CarbonCalc'));
@@ -41,13 +42,15 @@ const ExcessSludgeCalculator = lazy(() => import('./pages/Calculators/ExcessSlud
 const UserManagement = lazy(() => import('./pages/Admin/UserManagement'));
 const Settings = lazy(() => import('./pages/Admin/Settings'));
 const ApiManagement = lazy(() => import('./pages/ApiManagement/ApiManagement'));
+const NewApiManagement = lazy(() => import('./features/api/pages/ApiManagement'));
+const QueryManagement = lazy(() => import('./pages/QueryManagement/QueryManagement'));
 const NotFound = lazy(() => import('./pages/NotFound/NotFound'));
 
 // 加载中组件
 const LoadingFallback = () => <div className="loading-container">加载中...</div>;
 
 // 创建路由配置
-const router = createBrowserRouter(
+const router = createHashRouter(
   [
   {
     path: '/',
@@ -56,7 +59,8 @@ const router = createBrowserRouter(
       { index: true, element: <Suspense fallback={<LoadingFallback />}><EnhancedDashboard /></Suspense> },
       { path: 'admin-dashboard', element: <Suspense fallback={<LoadingFallback />}><AdminDashboard /></Suspense> },
       { path: 'sites', element: <Suspense fallback={<LoadingFallback />}><SiteList /></Suspense> },
-      { path: 'sites/:id', element: <Suspense fallback={<LoadingFallback />}><SiteDetail /></Suspense> },
+      { path: 'sites/:id', element: <Suspense fallback={<LoadingFallback />}><SiteDetailNew /></Suspense> },
+      { path: 'sites/:id/old', element: <Suspense fallback={<LoadingFallback />}><SiteDetail /></Suspense> },
       // 数据中心
       { path: 'data-query', element: <Suspense fallback={<LoadingFallback />}><DataQuery /></Suspense> },
       { path: 'history-data', element: <Suspense fallback={<LoadingFallback />}><HistoryDataQuery /></Suspense> },
@@ -86,6 +90,8 @@ const router = createBrowserRouter(
       { path: 'user-management', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><UserManagement /></Suspense></AdminRoute> },
       { path: 'settings', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><Settings /></Suspense></AdminRoute> },
       { path: 'api-management', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><ErrorBoundary showDetails={false}><ApiManagement /></ErrorBoundary></Suspense></AdminRoute> },
+      { path: 'new-api-management', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><ErrorBoundary showDetails={false}><NewApiManagement /></ErrorBoundary></Suspense></AdminRoute> },
+      { path: 'query-management', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><ErrorBoundary showDetails={false}><QueryManagement /></ErrorBoundary></Suspense></AdminRoute> },
       { path: 'db-test', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><ErrorBoundary showDetails={true}><DatabaseTest /></ErrorBoundary></Suspense></AdminRoute> },
       // API 仪表盘页面
       { path: 'api-dashboard', element: <Suspense fallback={<LoadingFallback />}><ErrorBoundary showDetails={true}><ApiDashboard /></ErrorBoundary></Suspense> },

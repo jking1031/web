@@ -697,14 +697,14 @@ const QueryManager = () => {
                     </AccordionSummary>
                     <AccordionDetails>
                       <Grid container spacing={2}>
-                        <Grid item xs={12}>
+                        <Grid sx={{ gridColumn: 'span 12' }}>
                           <Typography variant="subtitle2">SQL查询:</Typography>
                           <Paper sx={{ p: 1, bgcolor: '#f5f5f5' }}>
                             <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{savedQuery.query}</pre>
                           </Paper>
                         </Grid>
 
-                        <Grid item xs={12}>
+                        <Grid sx={{ gridColumn: 'span 12' }}>
                           <Typography variant="subtitle2">查询结果:</Typography>
                           {Array.isArray(savedQuery.result) && savedQuery.result.length > 0 ? (
                             <TableContainer component={Paper} variant="outlined">
@@ -809,7 +809,7 @@ const QueryManager = () => {
         <DialogContent>
           {selectedQuery && (
             <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12} sm={6}>
+              <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
                 <TextField
                   label="查询名称"
                   fullWidth
@@ -819,7 +819,7 @@ const QueryManager = () => {
                   helperText={formErrors.name}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
                 <FormControl fullWidth error={!!formErrors.dataSourceId}>
                   <InputLabel>数据源</InputLabel>
                   <Select
@@ -840,7 +840,7 @@ const QueryManager = () => {
                   )}
                 </FormControl>
               </Grid>
-              <Grid item xs={12}>
+              <Grid sx={{ gridColumn: 'span 12' }}>
                 <TextField
                   label="描述"
                   fullWidth
@@ -848,7 +848,7 @@ const QueryManager = () => {
                   onChange={(e) => handleFormChange('description', e.target.value)}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid sx={{ gridColumn: 'span 12' }}>
                 <TextField
                   label="SQL语句"
                   fullWidth
@@ -878,18 +878,18 @@ const QueryManager = () => {
           {selectedQuery && (
             <Box sx={{ mt: 2 }}>
               <Grid container spacing={2}>
-                <Grid item xs={12}>
+                <Grid sx={{ gridColumn: 'span 12' }}>
                   <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
                     <Typography variant="subtitle2" gutterBottom>
                       查询信息
                     </Typography>
                     <Grid container spacing={1}>
-                      <Grid item xs={12}>
+                      <Grid sx={{ gridColumn: 'span 12' }}>
                         <Typography variant="body2">
                           <strong>数据库:</strong> {dataSources.find(ds => ds.id === selectedQuery.dataSourceId)?.name || '未知数据源'}
                         </Typography>
                       </Grid>
-                      <Grid item xs={12}>
+                      <Grid sx={{ gridColumn: 'span 12' }}>
                         <Typography variant="body2">
                           <strong>描述:</strong> {selectedQuery.description || '无描述'}
                         </Typography>
@@ -898,7 +898,7 @@ const QueryManager = () => {
                   </Paper>
                 </Grid>
 
-                <Grid item xs={12}>
+                <Grid sx={{ gridColumn: 'span 12' }}>
                   <Typography variant="subtitle1" gutterBottom>
                     SQL语句:
                   </Typography>
@@ -907,7 +907,7 @@ const QueryManager = () => {
                   </Paper>
                 </Grid>
 
-                <Grid item xs={12}>
+                <Grid sx={{ gridColumn: 'span 12' }}>
                   <Typography variant="subtitle1" gutterBottom>
                     参数 (JSON格式):
                   </Typography>

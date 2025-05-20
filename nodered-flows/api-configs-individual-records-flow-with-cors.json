@@ -1,0 +1,446 @@
+[
+    {
+        "id": "api-configs-individual-flow",
+        "type": "tab",
+        "label": "API配置单条记录管理",
+        "disabled": false,
+        "info": "用于管理API配置的Node-RED流程，每个API作为单独的一条记录保存到MySQL数据库中，支持CORS",
+        "env": []
+    },
+    {
+        "id": "api-configs-save",
+        "type": "http in",
+        "z": "api-configs-individual-flow",
+        "name": "保存API配置",
+        "url": "/api/api-configs/save",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 80,
+        "wires": [
+            [
+                "api-configs-cors-middleware"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-cors-middleware",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "CORS中间件",
+        "func": "// 设置CORS头部\nif (msg.req.method === 'OPTIONS') {\n    // 处理OPTIONS预检请求\n    msg.headers = {\n        'Access-Control-Allow-Origin': '*',\n        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',\n        'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization',\n        'Access-Control-Max-Age': '3600',\n        'Content-Length': '0'\n    };\n    msg.statusCode = 204;\n    msg.payload = '';\n    return [msg, null]; // 发送到第一个输出，跳过后续处理\n}\n\n// 为所有响应添加CORS头部\nmsg._cors = {\n    headers: {\n        'Access-Control-Allow-Origin': '*',\n        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',\n        'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization'\n    }\n};\n\n// 继续正常处理\nreturn [null, msg]; // 发送到第二个输出，继续处理",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 80,
+        "wires": [
+            [
+                "api-configs-cors-response"
+            ],
+            [
+                "api-configs-save-debug"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-cors-response",
+        "type": "http response",
+        "z": "api-configs-individual-flow",
+        "name": "CORS响应",
+        "statusCode": "204",
+        "headers": {},
+        "x": 520,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "api-configs-save-debug",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "请求数据",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 520,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "api-configs-prepare-table",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "准备创建表",
+        "func": "// 从请求中获取API配置数据\nconst apiConfigs = msg.payload.apiConfigs;\n\nif (!apiConfigs) {\n    msg.payload = {\n        success: false,\n        message: '未提供API配置'\n    };\n    \n    // 添加CORS头部\n    if (msg._cors && msg._cors.headers) {\n        msg.headers = { ...msg._cors.headers, 'Content-Type': 'application/json' };\n    }\n    \n    return [msg, null]; // 发送错误响应\n}\n\n// 准备批量插入或更新的数据\nconst timestamp = new Date().toISOString();\nconst apiKeys = Object.keys(apiConfigs);\nconst totalCount = apiKeys.length;\n\n// 首先创建表（如果不存在）\n// 使用更合适的表结构，每个API是一条记录\nmsg.topic = `\nCREATE TABLE IF NOT EXISTS api_configs (\n    api_key VARCHAR(255) PRIMARY KEY,\n    name VARCHAR(255),\n    url TEXT,\n    method VARCHAR(50),\n    category VARCHAR(100),\n    status VARCHAR(50),\n    description TEXT,\n    config_json LONGTEXT,\n    timestamp VARCHAR(50),\n    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP\n);\n`;\n\n// 保存数据以便后续处理\nmsg._apiData = {\n    apiConfigs: apiConfigs,\n    apiKeys: apiKeys,\n    timestamp: timestamp,\n    totalCount: totalCount,\n    currentIndex: 0,\n    successCount: 0,\n    errorCount: 0,\n    errors: [],\n    batchSize: 10, // 每批处理的API数量\n    currentBatch: 0\n};\n\n// 添加调试信息\nnode.warn({\n    action: 'create_table',\n    totalApis: totalCount,\n    timestamp: timestamp\n});\n\nreturn [null, msg]; // 继续处理",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 720,
+        "y": 80,
+        "wires": [
+            [
+                "api-configs-error-http-response"
+            ],
+            [
+                "api-configs-create-table"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-create-table",
+        "type": "mysql",
+        "z": "api-configs-individual-flow",
+        "mydb": "api_db_config",
+        "name": "创建表",
+        "x": 920,
+        "y": 80,
+        "wires": [
+            [
+                "api-configs-prepare-batch"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-prepare-batch",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "准备批量处理",
+        "func": "// 获取之前保存的API数据\nconst apiData = msg._apiData;\nconst apiConfigs = apiData.apiConfigs;\nconst apiKeys = apiData.apiKeys;\nconst batchSize = apiData.batchSize;\nconst currentBatch = apiData.currentBatch;\nconst startIndex = currentBatch * batchSize;\nlet endIndex = startIndex + batchSize;\n\n// 确保不超出数组范围\nif (endIndex > apiKeys.length) {\n    endIndex = apiKeys.length;\n}\n\n// 检查是否已处理完所有批次\nif (startIndex >= apiKeys.length) {\n    // 所有API已处理完毕，返回结果\n    msg.payload = {\n        success: true,\n        message: `成功保存 ${apiData.successCount} 个API配置，失败 ${apiData.errorCount} 个`,\n        timestamp: apiData.timestamp,\n        totalCount: apiData.totalCount,\n        successCount: apiData.successCount,\n        errorCount: apiData.errorCount,\n        errors: apiData.errors\n    };\n    \n    // 添加CORS头部\n    if (msg._cors && msg._cors.headers) {\n        msg.headers = { ...msg._cors.headers, 'Content-Type': 'application/json' };\n    }\n    \n    // 清除临时数据\n    delete msg._apiData;\n    \n    return [msg, null]; // 发送到第一个输出，返回最终结果\n}\n\n// 准备当前批次的SQL语句\nlet sqlValues = [];\nlet params = [];\n\n// 构建批量插入的VALUES部分\nfor (let i = startIndex; i < endIndex; i++) {\n    const apiKey = apiKeys[i];\n    const apiConfig = apiConfigs[apiKey];\n    \n    // 将API配置转换为JSON字符串\n    const configJson = JSON.stringify(apiConfig);\n    \n    // 添加参数\n    params.push(\n        apiKey,\n        apiConfig.name || '',\n        apiConfig.url || '',\n        apiConfig.method || '',\n        apiConfig.category || '',\n        apiConfig.status || 'enabled',\n        apiConfig.description || '',\n        configJson,\n        apiData.timestamp\n    );\n    \n    // 添加占位符\n    sqlValues.push('(?, ?, ?, ?, ?, ?, ?, ?, ?)');\n}\n\n// 构建完整的SQL语句\nmsg.topic = `REPLACE INTO api_configs \n            (api_key, name, url, method, category, status, description, config_json, timestamp) \n            VALUES ${sqlValues.join(', ')}`;\n\n// 设置参数\nmsg.payload = params;\n\n// 设置MySQL节点需要的特殊属性\nmsg.queryType = \"prepared\";\n\n// 更新批次计数\napiData.currentBatch++;\n\n// 添加调试信息\nnode.warn({\n    action: 'prepare_batch',\n    currentBatch: apiData.currentBatch,\n    totalBatches: Math.ceil(apiKeys.length / batchSize),\n    startIndex: startIndex,\n    endIndex: endIndex,\n    progress: `${endIndex}/${apiKeys.length}`\n});\n\nreturn [null, msg]; // 发送到第二个输出，继续处理",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1120,
+        "y": 80,
+        "wires": [
+            [
+                "api-configs-save-http-response"
+            ],
+            [
+                "api-configs-execute-batch"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-execute-batch",
+        "type": "mysql",
+        "z": "api-configs-individual-flow",
+        "mydb": "api_db_config",
+        "name": "执行批量保存",
+        "x": 1320,
+        "y": 120,
+        "wires": [
+            [
+                "api-configs-process-batch-result"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-process-batch-result",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "处理批量结果",
+        "func": "// 获取之前保存的API数据\nconst apiData = msg._apiData;\nconst batchSize = apiData.batchSize;\nconst currentBatch = apiData.currentBatch - 1; // 当前已处理的批次\nconst startIndex = currentBatch * batchSize;\nlet endIndex = startIndex + batchSize;\n\n// 确保不超出数组范围\nif (endIndex > apiData.apiKeys.length) {\n    endIndex = apiData.apiKeys.length;\n}\n\n// 检查操作是否成功\nif (msg.payload && msg.payload.affectedRows > 0) {\n    // 更新成功计数\n    apiData.successCount += (endIndex - startIndex);\n} else {\n    // 更新失败计数\n    apiData.errorCount += (endIndex - startIndex);\n    \n    // 记录失败的API\n    for (let i = startIndex; i < endIndex; i++) {\n        apiData.errors.push({\n            apiKey: apiData.apiKeys[i],\n            error: 'MySQL操作未影响任何行'\n        });\n    }\n}\n\n// 添加调试信息\nnode.warn({\n    action: 'process_batch_result',\n    currentBatch: currentBatch + 1,\n    totalBatches: Math.ceil(apiData.apiKeys.length / batchSize),\n    successCount: apiData.successCount,\n    errorCount: apiData.errorCount,\n    progress: `${endIndex}/${apiData.apiKeys.length}`\n});\n\n// 继续处理下一批\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1520,
+        "y": 120,
+        "wires": [
+            [
+                "api-configs-prepare-batch"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-save-http-response",
+        "type": "http response",
+        "z": "api-configs-individual-flow",
+        "name": "返回保存结果",
+        "statusCode": "",
+        "headers": {},
+        "x": 1320,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "api-configs-get",
+        "type": "http in",
+        "z": "api-configs-individual-flow",
+        "name": "获取API配置",
+        "url": "/api/api-configs/get",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 180,
+        "wires": [
+            [
+                "api-configs-get-cors-middleware"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-get-cors-middleware",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "CORS中间件",
+        "func": "// 设置CORS头部\nif (msg.req.method === 'OPTIONS') {\n    // 处理OPTIONS预检请求\n    msg.headers = {\n        'Access-Control-Allow-Origin': '*',\n        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',\n        'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization',\n        'Access-Control-Max-Age': '3600',\n        'Content-Length': '0'\n    };\n    msg.statusCode = 204;\n    msg.payload = '';\n    return [msg, null]; // 发送到第一个输出，跳过后续处理\n}\n\n// 为所有响应添加CORS头部\nmsg._cors = {\n    headers: {\n        'Access-Control-Allow-Origin': '*',\n        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',\n        'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization'\n    }\n};\n\n// 继续正常处理\nreturn [null, msg]; // 发送到第二个输出，继续处理",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 180,
+        "wires": [
+            [
+                "api-configs-cors-response"
+            ],
+            [
+                "api-configs-get-function"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-get-function",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "准备查询",
+        "func": "// 准备SQL查询 - 获取所有API配置\nmsg.topic = 'SELECT * FROM api_configs ORDER BY api_key';\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 520,
+        "y": 180,
+        "wires": [
+            [
+                "api-configs-execute-get"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-execute-get",
+        "type": "mysql",
+        "z": "api-configs-individual-flow",
+        "mydb": "api_db_config",
+        "name": "执行查询",
+        "x": 720,
+        "y": 180,
+        "wires": [
+            [
+                "api-configs-get-response"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-get-response",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "准备响应",
+        "func": "// 检查是否有结果\nif (!msg.payload || msg.payload.length === 0) {\n    msg.payload = {\n        success: false,\n        message: '未找到API配置'\n    };\n    \n    // 添加CORS头部\n    if (msg._cors && msg._cors.headers) {\n        msg.headers = { ...msg._cors.headers, 'Content-Type': 'application/json' };\n    }\n    \n    return msg;\n}\n\n// 将结果转换为前端期望的格式\nconst apiConfigs = {};\nlet timestamp = '';\n\n// 处理每个API配置\nmsg.payload.forEach(row => {\n    try {\n        // 解析JSON字符串\n        const config = JSON.parse(row.config_json);\n        \n        // 将API配置添加到结果对象中\n        apiConfigs[row.api_key] = config;\n        \n        // 使用第一个记录的时间戳作为整体时间戳\n        if (!timestamp) {\n            timestamp = row.timestamp;\n        }\n    } catch (error) {\n        // 忽略解析错误的记录\n        console.error(`解析API配置失败: ${row.api_key}`, error);\n    }\n});\n\n// 返回API配置\nmsg.payload = {\n    success: true,\n    message: `成功获取 ${Object.keys(apiConfigs).length} 个API配置`,\n    timestamp: timestamp,\n    data: apiConfigs\n};\n\n// 添加CORS头部\nif (msg._cors && msg._cors.headers) {\n    msg.headers = { ...msg._cors.headers, 'Content-Type': 'application/json' };\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 920,
+        "y": 180,
+        "wires": [
+            [
+                "api-configs-get-http-response"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-get-http-response",
+        "type": "http response",
+        "z": "api-configs-individual-flow",
+        "name": "返回API配置",
+        "statusCode": "",
+        "headers": {},
+        "x": 1120,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "api-configs-delete",
+        "type": "http in",
+        "z": "api-configs-individual-flow",
+        "name": "删除API配置",
+        "url": "/api/api-configs/delete",
+        "method": "delete",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 240,
+        "wires": [
+            [
+                "api-configs-delete-cors-middleware"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-delete-cors-middleware",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "CORS中间件",
+        "func": "// 设置CORS头部\nif (msg.req.method === 'OPTIONS') {\n    // 处理OPTIONS预检请求\n    msg.headers = {\n        'Access-Control-Allow-Origin': '*',\n        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',\n        'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization',\n        'Access-Control-Max-Age': '3600',\n        'Content-Length': '0'\n    };\n    msg.statusCode = 204;\n    msg.payload = '';\n    return [msg, null]; // 发送到第一个输出，跳过后续处理\n}\n\n// 为所有响应添加CORS头部\nmsg._cors = {\n    headers: {\n        'Access-Control-Allow-Origin': '*',\n        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',\n        'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization'\n    }\n};\n\n// 继续正常处理\nreturn [null, msg]; // 发送到第二个输出，继续处理",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 240,
+        "wires": [
+            [
+                "api-configs-cors-response"
+            ],
+            [
+                "api-configs-delete-function"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-delete-function",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "准备删除",
+        "func": "// 准备SQL查询 - 删除所有API配置\nmsg.topic = 'DELETE FROM api_configs';\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 520,
+        "y": 240,
+        "wires": [
+            [
+                "api-configs-execute-delete"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-execute-delete",
+        "type": "mysql",
+        "z": "api-configs-individual-flow",
+        "mydb": "api_db_config",
+        "name": "执行删除",
+        "x": 720,
+        "y": 240,
+        "wires": [
+            [
+                "api-configs-delete-response"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-delete-response",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "准备响应",
+        "func": "// 返回成功响应\nmsg.payload = {\n    success: true,\n    message: '成功删除API配置',\n    timestamp: new Date().toISOString(),\n    affectedRows: msg.payload.affectedRows || 0\n};\n\n// 添加CORS头部\nif (msg._cors && msg._cors.headers) {\n    msg.headers = { ...msg._cors.headers, 'Content-Type': 'application/json' };\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 920,
+        "y": 240,
+        "wires": [
+            [
+                "api-configs-delete-http-response"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-delete-http-response",
+        "type": "http response",
+        "z": "api-configs-individual-flow",
+        "name": "返回删除结果",
+        "statusCode": "",
+        "headers": {},
+        "x": 1120,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "api-configs-error-handler",
+        "type": "catch",
+        "z": "api-configs-individual-flow",
+        "name": "错误处理",
+        "scope": null,
+        "uncaught": false,
+        "x": 120,
+        "y": 300,
+        "wires": [
+            [
+                "api-configs-error-debug",
+                "api-configs-error-response"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-error-debug",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "错误信息",
+        "active": true,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": false,
+        "complete": "error",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 320,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "api-configs-error-response",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "准备错误响应",
+        "func": "// 准备错误响应\nmsg.payload = {\n    success: false,\n    message: '操作失败',\n    error: msg.error ? msg.error.message || String(msg.error) : '未知错误'\n};\n\n// 添加CORS头部\nmsg.headers = {\n    'Content-Type': 'application/json',\n    'Access-Control-Allow-Origin': '*',\n    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',\n    'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization'\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 340,
+        "wires": [
+            [
+                "api-configs-error-http-response"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-error-http-response",
+        "type": "http response",
+        "z": "api-configs-individual-flow",
+        "name": "返回错误结果",
+        "statusCode": "500",
+        "headers": {},
+        "x": 520,
+        "y": 340,
+        "wires": []
+    }
+]
