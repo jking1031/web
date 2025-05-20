@@ -994,7 +994,7 @@ const QueryTool = () => {
         </DialogTitle>
         <DialogContent>
           <Grid container spacing={2}>
-            <Grid item xs={12}>
+            <Grid sx={{ gridColumn: 'span 12' }}>
               <TextField
                 label="连接名称"
                 fullWidth
@@ -1005,7 +1005,7 @@ const QueryTool = () => {
                 margin="normal"
               />
             </Grid>
-            <Grid item xs={12} sm={8}>
+            <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 8' } }}>
               <TextField
                 label="主机地址"
                 fullWidth
@@ -1016,7 +1016,7 @@ const QueryTool = () => {
                 margin="normal"
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 4' } }}>
               <TextField
                 label="端口"
                 fullWidth
@@ -1028,7 +1028,7 @@ const QueryTool = () => {
                 margin="normal"
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid sx={{ gridColumn: 'span 12' }}>
               <TextField
                 label="数据库名称"
                 fullWidth
@@ -1039,7 +1039,7 @@ const QueryTool = () => {
                 margin="normal"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
               <TextField
                 label="用户名"
                 fullWidth
@@ -1050,7 +1050,7 @@ const QueryTool = () => {
                 margin="normal"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
               <TextField
                 label="密码"
                 fullWidth
@@ -1060,7 +1060,7 @@ const QueryTool = () => {
                 margin="normal"
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid sx={{ gridColumn: 'span 12' }}>
               <FormControlLabel
                 control={
                   <Switch
@@ -1120,7 +1120,7 @@ const QueryTool = () => {
         </DialogTitle>
         <DialogContent>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
+            <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
               <TextField
                 label="参数名称"
                 fullWidth
@@ -1131,7 +1131,7 @@ const QueryTool = () => {
                 margin="normal"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
               <FormControl fullWidth margin="normal" error={!!paramFormErrors.type}>
                 <InputLabel id="param-type-label">参数类型</InputLabel>
                 <Select
@@ -1147,7 +1147,7 @@ const QueryTool = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12}>
+            <Grid sx={{ gridColumn: 'span 12' }}>
               <TextField
                 label="默认值"
                 fullWidth

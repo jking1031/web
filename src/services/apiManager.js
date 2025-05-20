@@ -20,6 +20,8 @@ class ApiManager {
     this.fieldManager = apiFieldManager;
     this.variableManager = apiVariableManager;
     this.docGenerator = apiDocGenerator;
+    this.isInitialized = false;
+    this.isInitializing = false;
 
     // 常量
     this.API_EVENTS = API_EVENTS;
@@ -32,33 +34,93 @@ class ApiManager {
     this.VARIABLE_TYPES = VARIABLE_TYPES;
     this.DOC_FORMATS = DOC_FORMATS;
 
-    // 初始化
-    this.init();
+    // 自动初始化（异步）
+    this.initPromise = this.init();
   }
 
   /**
    * 初始化
+   * @returns {Promise<boolean>} 初始化结果
    */
-  init() {
-    // 注册默认 API
-    this.registerDefaultApis();
+  async init() {
+    // 防止重复初始化
+    if (this.isInitialized) {
+      return true;
+    }
 
-    // 注册事件监听
-    this.registry.eventEmitter.addEventListener(API_EVENTS.REGISTERED, this.handleApiRegistered.bind(this));
-    this.registry.eventEmitter.addEventListener(API_EVENTS.UPDATED, this.handleApiUpdated.bind(this));
-    this.registry.eventEmitter.addEventListener(API_EVENTS.REMOVED, this.handleApiRemoved.bind(this));
+    if (this.isInitializing) {
+      // 如果已经在初始化中，等待初始化完成
+      return this.initPromise;
+    }
+
+    this.isInitializing = true;
+
+    try {
+      console.log('API管理器开始初始化...');
+
+      // 等待API注册中心初始化完成（从后端加载配置）
+      await this.registry.waitForReady();
+
+      // 注册默认 API（只有在没有API配置时才会执行）
+      await this.registerDefaultApis();
+
+      // 注册事件监听
+      this.registry.eventEmitter.addEventListener(API_EVENTS.REGISTERED, this.handleApiRegistered.bind(this));
+      this.registry.eventEmitter.addEventListener(API_EVENTS.UPDATED, this.handleApiUpdated.bind(this));
+      this.registry.eventEmitter.addEventListener(API_EVENTS.REMOVED, this.handleApiRemoved.bind(this));
+
+      this.isInitialized = true;
+      this.isInitializing = false;
+      console.log('API管理器初始化完成');
+      return true;
+    } catch (error) {
+      console.error('API管理器初始化失败:', error);
+      this.isInitializing = false;
+      return false;
+    }
+  }
+
+  /**
+   * 等待API管理器初始化完成
+   * @param {number} timeout 超时时间（毫秒），默认为10000
+   * @returns {Promise<boolean>} 初始化是否成功
+   */
+  async waitForReady(timeout = 10000) {
+    if (this.isInitialized) {
+      return true;
+    }
+
+    // 如果已经有初始化Promise，直接返回
+    if (this.initPromise) {
+      try {
+        return await Promise.race([
+          this.initPromise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('初始化超时')), timeout))
+        ]);
+      } catch (error) {
+        console.error('等待API管理器初始化超时:', error);
+        return false;
+      }
+    }
+
+    // 如果没有初始化，开始初始化
+    return this.init();
   }
 
   /**
    * 注册默认 API
+   * @returns {Promise<boolean>} 操作是否成功
    */
-  registerDefaultApis() {
+  async registerDefaultApis() {
     // 检查是否已经注册了默认 API
     if (Object.keys(this.registry.getAll()).length > 0) {
       // 确保趋势数据API已注册
-      this.registerTrendApis();
-      return;
+      await this.registerTrendApis();
+      console.log('API配置已存在，跳过默认API注册');
+      return true;
     }
+
+    console.log('没有找到API配置，注册默认API...');
 
     // 注册认证相关 API
     this.registry.register('login', {
@@ -505,17 +567,102 @@ class ApiManager {
       }
     });
 
+    // 注册告警相关API
+    this.registry.register('getAlarms', {
+      name: '获取告警信息',
+      url: '/api/alarms',
+      method: API_METHODS.GET,
+      category: API_CATEGORIES.SYSTEM,
+      status: API_STATUS.ENABLED,
+      description: '获取站点告警信息',
+      timeout: 10000,
+      retries: 1,
+      cacheTime: 30000, // 30秒缓存
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    // 注册获取站点详情API
+    this.registry.register('getSiteById', {
+      name: '获取站点详情',
+      url: 'https://nodered.jzz77.cn:9003/api/site/sites/:id',
+      method: API_METHODS.GET,
+      category: API_CATEGORIES.SYSTEM,
+      status: API_STATUS.ENABLED,
+      description: '获取站点详情信息',
+      timeout: 10000,
+      retries: 1,
+      cacheTime: 60000, // 60秒缓存
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      // 添加参数处理函数，确保URL中的:id被正确替换
+      paramsProcessor: (params) => {
+        const processedParams = { ...params };
+        const url = 'https://nodered.jzz77.cn:9003/api/site/sites/' + params.id;
+        return { url, params: {} };
+      }
+    });
+
+    // 注册获取用户角色API
+    this.registry.register('getUserRoles', {
+      name: '获取用户角色',
+      url: 'https://nodered.jzz77.cn:9003/api/users/:userId/roles',
+      method: API_METHODS.GET,
+      category: API_CATEGORIES.SYSTEM,
+      status: API_STATUS.ENABLED,
+      description: '获取用户角色信息',
+      timeout: 10000,
+      retries: 1,
+      cacheTime: 300000, // 5分钟缓存
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      // 添加参数处理函数，确保URL中的:userId被正确替换
+      paramsProcessor: (params) => {
+        const processedParams = { ...params };
+        const url = 'https://nodered.jzz77.cn:9003/api/users/' + params.userId + '/roles';
+        return { url, params: {} };
+      }
+    });
+
+    // 注册获取告警信息API
+    this.registry.register('getAlarms', {
+      name: '获取告警信息',
+      url: 'https://nodered.jzz77.cn:9003/api/site/alarms/:siteId',
+      method: API_METHODS.GET,
+      category: API_CATEGORIES.SYSTEM,
+      status: API_STATUS.ENABLED,
+      description: '获取站点告警信息',
+      timeout: 10000,
+      retries: 1,
+      cacheTime: 60000, // 1分钟缓存
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      // 添加参数处理函数，确保URL中的:siteId被正确替换
+      paramsProcessor: (params) => {
+        const processedParams = { ...params };
+        const url = 'https://nodered.jzz77.cn:9003/api/site/alarms/' + params.siteId;
+        return { url, params: {} };
+      }
+    });
+
     // 注册趋势数据相关API
     this.registerTrendApis();
   }
 
   /**
    * 注册趋势数据相关API
+   * @returns {Promise<boolean>} 操作是否成功
    */
-  registerTrendApis() {
+  async registerTrendApis() {
+    console.log('检查并注册趋势数据相关API...');
+
     // 注册历史趋势数据API
     if (!this.registry.get('getTrendData')) {
-      this.registry.register('getTrendData', {
+      await this.registry.register('getTrendData', {
         name: '获取趋势数据',
         url: '/api/trend-data',
         method: API_METHODS.POST,
@@ -533,7 +680,7 @@ class ApiManager {
 
     // 注册实时趋势数据API
     if (!this.registry.get('getRealtimeTrendData')) {
-      this.registry.register('getRealtimeTrendData', {
+      await this.registry.register('getRealtimeTrendData', {
         name: '获取实时趋势数据',
         url: '/api/realtime-trend-data',
         method: API_METHODS.POST,
@@ -551,7 +698,7 @@ class ApiManager {
 
     // 注册自定义查询API
     if (!this.registry.get('customQuery')) {
-      this.registry.register('customQuery', {
+      await this.registry.register('customQuery', {
         name: '自定义数据查询',
         url: '/api/custom-query',
         method: API_METHODS.POST,
@@ -594,6 +741,9 @@ class ApiManager {
         }
       });
     }
+
+    console.log('趋势数据相关API检查完成');
+    return true;
   }
 
   /**

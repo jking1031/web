@@ -66,7 +66,7 @@ const Login = () => {
 
         // 调用登录函数存储用户信息
         await login(defaultAdminUser);
-        
+
         // 检查管理员权限
         await checkAdminStatus();
 
@@ -91,19 +91,51 @@ const Login = () => {
     try {
       // 调用登录API，通过API管理器调用
       console.log('第一步：调用登录API获取用户基本信息');
+      console.log('登录请求参数:', { email: values.email, password: '******' });
+
       const response = await apiService.callApi('login', {
         email: values.email,
         password: values.password
       });
 
-      const loginResponse = response;
+      // 添加详细日志，打印完整的API响应
+      console.log('登录API响应:', response);
+      console.log('登录API响应类型:', typeof response);
+      console.log('登录API响应JSON:', JSON.stringify(response, null, 2));
 
-      if (!loginResponse || !loginResponse.user) {
-        throw new Error(loginResponse?.message || '登录响应数据无效');
+      // 处理嵌套的响应结构
+      let userInfo;
+
+      // 检查响应结构
+      if (response && response.data && response.data.user) {
+        // 新的API响应结构: { success: true, data: { user: {...} } }
+        userInfo = response.data.user;
+        console.log('从嵌套的data.user中获取用户信息:', userInfo);
+      } else if (response && response.user) {
+        // 旧的API响应结构: { user: {...} }
+        userInfo = response.user;
+        console.log('从直接的user字段获取用户信息:', userInfo);
+      } else {
+        // 无效的响应结构
+        console.error('登录响应验证失败:', {
+          hasResponse: !!response,
+          responseKeys: response ? Object.keys(response) : null,
+          hasData: !!(response && response.data),
+          dataKeys: (response && response.data) ? Object.keys(response.data) : null,
+          message: response?.message || response?.data?.message
+        });
+        throw new Error(response?.message || response?.data?.message || '登录响应数据无效');
       }
 
-      // 获取用户信息
-      const userInfo = loginResponse.user;
+      // 此时userInfo已经正确获取
+
+      // 获取token信息（如果存在）
+      const token = response?.data?.token;
+      if (token) {
+        // 如果token在响应中，添加到userInfo中
+        userInfo.token = token;
+        console.log('从响应中获取到token并添加到userInfo');
+      }
 
       // 检查所有可能的管理员相关字段
       const adminRelatedFields = [
@@ -143,11 +175,30 @@ const Login = () => {
     } catch (error) {
       console.error('登录失败:', error);
 
+      // 添加更详细的错误日志
+      console.error('登录错误详情:', {
+        errorName: error.name,
+        errorMessage: error.message,
+        errorStack: error.stack,
+        hasResponse: !!error.response,
+        hasRequest: !!error.request
+      });
+
+      if (error.response) {
+        console.error('服务器响应错误:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+      }
+
       let errorMessage = '登录失败';
       if (error.response) {
         errorMessage = error.response.data?.message || '服务器返回错误，请稍后重试';
       } else if (error.request) {
         errorMessage = '网络连接失败，请检查网络设置';
+        console.error('网络请求错误:', error.request);
       } else {
         errorMessage = error.message || '登录过程中发生错误，请重试';
       }

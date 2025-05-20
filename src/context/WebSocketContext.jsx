@@ -118,6 +118,9 @@ export const WebSocketProvider = ({ children }) => {
       // 添加时间戳和随机数，避免缓存问题
       const wsUrl = `${WS_BASE_URL}/device${siteId}?t=${Date.now()}&client=web`;
       console.log('连接WebSocket:', wsUrl);
+      console.log('WebSocket基础URL:', WS_BASE_URL);
+      console.log('站点ID:', siteId);
+      console.log('当前环境:', import.meta.env.DEV ? '开发环境' : '生产环境');
 
       const socket = new WebSocket(wsUrl);
 
@@ -161,19 +164,32 @@ export const WebSocketProvider = ({ children }) => {
 
       socket.onmessage = (event) => {
         try {
-          const data = JSON.parse(event.data);
+          console.log('收到原始WebSocket消息:', event.data);
+
+          // 尝试解析消息
+          let data;
+          try {
+            data = JSON.parse(event.data);
+          } catch (parseError) {
+            console.error('解析WebSocket消息失败:', parseError);
+            // 如果解析失败，直接传递原始消息
+            setLastMessage(event.data);
+            return;
+          }
 
           // 保存最后一条消息
           setLastMessage(data);
 
           // 处理心跳响应
           if (data.type === 'pong') {
+            console.log('收到心跳响应');
             return;
           }
 
           // 其他消息类型在使用WebSocket的组件中处理
+          console.log('收到WebSocket消息类型:', data.type);
         } catch (error) {
-          console.error('解析WebSocket消息失败:', error);
+          console.error('处理WebSocket消息失败:', error);
         }
       };
 
@@ -235,16 +251,24 @@ export const WebSocketProvider = ({ children }) => {
   // 发送WebSocket消息
   const sendMessage = useCallback((message) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      console.error('WebSocket未连接，无法发送消息');
+      console.error('WebSocket未连接，无法发送消息', {
+        wsRef: wsRef.current ? '已创建' : '未创建',
+        readyState: wsRef.current ? wsRef.current.readyState : 'N/A',
+        activeSiteId
+      });
       return Promise.reject(new Error('WebSocket未连接'));
     }
 
     try {
-      wsRef.current.send(JSON.stringify({
+      const fullMessage = {
         ...message,
         siteId: activeSiteId,
         timestamp: Date.now()
-      }));
+      };
+
+      console.log('发送WebSocket消息:', JSON.stringify(fullMessage, null, 2));
+
+      wsRef.current.send(JSON.stringify(fullMessage));
       return Promise.resolve();
     } catch (error) {
       console.error('发送WebSocket消息失败:', error);

@@ -290,7 +290,7 @@ const Dashboard = () => {
 
       <Grid container spacing={3}>
         {/* 月度生产统计 */}
-        <Grid item xs={12} md={8}>
+        <Grid sx={{ gridColumn: { xs: 'span 12', md: 'span 8' } }}>
           <Card className={styles.card}>
             <CardHeader
               title="月度生产统计"
@@ -322,7 +322,7 @@ const Dashboard = () => {
         </Grid>
 
         {/* 设备状态 */}
-        <Grid item xs={12} md={4}>
+        <Grid sx={{ gridColumn: { xs: 'span 12', md: 'span 4' } }}>
           <Card className={styles.card}>
             <CardHeader
               title="设备状态"
@@ -357,7 +357,7 @@ const Dashboard = () => {
         </Grid>
 
         {/* 实时趋势 */}
-        <Grid item xs={12}>
+        <Grid sx={{ gridColumn: 'span 12' }}>
           <Card className={styles.card}>
             <CardHeader
               title="实时趋势"
@@ -387,7 +387,7 @@ const Dashboard = () => {
         </Grid>
 
         {/* 告警信息 */}
-        <Grid item xs={12}>
+        <Grid sx={{ gridColumn: 'span 12' }}>
           <Card className={styles.card}>
             <CardHeader
               title="告警信息"

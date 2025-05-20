@@ -75,17 +75,50 @@ export default defineConfig(({ command }) => {
           import('connect-history-api-fallback').then(({ default: history }) => {
             server.middlewares.use(
               history({
-                // 不处理API请求
+                // 不处理API请求和静态资源
                 rewrites: [
                   {
+                    // 不处理API请求
                     from: /^\/api\/.*$/,
+                    to: function(context) {
+                      return context.parsedUrl.pathname;
+                    }
+                  },
+                  {
+                    // 不处理auth-api请求
+                    from: /^\/auth-api\/.*$/,
+                    to: function(context) {
+                      return context.parsedUrl.pathname;
+                    }
+                  },
+                  {
+                    // 不处理admin-api请求
+                    from: /^\/admin-api\/.*$/,
+                    to: function(context) {
+                      return context.parsedUrl.pathname;
+                    }
+                  },
+                  {
+                    // 不处理ws请求
+                    from: /^\/ws\/.*$/,
+                    to: function(context) {
+                      return context.parsedUrl.pathname;
+                    }
+                  },
+                  {
+                    // 不处理静态资源
+                    from: /^.*\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/,
                     to: function(context) {
                       return context.parsedUrl.pathname;
                     }
                   }
                 ],
                 // 调试日志
-                verbose: true
+                verbose: true,
+                // 禁用对URL中包含点的请求的处理（通常是静态资源）
+                disableDotRule: true,
+                // 始终返回index.html
+                index: '/index.html'
               })
             );
             console.log('History API fallback middleware enabled for development');

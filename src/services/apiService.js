@@ -14,34 +14,61 @@ class ApiService {
    */
   async callApi(apiKey, params = {}, options = {}) {
     try {
+      console.log(`[ApiService] 开始调用API: ${apiKey}`, {
+        params: apiKey === 'login' ? { ...params, password: '******' } : params,
+        options
+      });
+
       // 检查API是否存在
       if (apiManager.registry.get(apiKey) === null) {
+        console.error(`[ApiService] API不存在: ${apiKey}`);
         throw new Error(`API不存在: ${apiKey}`);
       }
-      
+
       // 获取API配置
       const apiConfig = apiManager.registry.get(apiKey);
-      
+      console.log(`[ApiService] API配置: ${apiKey}`, {
+        url: apiConfig.url,
+        method: apiConfig.method,
+        enabled: apiConfig.enabled,
+        timeout: apiConfig.timeout
+      });
+
       // 检查API是否启用
       if (apiConfig.enabled === false) {
+        console.error(`[ApiService] API已禁用: ${apiKey}`);
         throw new Error(`API已禁用: ${apiKey}`);
       }
-      
+
       // 合并选项
       const mergedOptions = {
         ...apiConfig,
         ...options
       };
-      
+
       // 调用API
+      console.log(`[ApiService] 执行API调用: ${apiKey}`);
       const response = await apiManager.call(apiKey, params, mergedOptions);
+      console.log(`[ApiService] API调用成功: ${apiKey}`, {
+        responseType: typeof response,
+        responseKeys: response ? Object.keys(response) : null
+      });
+
       return response;
     } catch (error) {
-      console.error(`调用API失败: ${apiKey}`, error);
+      console.error(`[ApiService] 调用API失败: ${apiKey}`, error);
+      console.error(`[ApiService] 错误详情:`, {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        hasResponse: !!error.response,
+        hasRequest: !!error.request
+      });
+
       throw error;
     }
   }
-  
+
   /**
    * 批量调用多个API
    * @param {Array<{key: string, params: object, options: object}>} apiCalls - API调用配置数组
@@ -52,12 +79,12 @@ class ApiService {
     try {
       if (parallel) {
         // 并行调用
-        const promises = apiCalls.map(call => 
+        const promises = apiCalls.map(call =>
           this.callApi(call.key, call.params || {}, call.options || {})
             .then(response => ({ key: call.key, response, error: null }))
             .catch(error => ({ key: call.key, response: null, error }))
         );
-        
+
         return await Promise.all(promises);
       } else {
         // 串行调用
@@ -77,7 +104,7 @@ class ApiService {
       throw error;
     }
   }
-  
+
   /**
    * 创建API调用函数
    * @param {string} apiKey - API键名
@@ -86,7 +113,7 @@ class ApiService {
   createApiCaller(apiKey) {
     return (params = {}, options = {}) => this.callApi(apiKey, params, options);
   }
-  
+
   /**
    * 获取API配置
    * @param {string} apiKey - API键名
@@ -103,7 +130,7 @@ class ApiService {
       return null;
     }
   }
-  
+
   /**
    * 获取所有API配置
    * @param {string} category - 可选的API分类过滤
@@ -112,11 +139,11 @@ class ApiService {
   getAllApiConfigs(category = null) {
     try {
       const allApis = apiManager.registry.getAll();
-      
+
       if (!category) {
         return allApis;
       }
-      
+
       // 按分类过滤
       const filteredApis = {};
       Object.entries(allApis).forEach(([key, config]) => {
@@ -124,7 +151,7 @@ class ApiService {
           filteredApis[key] = config;
         }
       });
-      
+
       return filteredApis;
     } catch (error) {
       console.error('获取所有API配置失败', error);

@@ -1,0 +1,476 @@
+[
+    {
+        "id": "api-configs-individual-flow",
+        "type": "tab",
+        "label": "API配置单条记录管理",
+        "disabled": false,
+        "info": "用于管理API配置的Node-RED流程，每个API作为单独的一条记录保存到MySQL数据库中",
+        "env": []
+    },
+    {
+        "id": "api-configs-save",
+        "type": "http in",
+        "z": "api-configs-individual-flow",
+        "name": "保存API配置",
+        "url": "/api/api-configs/save",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 80,
+        "wires": [
+            [
+                "api-configs-save-debug",
+                "api-configs-prepare-table"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-save-debug",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "请求数据",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 320,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "api-configs-prepare-table",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "准备创建表",
+        "func": "// 从请求中获取API配置数据\nconst apiConfigs = msg.payload.apiConfigs;\n\nif (!apiConfigs) {\n    msg.payload = {\n        success: false,\n        message: '未提供API配置'\n    };\n    return msg;\n}\n\n// 准备批量插入或更新的数据\nconst timestamp = new Date().toISOString();\nconst apiKeys = Object.keys(apiConfigs);\nconst totalCount = apiKeys.length;\n\n// 首先创建表（如果不存在）\n// 使用更合适的表结构，每个API是一条记录\nmsg.topic = `\nCREATE TABLE IF NOT EXISTS api_configs (\n    api_key VARCHAR(255) PRIMARY KEY,\n    name VARCHAR(255),\n    url TEXT,\n    method VARCHAR(50),\n    category VARCHAR(100),\n    status VARCHAR(50),\n    description TEXT,\n    config_json LONGTEXT,\n    timestamp VARCHAR(50),\n    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP\n);\n`;\n\n// 保存数据以便后续处理\nmsg._apiData = {\n    apiConfigs: apiConfigs,\n    apiKeys: apiKeys,\n    timestamp: timestamp,\n    totalCount: totalCount,\n    currentIndex: 0,\n    successCount: 0,\n    errorCount: 0,\n    errors: []\n};\n\n// 添加调试信息\nnode.warn({\n    action: 'create_table',\n    totalApis: totalCount,\n    timestamp: timestamp\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 80,
+        "wires": [
+            [
+                "api-configs-create-table"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-create-table",
+        "type": "mysql",
+        "z": "api-configs-individual-flow",
+        "mydb": "api_db_config",
+        "name": "创建表",
+        "x": 520,
+        "y": 80,
+        "wires": [
+            [
+                "api-configs-process-single"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-process-single",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "处理单个API",
+        "func": "// 获取之前保存的API数据\nconst apiData = msg._apiData;\nconst apiConfigs = apiData.apiConfigs;\nconst apiKeys = apiData.apiKeys;\nconst currentIndex = apiData.currentIndex;\n\n// 检查是否已处理完所有API\nif (currentIndex >= apiKeys.length) {\n    // 所有API已处理完毕，返回结果\n    msg.payload = {\n        success: true,\n        message: `成功保存 ${apiData.successCount} 个API配置，失败 ${apiData.errorCount} 个`,\n        timestamp: apiData.timestamp,\n        totalCount: apiData.totalCount,\n        successCount: apiData.successCount,\n        errorCount: apiData.errorCount,\n        errors: apiData.errors\n    };\n    \n    // 清除临时数据\n    delete msg._apiData;\n    \n    // 设置标志，表示这是最终结果\n    msg._finalResult = true;\n    \n    return [msg, null]; // 发送到第一个输出，跳过MySQL节点\n}\n\n// 获取当前要处理的API\nconst apiKey = apiKeys[currentIndex];\nconst apiConfig = apiConfigs[apiKey];\n\n// 准备下一个索引\napiData.currentIndex++;\n\n// 将API配置转换为JSON字符串\nconst configJson = JSON.stringify(apiConfig);\n\n// 使用REPLACE INTO语句（自动处理插入或更新）\nmsg.topic = \"REPLACE INTO api_configs (api_key, name, url, method, category, status, description, config_json, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)\";\n\n// 设置参数\nmsg.payload = [\n    apiKey,\n    apiConfig.name || '',\n    apiConfig.url || '',\n    apiConfig.method || '',\n    apiConfig.category || '',\n    apiConfig.status || 'enabled',\n    apiConfig.description || '',\n    configJson,\n    apiData.timestamp\n];\n\n// 设置MySQL节点需要的特殊属性\nmsg.queryType = \"prepared\";\n\n// 添加调试信息\nnode.warn({\n    action: 'save_api',\n    apiKey: apiKey,\n    currentIndex: currentIndex,\n    totalApis: apiKeys.length,\n    progress: `${currentIndex + 1}/${apiKeys.length}`\n});\n\nreturn [null, msg]; // 发送到第二个输出，继续处理",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 720,
+        "y": 80,
+        "wires": [
+            [
+                "api-configs-save-response"
+            ],
+            [
+                "api-configs-save-single"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-save-single",
+        "type": "mysql",
+        "z": "api-configs-individual-flow",
+        "mydb": "api_db_config",
+        "name": "保存单个API",
+        "x": 920,
+        "y": 120,
+        "wires": [
+            [
+                "api-configs-process-result"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-process-result",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "处理结果并继续",
+        "func": "// 获取之前保存的API数据\nconst apiData = msg._apiData;\n\n// 检查操作是否成功\nif (msg.payload && msg.payload.affectedRows > 0) {\n    apiData.successCount++;\n} else {\n    apiData.errorCount++;\n    apiData.errors.push({\n        apiKey: apiData.apiKeys[apiData.currentIndex - 1],\n        error: 'MySQL操作未影响任何行'\n    });\n}\n\n// 创建新消息，继续处理下一个API\nconst newMsg = {\n    _apiData: apiData\n};\n\n// 添加调试信息\nnode.warn({\n    action: 'process_next',\n    currentIndex: apiData.currentIndex,\n    totalApis: apiData.apiKeys.length,\n    successCount: apiData.successCount,\n    errorCount: apiData.errorCount,\n    progress: `${apiData.currentIndex}/${apiData.apiKeys.length}`\n});\n\nreturn newMsg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1120,
+        "y": 120,
+        "wires": [
+            [
+                "api-configs-process-single"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-save-response",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "准备响应",
+        "func": "// 检查是否是最终结果\nif (!msg._finalResult) {\n    return null; // 不是最终结果，不发送响应\n}\n\n// 最终结果，发送响应\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 920,
+        "y": 80,
+        "wires": [
+            [
+                "api-configs-save-http-response"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-save-http-response",
+        "type": "http response",
+        "z": "api-configs-individual-flow",
+        "name": "返回保存结果",
+        "statusCode": "",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 1120,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "api-configs-get",
+        "type": "http in",
+        "z": "api-configs-individual-flow",
+        "name": "获取API配置",
+        "url": "/api/api-configs/get",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 180,
+        "wires": [
+            [
+                "api-configs-get-function"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-get-function",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "准备查询",
+        "func": "// 准备SQL查询 - 获取所有API配置\nmsg.topic = 'SELECT * FROM api_configs ORDER BY api_key';\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 180,
+        "wires": [
+            [
+                "api-configs-execute-get"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-execute-get",
+        "type": "mysql",
+        "z": "api-configs-individual-flow",
+        "mydb": "api_db_config",
+        "name": "执行查询",
+        "x": 520,
+        "y": 180,
+        "wires": [
+            [
+                "api-configs-get-response"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-get-response",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "准备响应",
+        "func": "// 检查是否有结果\nif (!msg.payload || msg.payload.length === 0) {\n    msg.payload = {\n        success: false,\n        message: '未找到API配置'\n    };\n    return msg;\n}\n\n// 将结果转换为前端期望的格式\nconst apiConfigs = {};\nlet timestamp = '';\n\n// 处理每个API配置\nmsg.payload.forEach(row => {\n    try {\n        // 解析JSON字符串\n        const config = JSON.parse(row.config_json);\n        \n        // 将API配置添加到结果对象中\n        apiConfigs[row.api_key] = config;\n        \n        // 使用第一个记录的时间戳作为整体时间戳\n        if (!timestamp) {\n            timestamp = row.timestamp;\n        }\n    } catch (error) {\n        // 忽略解析错误的记录\n        console.error(`解析API配置失败: ${row.api_key}`, error);\n    }\n});\n\n// 返回API配置\nmsg.payload = {\n    success: true,\n    message: `成功获取 ${Object.keys(apiConfigs).length} 个API配置`,\n    timestamp: timestamp,\n    data: apiConfigs\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 720,
+        "y": 180,
+        "wires": [
+            [
+                "api-configs-get-http-response"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-get-http-response",
+        "type": "http response",
+        "z": "api-configs-individual-flow",
+        "name": "返回API配置",
+        "statusCode": "",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 920,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "api-configs-delete",
+        "type": "http in",
+        "z": "api-configs-individual-flow",
+        "name": "删除API配置",
+        "url": "/api/api-configs/delete",
+        "method": "delete",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 240,
+        "wires": [
+            [
+                "api-configs-delete-function"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-delete-function",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "准备删除",
+        "func": "// 准备SQL查询 - 删除所有API配置\nmsg.topic = 'DELETE FROM api_configs';\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 240,
+        "wires": [
+            [
+                "api-configs-execute-delete"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-execute-delete",
+        "type": "mysql",
+        "z": "api-configs-individual-flow",
+        "mydb": "api_db_config",
+        "name": "执行删除",
+        "x": 520,
+        "y": 240,
+        "wires": [
+            [
+                "api-configs-delete-response"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-delete-response",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "准备响应",
+        "func": "// 返回成功响应\nmsg.payload = {\n    success: true,\n    message: '成功删除API配置',\n    timestamp: new Date().toISOString(),\n    affectedRows: msg.payload.affectedRows || 0\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 720,
+        "y": 240,
+        "wires": [
+            [
+                "api-configs-delete-http-response"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-delete-http-response",
+        "type": "http response",
+        "z": "api-configs-individual-flow",
+        "name": "返回删除结果",
+        "statusCode": "",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 920,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "api-configs-error-handler",
+        "type": "catch",
+        "z": "api-configs-individual-flow",
+        "name": "错误处理",
+        "scope": null,
+        "uncaught": false,
+        "x": 120,
+        "y": 300,
+        "wires": [
+            [
+                "api-configs-error-debug",
+                "api-configs-error-response"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-error-debug",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "错误信息",
+        "active": true,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": false,
+        "complete": "error",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 320,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "api-configs-error-response",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "准备错误响应",
+        "func": "// 准备错误响应\nmsg.payload = {\n    success: false,\n    message: '操作失败',\n    error: msg.error ? msg.error.message || String(msg.error) : '未知错误'\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 340,
+        "wires": [
+            [
+                "api-configs-error-http-response"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-error-http-response",
+        "type": "http response",
+        "z": "api-configs-individual-flow",
+        "name": "返回错误结果",
+        "statusCode": "500",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 520,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "api-configs-get-single",
+        "type": "http in",
+        "z": "api-configs-individual-flow",
+        "name": "获取单个API配置",
+        "url": "/api/api-configs/get/:apiKey",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 140,
+        "y": 400,
+        "wires": [
+            [
+                "api-configs-get-single-function"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-get-single-function",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "准备查询单个API",
+        "func": "// 获取API键名\nconst apiKey = msg.req.params.apiKey;\n\nif (!apiKey) {\n    msg.payload = {\n        success: false,\n        message: '未提供API键名'\n    };\n    return msg;\n}\n\n// 准备SQL查询 - 获取单个API配置\nmsg.topic = 'SELECT * FROM api_configs WHERE api_key = ?';\nmsg.payload = [apiKey];\n\n// 设置MySQL节点需要的特殊属性\nmsg.queryType = \"prepared\";\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 340,
+        "y": 400,
+        "wires": [
+            [
+                "api-configs-execute-get-single"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-execute-get-single",
+        "type": "mysql",
+        "z": "api-configs-individual-flow",
+        "mydb": "api_db_config",
+        "name": "执行查询单个API",
+        "x": 550,
+        "y": 400,
+        "wires": [
+            [
+                "api-configs-get-single-response"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-get-single-response",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "准备单个API响应",
+        "func": "// 检查是否有结果\nif (!msg.payload || msg.payload.length === 0) {\n    msg.payload = {\n        success: false,\n        message: '未找到指定的API配置'\n    };\n    return msg;\n}\n\n// 获取结果\nconst row = msg.payload[0];\n\n// 解析JSON字符串\nlet apiConfig;\ntry {\n    apiConfig = JSON.parse(row.config_json);\n} catch (error) {\n    msg.payload = {\n        success: false,\n        message: 'API配置解析失败',\n        error: error.message\n    };\n    return msg;\n}\n\n// 返回API配置\nmsg.payload = {\n    success: true,\n    message: `成功获取API配置: ${row.api_key}`,\n    timestamp: row.timestamp,\n    data: apiConfig\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 760,
+        "y": 400,
+        "wires": [
+            [
+                "api-configs-get-single-http-response"
+            ]
+        ]
+    },
+    {
+        "id": "api-configs-get-single-http-response",
+        "type": "http response",
+        "z": "api-configs-individual-flow",
+        "name": "返回单个API配置",
+        "statusCode": "",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 970,
+        "y": 400,
+        "wires": []
+    }
+]

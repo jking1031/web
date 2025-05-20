@@ -1,0 +1,31 @@
+.json-editor-container {
+  border: 1px solid #d9d9d9;
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+
+  .json-editor-error {
+    color: #ff4d4f;
+    margin-top: 8px;
+    font-size: 12px;
+  }
+
+  .json-editor-toolbar {
+    margin-top: 8px;
+    display: flex;
+    justify-content: flex-end;
+
+    .json-editor-button {
+      background-color: #1890ff;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 2px;
+      cursor: pointer;
+
+      &:hover {
+        background-color: #40a9ff;
+      }
+    }
+  }
+}

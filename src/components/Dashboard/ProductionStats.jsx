@@ -136,11 +136,29 @@ const ProductionStats = () => {
       }
 
       // 如果没有保存的字段配置，尝试调用API获取示例数据
-      const apiData = await apiManager.call(apiKey);
-      if (apiData && typeof apiData === 'object') {
-        // 从返回的数据中提取字段
-        const fields = Object.keys(apiData).map(key => {
-          const value = apiData[key];
+      const apiResponse = await apiManager.call(apiKey);
+      console.log(`API ${apiKey} 响应:`, apiResponse);
+
+      if (apiResponse && typeof apiResponse === 'object') {
+        // 尝试从不同的数据结构中提取字段
+        let dataToExtract = apiResponse;
+
+        // 如果响应中有data字段，优先使用data字段
+        if (apiResponse.data && typeof apiResponse.data === 'object') {
+          dataToExtract = apiResponse.data;
+        }
+        // 如果响应中有result字段，使用result字段
+        else if (apiResponse.result && typeof apiResponse.result === 'object') {
+          dataToExtract = apiResponse.result;
+        }
+        // 如果响应中有response字段，使用response字段
+        else if (apiResponse.response && typeof apiResponse.response === 'object') {
+          dataToExtract = apiResponse.response;
+        }
+
+        // 从数据中提取字段
+        const fields = Object.keys(dataToExtract).map(key => {
+          const value = dataToExtract[key];
           const type = typeof value;
 
           return {
@@ -153,6 +171,28 @@ const ProductionStats = () => {
             visible: true
           };
         });
+
+        // 如果从嵌套结构中提取的字段为空，尝试从原始响应中提取
+        if (fields.length === 0 && dataToExtract !== apiResponse) {
+          const originalFields = Object.keys(apiResponse).map(key => {
+            const value = apiResponse[key];
+            const type = typeof value;
+
+            return {
+              id: key,
+              key: key,
+              label: key,
+              type: type === 'number' ? 'number' : 'string',
+              unit: type === 'number' ? '' : null,
+              color: getRandomColor(),
+              visible: true
+            };
+          });
+
+          setApiFields(originalFields);
+          localStorage.setItem(`api_fields_${apiKey}`, JSON.stringify(originalFields));
+          return;
+        }
 
         setApiFields(fields);
 
@@ -184,11 +224,15 @@ const ProductionStats = () => {
       const apiCalls = [];
       const uniqueApis = [...new Set(cards.map(card => card.apiKey))];
 
+      console.log('[ProductionStats] 开始获取数据，卡片使用的API:', uniqueApis);
+
       // 为每个唯一的API创建一个调用
       for (const apiKey of uniqueApis) {
+        console.log(`[ProductionStats] 调用API: ${apiKey}`);
         apiCalls.push(
           apiManager.call(apiKey)
             .then(result => {
+              console.log(`[ProductionStats] API ${apiKey} 返回数据:`, result);
               newData[apiKey] = result;
             })
             .catch(error => {
@@ -200,6 +244,44 @@ const ProductionStats = () => {
 
       // 等待所有API调用完成
       await Promise.all(apiCalls);
+
+      console.log('[ProductionStats] 所有API调用完成，数据:', newData);
+
+      // 检查每个卡片是否能获取到数据
+      cards.forEach(card => {
+        const apiData = newData[card.apiKey];
+        if (!apiData) {
+          console.warn(`[ProductionStats] 卡片 ${card.title} 的API ${card.apiKey} 没有返回数据`);
+          return;
+        }
+
+        // 尝试获取字段值
+        let value;
+
+        // 1. 直接从响应中获取
+        value = apiData[card.fieldKey];
+
+        // 2. 如果没有找到，尝试从data字段中获取
+        if (value === undefined && apiData.data) {
+          value = apiData.data[card.fieldKey];
+        }
+
+        // 3. 如果还没有找到，尝试从result字段中获取
+        if (value === undefined && apiData.result) {
+          value = apiData.result[card.fieldKey];
+        }
+
+        // 4. 如果还没有找到，尝试从response字段中获取
+        if (value === undefined && apiData.response) {
+          value = apiData.response[card.fieldKey];
+        }
+
+        if (value === undefined || value === null) {
+          console.warn(`[ProductionStats] 卡片 ${card.title} 无法获取字段 ${card.fieldKey} 的值，API响应:`, apiData);
+        } else {
+          console.log(`[ProductionStats] 卡片 ${card.title} 获取到字段 ${card.fieldKey} 的值:`, value);
+        }
+      });
 
       setData(newData);
       setLastUpdated(new Date());
@@ -257,6 +339,21 @@ const ProductionStats = () => {
       });
       setIsApiSelectDialogOpen(false);
       setIsAddCardDialogOpen(true);
+    }
+  };
+
+  // 清除API字段缓存
+  const clearApiFieldsCache = (apiKey) => {
+    try {
+      localStorage.removeItem(`api_fields_${apiKey}`);
+      console.log(`[ProductionStats] 已清除API ${apiKey} 的字段缓存`);
+
+      // 重新加载字段
+      if (apiKey === selectedApiKey) {
+        loadApiFields(apiKey);
+      }
+    } catch (error) {
+      console.error(`[ProductionStats] 清除API ${apiKey} 字段缓存失败:`, error);
     }
   };
 
@@ -318,11 +415,37 @@ const ProductionStats = () => {
       return '加载中...';
     }
 
-    const value = data[card.apiKey][card.fieldKey];
+    // 获取API响应数据
+    const apiResponse = data[card.apiKey];
+
+    // 尝试从不同的数据结构中获取值
+    let value;
+
+    // 1. 直接从响应中获取
+    value = apiResponse[card.fieldKey];
+
+    // 2. 如果没有找到，尝试从data字段中获取
+    if (value === undefined && apiResponse.data) {
+      value = apiResponse.data[card.fieldKey];
+    }
+
+    // 3. 如果还没有找到，尝试从result字段中获取
+    if (value === undefined && apiResponse.result) {
+      value = apiResponse.result[card.fieldKey];
+    }
+
+    // 4. 如果还没有找到，尝试从response字段中获取
+    if (value === undefined && apiResponse.response) {
+      value = apiResponse.response[card.fieldKey];
+    }
+
+    // 如果所有尝试都失败，返回无数据
     if (value === undefined || value === null) {
+      console.log(`无法获取字段 ${card.fieldKey} 的值，API响应:`, apiResponse);
       return '无数据';
     }
 
+    // 格式化数值
     if (typeof value === 'number') {
       return value.toLocaleString();
     }
@@ -484,6 +607,17 @@ const ProductionStats = () => {
                     </MenuItem>
                   ))}
                 </Select>
+                {selectedApiKey && (
+                  <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                    <Button
+                      size="small"
+                      onClick={() => clearApiFieldsCache(selectedApiKey)}
+                      startIcon={<ReloadOutlined />}
+                    >
+                      重新检测字段
+                    </Button>
+                  </Box>
+                )}
               </FormControl>
             ) : (
               <Alert severity="warning">

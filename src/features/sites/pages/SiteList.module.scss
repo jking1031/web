@@ -1,39 +1,71 @@
 .siteListContainer {
   padding: 24px;
-  
+
   @media (max-width: 768px) {
     padding: 12px;
   }
 }
 
 .pageTitle {
-  margin-bottom: 0;
+  margin-bottom: 0 !important;
   font-size: 24px;
-  font-weight: 500;
-  color: var(--text);
+  font-weight: 500 !important;
+  color: #2E7D32 !important; // 使用深绿色主题
 }
 
 .header {
   display: flex;
+  flex-direction: column;
+  margin-bottom: 24px;
+  background-color: #fff;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.titleContainer {
+  display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  
+  margin-bottom: 16px;
+
   @media (max-width: 576px) {
     flex-direction: column;
     align-items: flex-start;
-    
+
     .pageTitle {
-      margin-bottom: 16px;
+      margin-bottom: 16px !important;
     }
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.actionButton {
+  color: #2E7D32;
+  border-color: #2E7D32;
+
+  &:hover, &:focus {
+    color: #388E3C;
+    border-color: #388E3C;
   }
 }
 
 .searchInput {
   width: 300px;
-  
+
   @media (max-width: 576px) {
     width: 100%;
+  }
+
+  // 绿色主题
+  :global(.ant-input-affix-wrapper:focus),
+  :global(.ant-input-affix-wrapper-focused) {
+    border-color: #2E7D32 !important;
+    box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.1) !important;
   }
 }
 
@@ -50,24 +82,35 @@
 
 .siteCard {
   transition: all 0.3s;
-  
+  border-radius: 8px;
+  overflow: hidden;
+  height: 100%;
+
   &:hover {
     transform: translateY(-3px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
+
+  :global(.ant-card-body) {
+    padding: 16px;
+  }
 }
 
 .siteContent {
-  padding: 8px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .siteName {
   font-size: 16px;
-  font-weight: 500;
-  margin-bottom: 8px;
+  font-weight: 600;
+  margin-bottom: 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  color: #2E7D32; // 使用深绿色主题
 }
 
 .statusBadge {
@@ -76,19 +119,55 @@
 
 .siteLocation {
   font-size: 14px;
-  color: var(--text-secondary);
-  margin-bottom: 12px;
+  color: rgba(0, 0, 0, 0.65);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+
+  :global(.anticon) {
+    color: #2E7D32;
+  }
 }
 
 .siteStats {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-size: 13px;
-  color: var(--text-secondary);
+  color: rgba(0, 0, 0, 0.65);
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+
+  > div {
+    margin-bottom: 4px;
+  }
+}
+
+.inflowData {
+  display: flex;
+  align-items: center;
+
+  :global(.anticon) {
+    color: #2E7D32;
+  }
+}
+
+.siteDepartments {
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.65);
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px dashed #f0f0f0;
+  display: flex;
+  align-items: center;
+
+  :global(.anticon) {
+    color: #2E7D32;
+  }
 }
 
 .alertCount {
   color: #f5222d;
   font-weight: 500;
   margin-left: 4px;
-} 
+}

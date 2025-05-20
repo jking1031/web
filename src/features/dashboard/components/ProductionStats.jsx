@@ -17,23 +17,15 @@ import {
   Select,
   MenuItem,
   IconButton,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  ListItemSecondaryAction,
-  Checkbox,
   TextField,
-  Divider,
   Paper,
-  Alert
+  Alert,
+  Checkbox
 } from '@mui/material';
+import { message } from 'antd';
 import {
   BarChartOutlined,
-  PlusOutlined,
-  SettingOutlined,
   EditOutlined,
-  DeleteOutlined,
   ReloadOutlined,
   ExperimentOutlined,
   ThunderboltOutlined,
@@ -44,7 +36,6 @@ import {
   AppstoreOutlined
 } from '@ant-design/icons';
 import moment from 'moment';
-import api from '../../../api/interceptors';
 import apiManager from '../../../services/apiManager';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -64,7 +55,11 @@ const ProductionStats = () => {
   // 对话框状态
   const [isAddCardDialogOpen, setIsAddCardDialogOpen] = useState(false);
   const [isApiSelectDialogOpen, setIsApiSelectDialogOpen] = useState(false);
+  const [isEditCardsDialogOpen, setIsEditCardsDialogOpen] = useState(false);
   const [editingCard, setEditingCard] = useState(null);
+
+  // 字段配置状态
+  const [fieldConfigs, setFieldConfigs] = useState({});
 
   // API相关状态
   const [availableApis, setAvailableApis] = useState([]);
@@ -76,7 +71,25 @@ const ProductionStats = () => {
     try {
       const savedCards = localStorage.getItem('productionStatsCards');
       if (savedCards) {
-        setCards(JSON.parse(savedCards));
+        // 解析保存的卡片配置
+        const parsedCards = JSON.parse(savedCards);
+        console.log('加载到的卡片配置:', parsedCards);
+
+        // 检查是否有使用ID为13的API的卡片
+        const problematicCards = parsedCards.filter(card => card.apiKey === '13');
+        if (problematicCards.length > 0) {
+          console.warn('发现使用不存在API (ID: 13) 的卡片:', problematicCards);
+
+          // 移除使用不存在API的卡片
+          const validCards = parsedCards.filter(card => card.apiKey !== '13');
+          console.log('移除问题卡片后的配置:', validCards);
+
+          // 保存更新后的卡片配置
+          localStorage.setItem('productionStatsCards', JSON.stringify(validCards));
+          setCards(validCards);
+        } else {
+          setCards(parsedCards);
+        }
       }
     } catch (error) {
       console.error('[ProductionStats] 加载卡片配置失败:', error);
@@ -128,6 +141,14 @@ const ProductionStats = () => {
     try {
       setApiFields([]);
 
+      // 检查API是否存在
+      if (!apiManager.registry.get(apiKey)) {
+        console.error(`[ProductionStats] API不存在: ${apiKey}`);
+        message.error(`API配置不存在: ${apiKey}`);
+        setApiFields([]);
+        return;
+      }
+
       // 从API管理系统获取字段配置
       const savedFields = localStorage.getItem(`api_fields_${apiKey}`);
       if (savedFields) {
@@ -136,31 +157,38 @@ const ProductionStats = () => {
       }
 
       // 如果没有保存的字段配置，尝试调用API获取示例数据
-      const apiData = await apiManager.call(apiKey);
-      if (apiData && typeof apiData === 'object') {
-        // 从返回的数据中提取字段
-        const fields = Object.keys(apiData).map(key => {
-          const value = apiData[key];
-          const type = typeof value;
+      try {
+        const apiData = await apiManager.call(apiKey);
+        if (apiData && typeof apiData === 'object') {
+          // 从返回的数据中提取字段
+          const fields = Object.keys(apiData).map(key => {
+            const value = apiData[key];
+            const type = typeof value;
 
-          return {
-            id: key,
-            key: key,
-            label: key, // 默认使用字段名作为标签
-            type: type === 'number' ? 'number' : 'string',
-            unit: type === 'number' ? '' : null,
-            color: getRandomColor(),
-            visible: true
-          };
-        });
+            return {
+              id: key,
+              key: key,
+              label: key, // 默认使用字段名作为标签
+              type: type === 'number' ? 'number' : 'string',
+              unit: type === 'number' ? '' : null,
+              color: getRandomColor(),
+              visible: true
+            };
+          });
 
-        setApiFields(fields);
+          setApiFields(fields);
 
-        // 保存字段配置
-        localStorage.setItem(`api_fields_${apiKey}`, JSON.stringify(fields));
+          // 保存字段配置
+          localStorage.setItem(`api_fields_${apiKey}`, JSON.stringify(fields));
+        }
+      } catch (apiError) {
+        console.error(`[ProductionStats] 调用API ${apiKey} 失败:`, apiError);
+        message.error(`调用API失败: ${apiError.message || '未知错误'}`);
+        setApiFields([]);
       }
     } catch (error) {
       console.error('[ProductionStats] 加载API字段失败:', error);
+      message.error(`加载API字段失败: ${error.message || '未知错误'}`);
       setApiFields([]);
     }
   };
@@ -174,66 +202,151 @@ const ProductionStats = () => {
     return colors[Math.floor(Math.random() * colors.length)];
   };
 
-  // 获取所有卡片数据
-  const fetchAllData = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const newData = {};
-      const apiCalls = [];
-      const uniqueApis = [...new Set(cards.map(card => card.apiKey))];
-
-      // 为每个唯一的API创建一个调用
-      for (const apiKey of uniqueApis) {
-        apiCalls.push(
-          apiManager.call(apiKey)
-            .then(result => {
-              newData[apiKey] = result;
-            })
-            .catch(error => {
-              console.error(`[ProductionStats] 获取API ${apiKey} 数据失败:`, error);
-              newData[apiKey] = null;
-            })
-        );
-      }
-
-      // 等待所有API调用完成
-      await Promise.all(apiCalls);
-
-      setData(newData);
-      setLastUpdated(new Date());
-    } catch (error) {
-      console.error('[ProductionStats] 获取数据失败:', error);
-      setError('获取数据失败: ' + (error.message || '未知错误'));
-    } finally {
-      setLoading(false);
-    }
-  };
+  // 不再需要获取所有卡片数据的函数，因为我们只使用getoverview API
 
   // 手动刷新数据
   const handleRefresh = () => {
-    fetchAllData();
+    // 直接调用获取概览数据的函数，而不是fetchAllData
+    fetchOverviewData();
   };
 
-  // 处理添加/编辑卡片对话框
-  const handleOpenAddCardDialog = (card = null) => {
-    if (card) {
-      setEditingCard(card);
-    } else {
-      setEditingCard({
-        id: null,
-        apiKey: '',
-        fieldKey: '',
-        title: '',
-        unit: '',
-        color: '#2196F3'
+  // 不再需要添加单个卡片的功能
+
+  // 不再需要单独编辑卡片名称的功能
+
+  // 打开编辑卡片组对话框
+  const handleOpenEditCardsDialog = () => {
+    // 初始化字段配置
+    if (data.getoverview) {
+      const initialFieldConfigs = {};
+
+      // 获取当前已有的卡片配置
+      const existingCards = cards.reduce((acc, card) => {
+        if (card.apiKey === 'getoverview') {
+          acc[card.fieldKey] = {
+            title: card.title,
+            unit: card.unit,
+            color: card.color,
+            visible: true
+          };
+        }
+        return acc;
+      }, {});
+
+      // 字段名称映射表
+      const fieldNameMap = {
+        totalProcessing_in: '总进水量',
+        totalProcessing_out: '总出水量',
+        sludgeProduction: '污泥产量',
+        carbonUsage: '活性炭用量',
+        phosphorusRemoval: '除磷剂用量',
+        disinfectant: '消毒剂用量',
+        alarmCount: '告警数量',
+        offlineSites: '离线站点数',
+        totalDevices: '设备总数',
+        runningDevices: '运行设备数',
+        electricity: '用电量',
+        pacUsage: 'PAC用量',
+        pamUsage: 'PAM用量'
+      };
+
+      // 字段单位映射表
+      const fieldUnitMap = {
+        totalProcessing_in: '吨',
+        totalProcessing_out: '吨',
+        sludgeProduction: '吨',
+        carbonUsage: 'kg',
+        phosphorusRemoval: 'kg',
+        disinfectant: 'kg',
+        alarmCount: '个',
+        offlineSites: '个',
+        totalDevices: '台',
+        runningDevices: '台',
+        electricity: 'kWh',
+        pacUsage: 'kg',
+        pamUsage: 'kg'
+      };
+
+      // 字段颜色映射表
+      const fieldColorMap = {
+        totalProcessing_in: '#2196F3',
+        totalProcessing_out: '#4CAF50',
+        sludgeProduction: '#FF9800',
+        carbonUsage: '#9C27B0',
+        phosphorusRemoval: '#E91E63',
+        disinfectant: '#673AB7',
+        alarmCount: '#F44336',
+        offlineSites: '#FF5722',
+        totalDevices: '#3F51B5',
+        runningDevices: '#00BCD4',
+        electricity: '#FFC107',
+        pacUsage: '#795548',
+        pamUsage: '#607D8B'
+      };
+
+      // 为每个字段创建配置
+      Object.keys(data.getoverview).forEach(key => {
+        initialFieldConfigs[key] = existingCards[key] || {
+          title: fieldNameMap[key] || key,
+          unit: fieldUnitMap[key] || '',
+          color: fieldColorMap[key] || getRandomColor(),
+          visible: existingCards[key] ? true : false // 默认只显示已有的卡片
+        };
       });
-      // 打开API选择对话框
-      setIsApiSelectDialogOpen(true);
-      return;
+
+      setFieldConfigs(initialFieldConfigs);
     }
-    setIsAddCardDialogOpen(true);
+
+    setIsEditCardsDialogOpen(true);
+  };
+
+  // 关闭编辑卡片组对话框
+  const handleCloseEditCardsDialog = () => {
+    setIsEditCardsDialogOpen(false);
+  };
+
+  // 保存卡片组配置
+  const handleSaveCardConfigs = () => {
+    // 根据字段配置生成卡片
+    const newCards = Object.keys(fieldConfigs)
+      .filter(key => fieldConfigs[key].visible)
+      .map(key => ({
+        id: `card_${Date.now()}_${Math.random().toString(36).substring(2, 11)}_${key}`,
+        apiKey: 'getoverview',
+        fieldKey: key,
+        title: fieldConfigs[key].title,
+        unit: fieldConfigs[key].unit,
+        color: fieldConfigs[key].color
+      }));
+
+    console.log('保存新的卡片配置:', newCards);
+    saveCards(newCards);
+    setIsEditCardsDialogOpen(false);
+
+    // 保存配置后立即刷新数据
+    fetchOverviewData();
+  };
+
+  // 切换字段可见性
+  const handleToggleFieldVisibility = (fieldKey) => {
+    setFieldConfigs(prev => ({
+      ...prev,
+      [fieldKey]: {
+        ...prev[fieldKey],
+        visible: !prev[fieldKey].visible
+      }
+    }));
+  };
+
+  // 更新字段配置
+  const handleUpdateFieldConfig = (fieldKey, property, value) => {
+    setFieldConfigs(prev => ({
+      ...prev,
+      [fieldKey]: {
+        ...prev[fieldKey],
+        [property]: value
+      }
+    }));
   };
 
   const handleCloseAddCardDialog = () => {
@@ -279,21 +392,17 @@ const ProductionStats = () => {
         ...cards,
         {
           ...editingCard,
-          id: `card_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+          id: `card_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
         }
       ];
     }
 
     saveCards(newCards);
     handleCloseAddCardDialog();
-    fetchAllData();
+    fetchOverviewData();
   };
 
-  // 删除卡片
-  const handleDeleteCard = (cardId) => {
-    const newCards = cards.filter(card => card.id !== cardId);
-    saveCards(newCards);
-  };
+  // 不再需要删除单个卡片的功能
 
   // 获取字段图标
   const getIconForField = (fieldKey) => {
@@ -314,35 +423,224 @@ const ProductionStats = () => {
 
   // 获取卡片值
   const getCardValue = (card) => {
+    // 如果正在加载，显示加载中
+    if (loading) {
+      return '加载中...';
+    }
+
+    // 如果没有数据对象，显示加载中
     if (!data[card.apiKey]) {
       return '加载中...';
     }
 
-    const value = data[card.apiKey][card.fieldKey];
-    if (value === undefined || value === null) {
-      return '无数据';
-    }
+    // 对于getoverview API，直接从数据中获取字段值
+    if (card.apiKey === 'getoverview') {
+      const value = data.getoverview[card.fieldKey];
+      if (value === undefined || value === null) {
+        // 如果值为空但不是因为加载中，显示无数据
+        return '无数据';
+      }
 
-    if (typeof value === 'number') {
-      return value.toLocaleString();
-    }
+      if (typeof value === 'number') {
+        return value.toLocaleString();
+      }
 
-    return value.toString();
+      return value.toString();
+    } else {
+      // 对于其他API，保持原有逻辑
+      const value = data[card.apiKey][card.fieldKey];
+      if (value === undefined || value === null) {
+        return '无数据';
+      }
+
+      if (typeof value === 'number') {
+        return value.toLocaleString();
+      }
+
+      return value.toString();
+    }
+  };
+
+  // 检查并注册getoverview API
+  const checkAndRegisterOverviewApi = async () => {
+    try {
+      // 检查getoverview API是否存在
+      const overviewApi = apiManager.registry.get('getoverview');
+
+      if (!overviewApi) {
+        console.log('getoverview API不存在，正在注册...');
+
+        // 注册getoverview API
+        await apiManager.registry.register('getoverview', {
+          name: '获取生产概览数据',
+          url: 'https://nodered.jzz77.cn:9003/api/overview',
+          method: 'GET',
+          category: 'data',
+          status: 'enabled',
+          description: '获取生产概览数据，包括进出水量、污泥产量、药剂用量等',
+          timeout: 10000,
+          retries: 1,
+          cacheTime: 60000, // 60秒缓存
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        console.log('getoverview API注册成功');
+      } else {
+        console.log('getoverview API已存在');
+      }
+
+      return true;
+    } catch (error) {
+      console.error('检查/注册getoverview API失败:', error);
+      message.error('初始化API失败，请刷新页面重试');
+      return false;
+    }
   };
 
   // 初始化
   useEffect(() => {
-    loadAvailableApis();
-    loadSavedCards();
+    // 等待API管理器初始化完成
+    apiManager.waitForReady().then(ready => {
+      if (ready) {
+        checkAndRegisterOverviewApi().then(() => {
+          loadAvailableApis();
+          loadSavedCards();
+          // 直接获取概览数据
+          fetchOverviewData();
+        });
+      } else {
+        console.error('API管理器初始化失败');
+        message.error('API管理器初始化失败');
+      }
+    });
   }, []);
 
-  // 当卡片配置变更时，获取数据
-  useEffect(() => {
-    if (cards.length > 0) {
-      fetchAllData();
-    } else {
+  // 获取概览数据
+  const fetchOverviewData = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // 调用getoverview API
+      const response = await apiManager.call('getoverview');
+      console.log('获取到概览数据:', response);
+
+      // 处理嵌套的data字段
+      let overviewData = response;
+      if (response && response.success && response.data) {
+        overviewData = response.data;
+      }
+
+      if (overviewData && typeof overviewData === 'object') {
+        // 更新数据
+        setData({
+          getoverview: overviewData
+        });
+
+        // 自动生成卡片（如果没有已保存的卡片）
+        if (cards.length === 0) {
+          generateCardsFromData(overviewData);
+        }
+
+        setLastUpdated(new Date());
+      } else {
+        throw new Error('获取到的概览数据格式无效');
+      }
+    } catch (error) {
+      console.error('[ProductionStats] 获取概览数据失败:', error);
+      setError('获取概览数据失败: ' + (error.message || '未知错误'));
+    } finally {
       setLoading(false);
     }
+  };
+
+  // 从数据自动生成卡片
+  const generateCardsFromData = (data) => {
+    if (!data || typeof data !== 'object') {
+      return;
+    }
+
+    // 字段名称映射表
+    const fieldNameMap = {
+      totalProcessing_in: '总进水量',
+      totalProcessing_out: '总出水量',
+      sludgeProduction: '污泥产量',
+      carbonUsage: '活性炭用量',
+      phosphorusRemoval: '除磷剂用量',
+      disinfectant: '消毒剂用量',
+      alarmCount: '告警数量',
+      offlineSites: '离线站点数',
+      totalDevices: '设备总数',
+      runningDevices: '运行设备数',
+      electricity: '用电量',
+      pacUsage: 'PAC用量',
+      pamUsage: 'PAM用量'
+    };
+
+    // 字段单位映射表
+    const fieldUnitMap = {
+      totalProcessing_in: '吨',
+      totalProcessing_out: '吨',
+      sludgeProduction: '吨',
+      carbonUsage: 'kg',
+      phosphorusRemoval: 'kg',
+      disinfectant: 'kg',
+      alarmCount: '个',
+      offlineSites: '个',
+      totalDevices: '台',
+      runningDevices: '台',
+      electricity: 'kWh',
+      pacUsage: 'kg',
+      pamUsage: 'kg'
+    };
+
+    // 字段颜色映射表
+    const fieldColorMap = {
+      totalProcessing_in: '#2196F3',
+      totalProcessing_out: '#4CAF50',
+      sludgeProduction: '#FF9800',
+      carbonUsage: '#9C27B0',
+      phosphorusRemoval: '#E91E63',
+      disinfectant: '#673AB7',
+      alarmCount: '#F44336',
+      offlineSites: '#FF5722',
+      totalDevices: '#3F51B5',
+      runningDevices: '#00BCD4',
+      electricity: '#FFC107',
+      pacUsage: '#795548',
+      pamUsage: '#607D8B'
+    };
+
+    // 生成卡片
+    const newCards = Object.keys(data).map(key => ({
+      id: `card_${Date.now()}_${Math.random().toString(36).substring(2, 11)}_${key}`,
+      apiKey: 'getoverview',
+      fieldKey: key,
+      title: fieldNameMap[key] || key,
+      unit: fieldUnitMap[key] || '',
+      color: fieldColorMap[key] || getRandomColor()
+    }));
+
+    console.log('自动生成卡片:', newCards);
+    saveCards(newCards);
+  };
+
+  // 定时刷新数据
+  useEffect(() => {
+    // 初始加载 - 始终使用fetchOverviewData
+    fetchOverviewData();
+
+    // 设置定时器，每60秒刷新一次数据
+    const refreshInterval = setInterval(() => {
+      fetchOverviewData();
+    }, 60000);
+
+    // 组件卸载时清除定时器
+    return () => {
+      clearInterval(refreshInterval);
+    };
   }, [cards]);
 
   return (
@@ -356,13 +654,13 @@ const ProductionStats = () => {
             </Box>
             <Box>
               {isAdmin && (
-                <Tooltip title="添加数据卡片">
+                <Tooltip title="编辑数据卡片">
                   <IconButton
                     size="small"
-                    onClick={() => handleOpenAddCardDialog()}
+                    onClick={() => handleOpenEditCardsDialog()}
                     sx={{ mr: 1 }}
                   >
-                    <PlusOutlined />
+                    <EditOutlined />
                   </IconButton>
                 </Tooltip>
               )}
@@ -395,15 +693,15 @@ const ProductionStats = () => {
               {isAdmin ? (
                 <Button
                   variant="outlined"
-                  startIcon={<PlusOutlined />}
-                  onClick={() => handleOpenAddCardDialog()}
+                  startIcon={<EditOutlined />}
+                  onClick={() => handleOpenEditCardsDialog()}
                   sx={{ mt: 1 }}
                 >
-                  添加数据卡片
+                  编辑数据卡片
                 </Button>
               ) : (
                 <Typography variant="body2" color="textSecondary">
-                  请联系管理员添加数据卡片
+                  请联系管理员配置数据卡片
                 </Typography>
               )}
             </Paper>
@@ -421,20 +719,7 @@ const ProductionStats = () => {
                     },
                     position: 'relative'
                   }}>
-                    {isAdmin && (
-                      <Box sx={{ position: 'absolute', top: 5, right: 5 }}>
-                        <Tooltip title="编辑卡片">
-                          <IconButton size="small" onClick={() => handleOpenAddCardDialog(card)}>
-                            <EditOutlined style={{ fontSize: 14 }} />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="删除卡片">
-                          <IconButton size="small" onClick={() => handleDeleteCard(card.id)}>
-                            <DeleteOutlined style={{ fontSize: 14 }} />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    )}
+                    {/* 移除卡片上的编辑和删除按钮 */}
                     <CardContent>
                       <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                         <Box sx={{ color: card.color }}>
@@ -507,31 +792,36 @@ const ProductionStats = () => {
 
       {/* 添加/编辑卡片对话框 */}
       <Dialog open={isAddCardDialogOpen} onClose={handleCloseAddCardDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>{editingCard?.id ? '编辑数据卡片' : '添加数据卡片'}</DialogTitle>
+        <DialogTitle>
+          {editingCard?.editNameOnly ? '编辑卡片名称' :
+           editingCard?.id ? '编辑数据卡片' : '添加数据卡片'}
+        </DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 2 }}>
             <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <FormControl fullWidth disabled={!!editingCard?.id}>
-                  <InputLabel id="field-select-label">选择字段</InputLabel>
-                  <Select
-                    labelId="field-select-label"
-                    value={editingCard?.fieldKey || ''}
-                    label="选择字段"
-                    onChange={(e) => setEditingCard({
-                      ...editingCard,
-                      fieldKey: e.target.value
-                    })}
-                  >
-                    {apiFields.map(field => (
-                      <MenuItem key={field.id} value={field.key}>
-                        {field.label || field.key}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={6}>
+              {!editingCard?.editNameOnly && (
+                <Grid item xs={12}>
+                  <FormControl fullWidth disabled={!!editingCard?.id}>
+                    <InputLabel id="field-select-label">选择字段</InputLabel>
+                    <Select
+                      labelId="field-select-label"
+                      value={editingCard?.fieldKey || ''}
+                      label="选择字段"
+                      onChange={(e) => setEditingCard({
+                        ...editingCard,
+                        fieldKey: e.target.value
+                      })}
+                    >
+                      {apiFields.map(field => (
+                        <MenuItem key={field.id} value={field.key}>
+                          {field.label || field.key}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              )}
+              <Grid item xs={12} sm={editingCard?.editNameOnly ? 12 : 6}>
                 <TextField
                   label="显示名称"
                   fullWidth
@@ -540,44 +830,49 @@ const ProductionStats = () => {
                     ...editingCard,
                     title: e.target.value
                   })}
+                  autoFocus={!!editingCard?.editNameOnly}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="单位"
-                  fullWidth
-                  value={editingCard?.unit || ''}
-                  onChange={(e) => setEditingCard({
-                    ...editingCard,
-                    unit: e.target.value
-                  })}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel id="color-select-label">颜色</InputLabel>
-                  <Select
-                    labelId="color-select-label"
-                    value={editingCard?.color || '#2196F3'}
-                    label="颜色"
+              {!editingCard?.editNameOnly && (
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="单位"
+                    fullWidth
+                    value={editingCard?.unit || ''}
                     onChange={(e) => setEditingCard({
                       ...editingCard,
-                      color: e.target.value
+                      unit: e.target.value
                     })}
-                  >
-                    <MenuItem value="#2196F3">蓝色</MenuItem>
-                    <MenuItem value="#4CAF50">绿色</MenuItem>
-                    <MenuItem value="#FF9800">橙色</MenuItem>
-                    <MenuItem value="#E91E63">粉色</MenuItem>
-                    <MenuItem value="#9C27B0">紫色</MenuItem>
-                    <MenuItem value="#673AB7">深紫色</MenuItem>
-                    <MenuItem value="#3F51B5">靛蓝色</MenuItem>
-                    <MenuItem value="#00BCD4">青色</MenuItem>
-                    <MenuItem value="#009688">蓝绿色</MenuItem>
-                    <MenuItem value="#FFC107">琥珀色</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
+                  />
+                </Grid>
+              )}
+              {!editingCard?.editNameOnly && (
+                <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <InputLabel id="color-select-label">颜色</InputLabel>
+                    <Select
+                      labelId="color-select-label"
+                      value={editingCard?.color || '#2196F3'}
+                      label="颜色"
+                      onChange={(e) => setEditingCard({
+                        ...editingCard,
+                        color: e.target.value
+                      })}
+                    >
+                      <MenuItem value="#2196F3">蓝色</MenuItem>
+                      <MenuItem value="#4CAF50">绿色</MenuItem>
+                      <MenuItem value="#FF9800">橙色</MenuItem>
+                      <MenuItem value="#E91E63">粉色</MenuItem>
+                      <MenuItem value="#9C27B0">紫色</MenuItem>
+                      <MenuItem value="#673AB7">深紫色</MenuItem>
+                      <MenuItem value="#3F51B5">靛蓝色</MenuItem>
+                      <MenuItem value="#00BCD4">青色</MenuItem>
+                      <MenuItem value="#009688">蓝绿色</MenuItem>
+                      <MenuItem value="#FFC107">琥珀色</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+              )}
             </Grid>
           </Box>
         </DialogContent>
@@ -587,7 +882,103 @@ const ProductionStats = () => {
             onClick={handleSaveCard}
             variant="contained"
             color="primary"
-            disabled={!editingCard?.fieldKey || !editingCard?.title}
+            disabled={!editingCard?.title || (!editingCard?.editNameOnly && !editingCard?.fieldKey)}
+          >
+            保存
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 编辑卡片组对话框 */}
+      <Dialog open={isEditCardsDialogOpen} onClose={handleCloseEditCardsDialog} maxWidth="md" fullWidth>
+        <DialogTitle>编辑数据卡片</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle1" gutterBottom>
+              选择要显示的数据项并编辑显示名称
+            </Typography>
+
+            <Paper variant="outlined" sx={{ mt: 2, p: 2 }}>
+              <Grid container spacing={2}>
+                {Object.keys(fieldConfigs).map(fieldKey => (
+                  <Grid item xs={12} sm={6} md={4} key={fieldKey}>
+                    <Box sx={{
+                      p: 2,
+                      border: '1px solid',
+                      borderColor: fieldConfigs[fieldKey].visible ? fieldConfigs[fieldKey].color : '#e0e0e0',
+                      borderRadius: 1,
+                      opacity: fieldConfigs[fieldKey].visible ? 1 : 0.6,
+                      transition: 'all 0.3s'
+                    }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                        <Checkbox
+                          checked={fieldConfigs[fieldKey].visible}
+                          onChange={() => handleToggleFieldVisibility(fieldKey)}
+                          sx={{
+                            color: fieldConfigs[fieldKey].color,
+                            '&.Mui-checked': {
+                              color: fieldConfigs[fieldKey].color,
+                            }
+                          }}
+                        />
+                        <Typography variant="subtitle2">
+                          {fieldKey}
+                        </Typography>
+                      </Box>
+
+                      <TextField
+                        label="显示名称"
+                        fullWidth
+                        size="small"
+                        value={fieldConfigs[fieldKey].title}
+                        onChange={(e) => handleUpdateFieldConfig(fieldKey, 'title', e.target.value)}
+                        disabled={!fieldConfigs[fieldKey].visible}
+                        sx={{ mb: 2 }}
+                      />
+
+                      <TextField
+                        label="单位"
+                        fullWidth
+                        size="small"
+                        value={fieldConfigs[fieldKey].unit}
+                        onChange={(e) => handleUpdateFieldConfig(fieldKey, 'unit', e.target.value)}
+                        disabled={!fieldConfigs[fieldKey].visible}
+                        sx={{ mb: 2 }}
+                      />
+
+                      <FormControl fullWidth size="small" disabled={!fieldConfigs[fieldKey].visible}>
+                        <InputLabel id={`color-select-${fieldKey}`}>颜色</InputLabel>
+                        <Select
+                          labelId={`color-select-${fieldKey}`}
+                          value={fieldConfigs[fieldKey].color}
+                          label="颜色"
+                          onChange={(e) => handleUpdateFieldConfig(fieldKey, 'color', e.target.value)}
+                        >
+                          <MenuItem value="#2196F3">蓝色</MenuItem>
+                          <MenuItem value="#4CAF50">绿色</MenuItem>
+                          <MenuItem value="#FF9800">橙色</MenuItem>
+                          <MenuItem value="#E91E63">粉色</MenuItem>
+                          <MenuItem value="#9C27B0">紫色</MenuItem>
+                          <MenuItem value="#673AB7">深紫色</MenuItem>
+                          <MenuItem value="#3F51B5">靛蓝色</MenuItem>
+                          <MenuItem value="#00BCD4">青色</MenuItem>
+                          <MenuItem value="#009688">蓝绿色</MenuItem>
+                          <MenuItem value="#FFC107">琥珀色</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Box>
+                  </Grid>
+                ))}
+              </Grid>
+            </Paper>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseEditCardsDialog}>取消</Button>
+          <Button
+            onClick={handleSaveCardConfigs}
+            variant="contained"
+            color="primary"
           >
             保存
           </Button>

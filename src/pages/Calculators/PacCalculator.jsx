@@ -309,10 +309,10 @@ const PacCalculator = () => {
                     <span className={styles.resultValue}>{result.hourlyPac} kg/h</span>
                   </div>
                 ) : (
-                  <div className={styles.resultItem}>
+                <div className={styles.resultItem}>
                     <span className={styles.resultLabel}>一次投加量：</span>
                     <span className={styles.resultValue}>{result.fixedPac} kg</span>
-                  </div>
+                </div>
                 )}
                 
                 <Divider />
@@ -336,15 +336,15 @@ const PacCalculator = () => {
                       />
                     </Col>
                     <Col span={8}>
-                      <Button 
-                        type="primary" 
-                        icon={<SaveOutlined />} 
-                        onClick={handleSave}
-                        loading={saveLoading}
+                  <Button 
+                    type="primary" 
+                    icon={<SaveOutlined />} 
+                    onClick={handleSave}
+                    loading={saveLoading}
                         disabled={!schemeName.trim()}
-                      >
+                  >
                         保存
-                      </Button>
+                  </Button>
                     </Col>
                   </Row>
                 </div>
