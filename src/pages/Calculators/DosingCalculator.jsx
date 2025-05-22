@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Form, InputNumber, Button, Row, Col, Divider, Empty, Select, message } from 'antd';
 import { CalculatorOutlined, SaveOutlined, ReloadOutlined } from '@ant-design/icons';
-import apiService from '../../services/apiService';
+import apiManager from '../../services/apiManager';
 import styles from './DosingCalculator.module.scss';
 
 const { Option } = Select;

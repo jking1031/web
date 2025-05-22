@@ -50,8 +50,8 @@ import {
   Refresh as RefreshIcon,
   FormatListBulleted as ListIcon
 } from '@mui/icons-material';
-import JsonEditor from '../../components/JsonEditor/JsonEditor';
-import dbService, { DB_EVENTS, DB_STATUS } from '../../services/dbService';
+import JsonEditor from '../../../components/JsonEditor/JsonEditor';
+import dbService, { DB_EVENTS, DB_STATUS } from '../../../services/dbService';
 
 /**
  * 查询管理组件

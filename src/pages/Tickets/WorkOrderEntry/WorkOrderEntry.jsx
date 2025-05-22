@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Form, Input, Select, DatePicker, Button, Upload, message, Typography, Space, Divider, Row, Col } from 'antd';
 import { UploadOutlined, SaveOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import apiService from '../../../services/apiService';
+import apiManager from '../../../services/apiManager';
 import { useAuth } from '../../../context/AuthContext';
 import styles from './WorkOrderEntry.module.scss';
 
@@ -30,14 +30,14 @@ const WorkOrderEntry = () => {
     const fetchInitialData = async () => {
       try {
         // 通过API管理器调用获取站点列表API
-        const sitesResponse = await apiService.callApi('getSiteList');
+        const sitesResponse = await apiManager.callApi('getSiteList');
         
         if (sitesResponse && sitesResponse.success) {
           setSites(sitesResponse.data || []);
         }
         
         // 通过API管理器调用获取设备类型API
-        const typesResponse = await apiService.callApi('getEquipmentTypes');
+        const typesResponse = await apiManager.callApi('getEquipmentTypes');
         
         if (typesResponse && typesResponse.success) {
           setEquipmentTypes(typesResponse.data || []);
@@ -61,7 +61,7 @@ const WorkOrderEntry = () => {
     
     try {
       // 通过API管理器调用获取站点设备列表API
-      const response = await apiService.callApi('getSiteEquipments', { siteId });
+      const response = await apiManager.callApi('getSiteEquipments', { siteId });
       
       if (response && response.success) {
         setEquipments(response.data || []);
@@ -114,14 +114,14 @@ const WorkOrderEntry = () => {
       // 上传文件
       let attachments = [];
       if (fileList.length > 0) {
-        const uploadResponse = await apiService.callApi('uploadFiles', { formData });
+        const uploadResponse = await apiManager.callApi('uploadFiles', { formData });
         if (uploadResponse && uploadResponse.success) {
           attachments = uploadResponse.data.fileUrls || [];
         }
       }
       
       // 通过API管理器调用创建工单API
-      const response = await apiService.callApi('createWorkOrder', {
+      const response = await apiManager.callApi('createWorkOrder', {
         title: values.title,
         description: values.description,
         siteId: values.siteId,

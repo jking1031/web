@@ -36,14 +36,14 @@ import {
   AppstoreOutlined
 } from '@ant-design/icons';
 import moment from 'moment';
-import apiManager from '../../../services/apiManager';
+import apiManager from '../../../services/api/core/apiManager';
 import { useAuth } from '../../../context/AuthContext';
 
 /**
  * 生产数据统计组件
  * 显示自定义数据卡片，由管理员配置
  */
-const ProductionStats = () => {
+const ProductionStats = ({ refreshMode = 'realtime', refreshInterval = 10 }) => {
   // 使用AuthContext中的isAdmin
   const { isAdmin } = useAuth();
   const [cards, setCards] = useState([]);
@@ -202,17 +202,11 @@ const ProductionStats = () => {
     return colors[Math.floor(Math.random() * colors.length)];
   };
 
-  // 不再需要获取所有卡片数据的函数，因为我们只使用getoverview API
-
   // 手动刷新数据
   const handleRefresh = () => {
     // 直接调用获取概览数据的函数，而不是fetchAllData
     fetchOverviewData();
   };
-
-  // 不再需要添加单个卡片的功能
-
-  // 不再需要单独编辑卡片名称的功能
 
   // 打开编辑卡片组对话框
   const handleOpenEditCardsDialog = () => {
@@ -402,8 +396,6 @@ const ProductionStats = () => {
     fetchOverviewData();
   };
 
-  // 不再需要删除单个卡片的功能
-
   // 获取字段图标
   const getIconForField = (fieldKey) => {
     const iconMap = {
@@ -567,7 +559,7 @@ const ProductionStats = () => {
       totalProcessing_in: '总进水量',
       totalProcessing_out: '总出水量',
       sludgeProduction: '污泥产量',
-      carbonUsage: '活性炭用量',
+      carbonUsage: '碳源用量',
       phosphorusRemoval: '除磷剂用量',
       disinfectant: '消毒剂用量',
       alarmCount: '告警数量',
@@ -584,9 +576,9 @@ const ProductionStats = () => {
       totalProcessing_in: '吨',
       totalProcessing_out: '吨',
       sludgeProduction: '吨',
-      carbonUsage: 'kg',
-      phosphorusRemoval: 'kg',
-      disinfectant: 'kg',
+      carbonUsage: 'L',
+      phosphorusRemoval: 'L',
+      disinfectant: 'L',
       alarmCount: '个',
       offlineSites: '个',
       totalDevices: '台',
@@ -632,67 +624,83 @@ const ProductionStats = () => {
     // 初始加载 - 始终使用fetchOverviewData
     fetchOverviewData();
 
-    // 设置定时器，每60秒刷新一次数据
-    const refreshInterval = setInterval(() => {
+    // 根据刷新模式设置定时器
+    const interval = refreshMode === 'realtime' ? 300000 : refreshInterval * 60000; // 实时模式5分钟，周期模式使用用户设置的间隔
+    const timer = setInterval(() => {
       fetchOverviewData();
-    }, 60000);
+    }, interval);
 
     // 组件卸载时清除定时器
     return () => {
-      clearInterval(refreshInterval);
+      clearInterval(timer);
     };
-  }, [cards]);
+  }, [cards, refreshMode, refreshInterval]); // 添加refreshMode和refreshInterval作为依赖项
 
   return (
     <>
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Box sx={{ 
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between', 
+            mb: 2,
+            borderBottom: '1px solid #f0f0f0',
+            pb: 1
+          }}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <AppstoreOutlined style={{ fontSize: 24, marginRight: 8, color: '#2E7D32' }} />
-              <Typography variant="h6">生产数据卡片</Typography>
+              <AppstoreOutlined style={{ fontSize: 20, marginRight: 8, color: '#2E7D32' }} />
+              <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>生产数据统计</Typography>
             </Box>
-            <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               {isAdmin && (
                 <Tooltip title="编辑数据卡片">
                   <IconButton
                     size="small"
                     onClick={() => handleOpenEditCardsDialog()}
-                    sx={{ mr: 1 }}
+                    sx={{ 
+                      color: '#666',
+                      '&:hover': { color: '#2E7D32' }
+                    }}
                   >
                     <EditOutlined />
                   </IconButton>
                 </Tooltip>
               )}
               <Tooltip title={lastUpdated ? `最后更新: ${moment(lastUpdated).format('YYYY-MM-DD HH:mm')}` : '未更新'}>
-                <Button
+                <IconButton
                   size="small"
-                  startIcon={<ReloadOutlined />}
                   onClick={handleRefresh}
                   disabled={loading}
+                  sx={{ 
+                    color: '#666',
+                    '&:hover': { color: '#2E7D32' },
+                    '&.Mui-disabled': { color: '#ccc' }
+                  }}
                 >
-                  刷新
-                </Button>
+                  <ReloadOutlined />
+                </IconButton>
               </Tooltip>
             </Box>
           </Box>
 
           {loading && cards.length === 0 ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100px' }}>
               <CircularProgress />
             </Box>
           ) : error ? (
-            <Box sx={{ p: 2, bgcolor: '#ffebee', borderRadius: 1, color: '#d32f2f' }}>
-              <Typography variant="body1">{error}</Typography>
+            <Box sx={{ p: 1, bgcolor: '#ffebee', borderRadius: 1, color: '#d32f2f' }}>
+              <Typography variant="body2">{error}</Typography>
             </Box>
           ) : cards.length === 0 ? (
-            <Paper sx={{ p: 3, textAlign: 'center', bgcolor: '#f5f5f5' }}>
-              <Typography variant="body1" color="textSecondary" gutterBottom>
+            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#f5f5f5' }}>
+              <Typography variant="body2" color="textSecondary" gutterBottom>
                 没有配置数据卡片
               </Typography>
               {isAdmin ? (
                 <Button
                   variant="outlined"
+                  size="small"
                   startIcon={<EditOutlined />}
                   onClick={() => handleOpenEditCardsDialog()}
                   sx={{ mt: 1 }}
@@ -706,28 +714,35 @@ const ProductionStats = () => {
               )}
             </Paper>
           ) : (
-            <Grid container spacing={2}>
+            <Grid container spacing={1}>
               {cards.map(card => (
-                <Grid item xs={6} sm={4} md={3} lg={3} key={card.id}>
+                <Grid item xs={6} sm={4} md={3} lg={2} key={card.id}>
                   <Card variant="outlined" sx={{
                     bgcolor: '#f5f5f5',
                     transition: 'all 0.3s',
                     '&:hover': {
-                      boxShadow: `0 4px 8px rgba(0,0,0,0.1)`,
-                      transform: 'translateY(-2px)',
+                      boxShadow: `0 2px 4px rgba(0,0,0,0.1)`,
+                      transform: 'translateY(-1px)',
                       borderColor: card.color
                     },
-                    position: 'relative'
+                    position: 'relative',
+                    height: '100%'
                   }}>
-                    {/* 移除卡片上的编辑和删除按钮 */}
-                    <CardContent>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
                         <Box sx={{ color: card.color }}>
                           {getIconForField(card.fieldKey)}
                         </Box>
-                        <Typography variant="body2" color="textSecondary">{card.title}</Typography>
+                        <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.75rem' }}>
+                          {card.title}
+                        </Typography>
                       </Box>
-                      <Typography variant="h5" sx={{ fontWeight: 'bold', color: card.color }}>
+                      <Typography variant="h6" sx={{ 
+                        fontWeight: 'bold', 
+                        color: card.color,
+                        fontSize: '1.1rem',
+                        lineHeight: 1.2
+                      }}>
                         {getCardValue(card)} {card.unit}
                       </Typography>
                     </CardContent>
@@ -738,8 +753,8 @@ const ProductionStats = () => {
           )}
 
           {loading && cards.length > 0 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-              <CircularProgress size={24} />
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+              <CircularProgress size={20} />
             </Box>
           )}
         </CardContent>

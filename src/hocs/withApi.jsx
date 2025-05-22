@@ -3,7 +3,8 @@
  * 为类组件提供 API 调用功能
  */
 import React, { Component } from 'react';
-import apiService from '../services/apiService';
+import PropTypes from 'prop-types';
+import { ApiManager } from '../services/api';
 import { ApiContext } from '../context/ApiContext';
 
 /**
@@ -55,7 +56,7 @@ export function withApi(apiConfig) {
             }
             
             // 调用API
-            const response = await apiService.callApi(apiKey, params, options);
+            const response = await ApiManager.callApi(apiKey, params, options);
             
             // 更新状态
             this.setState(prev => ({
@@ -85,7 +86,7 @@ export function withApi(apiConfig) {
         this.setState({ batchLoading: true, batchError: null });
         
         try {
-          const results = await apiService.batchCallApis(calls, options.parallel);
+          const results = await ApiManager.batchCallApis(calls, options.parallel);
           
           // 更新状态
           const newData = {};

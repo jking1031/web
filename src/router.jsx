@@ -4,11 +4,13 @@ import MainLayout from './components/Layout/MainLayout';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import AdminRoute from './components/Auth/AdminRoute';
 import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
+import { WebSocketProvider } from './context/WebSocketContext';
 
 // 使用懒加载方式导入组件
 const EnhancedDashboard = lazy(() => import('./features/dashboard/components/EnhancedDashboard'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard/AdminDashboard'));
 const DatabaseTest = lazy(() => import('./components/DatabaseTest/DatabaseTest'));
+const ApiManagement = lazy(() => import('./pages/ApiManagement/ApiManagement'));
 // 示例组件已移除，不再导入
 const ApiDashboard = lazy(() => import('./features/dashboard/pages/ApiDashboard'));
 
@@ -41,8 +43,6 @@ const DosingCalculator = lazy(() => import('./pages/Calculators/DosingCalculator
 const ExcessSludgeCalculator = lazy(() => import('./pages/Calculators/ExcessSludgeCalculator'));
 const UserManagement = lazy(() => import('./pages/Admin/UserManagement'));
 const Settings = lazy(() => import('./pages/Admin/Settings'));
-const ApiManagement = lazy(() => import('./pages/ApiManagement/ApiManagement'));
-const NewApiManagement = lazy(() => import('./features/api/pages/ApiManagement'));
 const QueryManagement = lazy(() => import('./pages/QueryManagement/QueryManagement'));
 const NotFound = lazy(() => import('./pages/NotFound/NotFound'));
 
@@ -59,7 +59,7 @@ const router = createHashRouter(
       { index: true, element: <Suspense fallback={<LoadingFallback />}><EnhancedDashboard /></Suspense> },
       { path: 'admin-dashboard', element: <Suspense fallback={<LoadingFallback />}><AdminDashboard /></Suspense> },
       { path: 'sites', element: <Suspense fallback={<LoadingFallback />}><SiteList /></Suspense> },
-      { path: 'sites/:id', element: <Suspense fallback={<LoadingFallback />}><SiteDetailNew /></Suspense> },
+      { path: 'sites/:id', element: <Suspense fallback={<LoadingFallback />}><WebSocketProvider><SiteDetailNew /></WebSocketProvider></Suspense> },
       { path: 'sites/:id/old', element: <Suspense fallback={<LoadingFallback />}><SiteDetail /></Suspense> },
       // 数据中心
       { path: 'data-query', element: <Suspense fallback={<LoadingFallback />}><DataQuery /></Suspense> },
@@ -89,12 +89,12 @@ const router = createHashRouter(
       // 管理功能 - 只有管理员可以访问
       { path: 'user-management', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><UserManagement /></Suspense></AdminRoute> },
       { path: 'settings', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><Settings /></Suspense></AdminRoute> },
-      { path: 'api-management', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><ErrorBoundary showDetails={false}><ApiManagement /></ErrorBoundary></Suspense></AdminRoute> },
-      { path: 'new-api-management', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><ErrorBoundary showDetails={false}><NewApiManagement /></ErrorBoundary></Suspense></AdminRoute> },
       { path: 'query-management', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><ErrorBoundary showDetails={false}><QueryManagement /></ErrorBoundary></Suspense></AdminRoute> },
       { path: 'db-test', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><ErrorBoundary showDetails={true}><DatabaseTest /></ErrorBoundary></Suspense></AdminRoute> },
       // API 仪表盘页面
       { path: 'api-dashboard', element: <Suspense fallback={<LoadingFallback />}><ErrorBoundary showDetails={true}><ApiDashboard /></ErrorBoundary></Suspense> },
+      // API 管理路由
+      { path: 'api-management', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><ErrorBoundary showDetails={false}><ApiManagement /></ErrorBoundary></Suspense></AdminRoute> },
       // 404页面
       { path: '404', element: <Suspense fallback={<LoadingFallback />}><NotFound /></Suspense> },
       { path: '*', element: <Navigate to="/404" replace /> }

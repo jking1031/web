@@ -16,7 +16,7 @@ import {
   Delete as DeleteIcon,
   Sync as SyncIcon
 } from '@mui/icons-material';
-import apiManager from '../../services/apiManager';
+import apiManager from "../../services/api/core/apiManager";
 import { saveApiConfigsToDb, getApiConfigsFromDb, deleteApiConfigsFromDb } from '../../api/apiSyncApi';
 
 /**

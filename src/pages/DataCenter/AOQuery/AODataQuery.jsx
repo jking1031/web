@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Form, DatePicker, Button, Table, Select, Spin, Typography, Space, Tabs, Row, Col } from 'antd';
 import { DownloadOutlined, SearchOutlined, LineChartOutlined, BarChartOutlined } from '@ant-design/icons';
 import moment from 'moment';
-import apiService from '../../../services/apiService';
+import apiManager from '../../../services/apiManager';
 import TrendChart from '../../../components/TrendChart';
 import styles from './AODataQuery.module.scss';
 
@@ -30,7 +30,7 @@ const AODataQuery = () => {
     const fetchParameters = async () => {
       try {
         // 通过API管理器调用获取AO池参数列表API
-        const response = await apiService.callApi('getAOParameters');
+        const response = await apiManager.callApi('getAOParameters');
         
         if (response && response.success) {
           setParameters(response.data || []);
@@ -57,7 +57,7 @@ const AODataQuery = () => {
       const endDate = values.dateRange[1].format('YYYY-MM-DD');
       
       // 通过API管理器调用查询AO池数据API
-      const response = await apiService.callApi('queryAOData', {
+      const response = await apiManager.callApi('queryAOData', {
         startDate,
         endDate,
         parameters: values.parameters
@@ -89,7 +89,7 @@ const AODataQuery = () => {
     setChartLoading(true);
     try {
       // 通过API管理器调用获取AO池图表数据API
-      const response = await apiService.callApi('getAOChartData', {
+      const response = await apiManager.callApi('getAOChartData', {
         startDate,
         endDate,
         parameters
@@ -138,7 +138,7 @@ const AODataQuery = () => {
       const endDate = values.dateRange[1].format('YYYY-MM-DD');
       
       // 通过API管理器调用导出AO池数据API
-      const response = await apiService.callApi('exportAOData', {
+      const response = await apiManager.callApi('exportAOData', {
         startDate,
         endDate,
         parameters: values.parameters,

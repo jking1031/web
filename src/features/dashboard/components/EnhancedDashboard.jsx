@@ -1,15 +1,31 @@
-import React, { useEffect } from 'react';
-import { Box, Typography, Button, Grid } from '@mui/material';
-import { AppstoreOutlined, UserOutlined } from '@ant-design/icons';
+import React, { useEffect, useState } from 'react';
+import { Box, Typography, Button, Grid, FormControl, Select, MenuItem, IconButton, Tooltip } from '@mui/material';
+import { AppstoreOutlined, UserOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import ProductionStats from './ProductionStats';
 import EnhancedTrendChart from './EnhancedTrendChart';
-import DeviceStatus from './DeviceStatus';
+import DailyProcessAnalysis from './DailyProcessAnalysis';
 
 /**
  * 增强版仪表盘组件
- * 集成生产数据统计、趋势图和设备状态卡片
+ * 集成生产数据统计、趋势图和工艺分析卡片
  */
 const EnhancedDashboard = () => {
+  const [refreshMode, setRefreshMode] = useState('realtime'); // 'realtime' 或 'periodic'
+  const [refreshInterval, setRefreshInterval] = useState(10); // 默认10分钟
+
+  // 刷新间隔选项（分钟）
+  const intervalOptions = [10, 15, 30, 60, 90, 120];
+
+  // 处理刷新模式切换
+  const handleRefreshModeChange = (event) => {
+    setRefreshMode(event.target.value);
+  };
+
+  // 处理刷新间隔切换
+  const handleIntervalChange = (event) => {
+    setRefreshInterval(event.target.value);
+  };
+
   useEffect(() => {
     // 移除不必要的日志输出
     return () => {
@@ -18,29 +34,49 @@ const EnhancedDashboard = () => {
   }, []);
 
   return (
-    <Box sx={{
-      p: 3,
-      maxHeight: 'calc(100vh - 64px)', // 减去顶部导航栏的高度
-      overflowY: 'auto', // 添加垂直滚动
-      '&::-webkit-scrollbar': {
-        width: '8px',
-      },
-      '&::-webkit-scrollbar-thumb': {
-        backgroundColor: 'rgba(0,0,0,0.2)',
-        borderRadius: '4px',
-      },
-      '&::-webkit-scrollbar-track': {
-        backgroundColor: 'rgba(0,0,0,0.05)',
-      }
-    }}>
-      {/* 生产数据统计 */}
-      <ProductionStats />
+    <Box>
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="h5">仪表盘</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <Select
+              value={refreshMode}
+              onChange={handleRefreshModeChange}
+              displayEmpty
+            >
+              <MenuItem value="realtime">实时更新</MenuItem>
+              <MenuItem value="periodic">定时更新</MenuItem>
+            </Select>
+          </FormControl>
+          {refreshMode === 'periodic' && (
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <Select
+                value={refreshInterval}
+                onChange={handleIntervalChange}
+                displayEmpty
+              >
+                {intervalOptions.map(interval => (
+                  <MenuItem key={interval} value={interval}>
+                    {interval}分钟
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+        </Box>
+      </Box>
 
-      {/* 趋势图 - 移到设备状态上面 */}
-      <EnhancedTrendChart />
-
-      {/* 设备状态 */}
-      <DeviceStatus />
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <ProductionStats />
+        </Grid>
+        <Grid item xs={12}>
+          <EnhancedTrendChart />
+        </Grid>
+        <Grid item xs={12}>
+          <DailyProcessAnalysis />
+        </Grid>
+      </Grid>
     </Box>
   );
 };

@@ -3,7 +3,7 @@
  * 提供全局 API 状态和缓存管理
  */
 import React, { createContext, useState, useCallback, useContext, useEffect } from 'react';
-import apiManager from '../services/apiManager';
+import { ApiManager } from '../services/api';
 
 // 创建简单的缓存实现
 class ApiCache {
@@ -76,7 +76,7 @@ export const ApiProvider = ({ children, cacheSize = 100 }) => {
     setApiStatus({ loading: true, error: null });
     
     try {
-      apiManager.registry.reload();
+      ApiManager.registry.reload();
       setApiStatus({ loading: false, error: null });
     } catch (error) {
       setApiStatus({ loading: false, error });
@@ -104,14 +104,14 @@ export const ApiProvider = ({ children, cacheSize = 100 }) => {
       console.log('API事件:', event);
     };
     
-    apiManager.registry.eventEmitter.addEventListener(apiManager.API_EVENTS.REGISTERED, handleApiEvent);
-    apiManager.registry.eventEmitter.addEventListener(apiManager.API_EVENTS.UPDATED, handleApiEvent);
-    apiManager.registry.eventEmitter.addEventListener(apiManager.API_EVENTS.REMOVED, handleApiEvent);
+    ApiManager.registry.eventEmitter.addEventListener(ApiManager.API_EVENTS.REGISTERED, handleApiEvent);
+    ApiManager.registry.eventEmitter.addEventListener(ApiManager.API_EVENTS.UPDATED, handleApiEvent);
+    ApiManager.registry.eventEmitter.addEventListener(ApiManager.API_EVENTS.REMOVED, handleApiEvent);
     
     return () => {
-      apiManager.registry.eventEmitter.removeEventListener(apiManager.API_EVENTS.REGISTERED, handleApiEvent);
-      apiManager.registry.eventEmitter.removeEventListener(apiManager.API_EVENTS.UPDATED, handleApiEvent);
-      apiManager.registry.eventEmitter.removeEventListener(apiManager.API_EVENTS.REMOVED, handleApiEvent);
+      ApiManager.registry.eventEmitter.removeEventListener(ApiManager.API_EVENTS.REGISTERED, handleApiEvent);
+      ApiManager.registry.eventEmitter.removeEventListener(ApiManager.API_EVENTS.UPDATED, handleApiEvent);
+      ApiManager.registry.eventEmitter.removeEventListener(ApiManager.API_EVENTS.REMOVED, handleApiEvent);
     };
   }, []);
   

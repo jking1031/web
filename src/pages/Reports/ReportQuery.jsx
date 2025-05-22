@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Table, Button, DatePicker, Select, Input, Space, Row, Col, message, Typography, Tabs, Modal, Descriptions, Tag, Divider } from 'antd';
 import { SearchOutlined, FileExcelOutlined, FilePdfOutlined, EyeOutlined, DownloadOutlined } from '@ant-design/icons';
-import apiService from '../../services/apiService';
+import apiManager from '../../services/apiManager';
 import dayjs from 'dayjs';
 import styles from './Reports.module.scss';
 
@@ -32,7 +32,7 @@ const ReportQuery = () => {
     const fetchPumpStations = async () => {
       try {
         // 通过API管理器调用获取泵站列表API
-        const response = await apiService.callApi('getPumpStations');
+        const response = await apiManager.callApi('getPumpStations');
         
         if (response && response.success) {
           setPumpStations(response.data || []);
@@ -84,7 +84,7 @@ const ReportQuery = () => {
       }
       
       // 通过API管理器调用获取报告数据API
-      const response = await apiService.callApi(apiKey, params);
+      const response = await apiManager.callApi(apiKey, params);
       
       if (response && response.success) {
         if (activeTab === '5000') {

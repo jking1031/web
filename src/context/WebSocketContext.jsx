@@ -16,6 +16,9 @@ export const WebSocketProvider = ({ children }) => {
   const [activeSiteId, setActiveSiteId] = useState(null);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [lastMessage, setLastMessage] = useState(null);
+  const [error, setError] = useState(null);
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const [lastActivity, setLastActivity] = useState(null);
 
   // WebSocket引用
   const wsRef = useRef(null);
@@ -105,6 +108,12 @@ export const WebSocketProvider = ({ children }) => {
       return;
     }
 
+    // 如果正在重连，不重复连接
+    if (isReconnecting) {
+      console.log('正在重连中，请稍候...');
+      return;
+    }
+
     // 如果已经连接到不同站点，先断开
     if (wsRef.current) {
       cleanup();
@@ -112,6 +121,8 @@ export const WebSocketProvider = ({ children }) => {
 
     // 设置当前站点ID
     setActiveSiteId(siteId);
+    setIsReconnecting(true);
+    setError(null);
 
     // 创建新连接
     try {
@@ -128,6 +139,8 @@ export const WebSocketProvider = ({ children }) => {
         console.log('WebSocket连接成功');
         setConnected(true);
         setReconnectAttempts(0);
+        setIsReconnecting(false);
+        setLastActivity(Date.now());
 
         // 连接建立后立即发送一个初始化消息
         try {
@@ -142,6 +155,7 @@ export const WebSocketProvider = ({ children }) => {
           }));
         } catch (e) {
           console.error('发送初始化消息失败:', e);
+          setError('发送初始化消息失败');
         }
 
         // 连接成功后延迟1秒再请求设备状态
@@ -164,6 +178,7 @@ export const WebSocketProvider = ({ children }) => {
 
       socket.onmessage = (event) => {
         try {
+          setLastActivity(Date.now());
           console.log('收到原始WebSocket消息:', event.data);
 
           // 尝试解析消息
@@ -172,8 +187,7 @@ export const WebSocketProvider = ({ children }) => {
             data = JSON.parse(event.data);
           } catch (parseError) {
             console.error('解析WebSocket消息失败:', parseError);
-            // 如果解析失败，直接传递原始消息
-            setLastMessage(event.data);
+            setError('解析WebSocket消息失败');
             return;
           }
 
@@ -186,16 +200,25 @@ export const WebSocketProvider = ({ children }) => {
             return;
           }
 
+          // 处理错误消息
+          if (data.type === 'error') {
+            console.error('收到错误消息:', data.message);
+            setError(data.message);
+            return;
+          }
+
           // 其他消息类型在使用WebSocket的组件中处理
           console.log('收到WebSocket消息类型:', data.type);
         } catch (error) {
           console.error('处理WebSocket消息失败:', error);
+          setError('处理WebSocket消息失败');
         }
       };
 
       socket.onclose = (event) => {
         console.log('WebSocket连接关闭:', event.code, event.reason);
         setConnected(false);
+        setIsReconnecting(false);
 
         // 清理心跳
         if (heartbeatRef.current) {
@@ -207,6 +230,9 @@ export const WebSocketProvider = ({ children }) => {
         if (event.code === 1000 || event.code === 1003) {
           return;
         }
+
+        // 设置错误信息
+        setError(`连接关闭: ${event.reason || '未知原因'}`);
 
         // 重连逻辑
         const baseDelay = event.reason && event.reason.includes('502') ? 5000 : 1000;
@@ -223,6 +249,8 @@ export const WebSocketProvider = ({ children }) => {
 
       socket.onerror = (error) => {
         console.error('WebSocket连接错误:', error);
+        setError('WebSocket连接错误');
+        setIsReconnecting(false);
       };
 
       wsRef.current = socket;
@@ -230,6 +258,8 @@ export const WebSocketProvider = ({ children }) => {
     } catch (error) {
       console.error('创建WebSocket连接失败:', error);
       setConnected(false);
+      setIsReconnecting(false);
+      setError('创建WebSocket连接失败');
 
       // 连接失败也增加重试计数
       const delay = Math.min(1000 * Math.pow(1.5, reconnectAttempts), 30000);
@@ -240,7 +270,7 @@ export const WebSocketProvider = ({ children }) => {
         }
       }, delay);
     }
-  }, [isLoggedIn, activeSiteId, reconnectAttempts, cleanup, setupHeartbeat]);
+  }, [isLoggedIn, activeSiteId, reconnectAttempts, cleanup, setupHeartbeat, isReconnecting]);
 
   // 断开WebSocket连接
   const disconnect = useCallback(() => {
@@ -249,14 +279,9 @@ export const WebSocketProvider = ({ children }) => {
   }, [cleanup]);
 
   // 发送WebSocket消息
-  const sendMessage = useCallback((message) => {
+  const sendMessage = useCallback(async (message) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      console.error('WebSocket未连接，无法发送消息', {
-        wsRef: wsRef.current ? '已创建' : '未创建',
-        readyState: wsRef.current ? wsRef.current.readyState : 'N/A',
-        activeSiteId
-      });
-      return Promise.reject(new Error('WebSocket未连接'));
+      throw new Error('WebSocket未连接');
     }
 
     try {
@@ -269,10 +294,11 @@ export const WebSocketProvider = ({ children }) => {
       console.log('发送WebSocket消息:', JSON.stringify(fullMessage, null, 2));
 
       wsRef.current.send(JSON.stringify(fullMessage));
-      return Promise.resolve();
+      setLastActivity(Date.now());
     } catch (error) {
       console.error('发送WebSocket消息失败:', error);
-      return Promise.reject(error);
+      setError('发送WebSocket消息失败');
+      throw error;
     }
   }, [activeSiteId]);
 
@@ -305,6 +331,9 @@ export const WebSocketProvider = ({ children }) => {
         connected,
         activeSiteId,
         lastMessage,
+        error,
+        isReconnecting,
+        lastActivity,
         connect,
         disconnect,
         sendMessage

@@ -11,7 +11,7 @@ import {
 } from '@ant-design/icons';
 import api from '../../../api/interceptors';
 import { ApiEditorButton } from '../../../components/ApiEditor';
-import apiManager from '../../../services/apiManager';
+import apiManager from '../../../services/api/core/apiManager';
 import styles from './SiteList.module.scss';
 
 const { Title } = Typography;
@@ -190,8 +190,9 @@ const SiteList = () => {
   };
 
   // 点击站点卡片导航到详情页
-  const handleSiteClick = (siteId) => {
-    navigate(`/sites/${siteId}`);
+  const handleSiteClick = (siteId, site) => {
+    // 使用React Router的state参数传递完整的站点数据
+    navigate(`/sites/${siteId}`, { state: { siteData: site } });
   };
 
 
@@ -261,7 +262,7 @@ const SiteList = () => {
               <Card
                 className={styles.siteCard}
                 hoverable
-                onClick={() => handleSiteClick(site.id)}
+                onClick={() => handleSiteClick(site.id, site)}
               >
                 <div className={styles.siteContent}>
                   <div className={styles.siteName}>

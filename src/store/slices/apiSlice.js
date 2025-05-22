@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { baseUrlManager } from '../../services/baseUrlManager';
+import { BaseUrlManager } from '../../services/api';
 
 /**
  * API切片 - 使用RTK Query实现API调用
@@ -8,7 +8,7 @@ import { baseUrlManager } from '../../services/baseUrlManager';
 const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({
-    baseUrl: baseUrlManager.getBaseUrl(),
+    baseUrl: BaseUrlManager.getBaseUrl(),
     prepareHeaders: (headers, { getState }) => {
       // 从状态中获取令牌
       const token = getState().auth.token;

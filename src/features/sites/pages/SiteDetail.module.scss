@@ -1,51 +1,110 @@
 .siteDetailContainer {
-  padding: 24px;
+  padding: 16px;
+}
 
-  @media (max-width: 768px) {
-    padding: 12px;
-  }
+.header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.backButton {
+  margin-right: 16px;
+}
+
+.pageTitle {
+  flex: 1;
+  margin: 0;
+  font-size: 20px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.infoCard {
+  margin-bottom: 16px;
 }
 
 .loadingContainer {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 60vh;
+  height: 300px;
+  width: 100%;
 }
 
-.header {
+.dataTabs {
+  margin-top: 16px;
+}
+
+.dataContainer {
   display: flex;
-  align-items: center;
-  margin-bottom: 24px;
-  background-color: #fff;
-  padding: 16px;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  flex-direction: column;
+  gap: 16px;
 }
 
-.backButton {
-  margin-right: 16px;
+.groupSection {
+  margin-bottom: 16px;
+}
 
-  :global(.ant-btn) {
-    color: #2E7D32;
+.groupContent {
+  margin-top: 8px;
+}
 
-    &:hover {
-      color: #388E3C;
-    }
+.dataCard {
+  height: 100%;
+  transition: all 0.3s;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  
+  :global(.ant-card-body) {
+    padding: 12px;
+  }
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 }
 
-.pageTitle {
-  margin-bottom: 0 !important;
-  margin-right: auto;
-  font-size: 24px;
-  font-weight: 500 !important;
-  color: #2E7D32 !important;
+.deviceCard, .valveCard {
+  height: 100%;
+  transition: all 0.3s;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  
+  :global(.ant-card-body) {
+    padding: 12px;
+  }
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
 }
 
-.actions {
-  display: flex;
-  gap: 8px;
+.alarmList {
+  margin-bottom: 16px;
+}
+
+@media screen and (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .pageTitle {
+    margin: 8px 0;
+  }
+  
+  .actions {
+    margin-top: 8px;
+    width: 100%;
+    justify-content: flex-end;
+  }
 }
 
 .statsRow {
@@ -63,21 +122,24 @@
 }
 
 .sectionCard {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 
   :global(.ant-card-head) {
     background-color: #f9f9f9;
     border-bottom: 1px solid #f0f0f0;
+    padding: 8px 16px;
+    min-height: 40px;
   }
 
   :global(.ant-card-body) {
-    padding: 20px;
+    padding: 12px;
   }
 
   :global(.ant-tabs-tab) {
+    padding: 8px 16px;
     &:hover {
       color: #2E7D32;
     }

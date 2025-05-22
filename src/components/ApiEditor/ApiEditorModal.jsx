@@ -10,7 +10,7 @@ import {
   InfoCircleOutlined, CheckCircleOutlined, CloseCircleOutlined,
   ReloadOutlined
 } from '@ant-design/icons';
-import apiManager from '../../services/apiManager';
+import apiManager from '../../services/api/core/apiManager';
 import { API_METHODS, API_CATEGORIES, API_STATUS } from '../../constants/apiConstants';
 import JsonEditor from './JsonEditor';
 import './ApiEditorModal.scss';

@@ -3,7 +3,7 @@
  * 提供组件使用的 API 调用钩子函数
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
-import apiService from '../services/apiService';
+import { ApiManager } from '../services/api';
 
 /**
  * 使用单个API的Hook
@@ -35,7 +35,7 @@ export function useApi(apiKey, defaultParams = {}, options = {}) {
     setError(null);
     
     try {
-      const response = await apiService.callApi(apiKey, finalParams);
+      const response = await ApiManager.callApi(apiKey, finalParams);
       
       if (isMounted.current) {
         const transformedData = transformData(response);
@@ -125,7 +125,7 @@ export function useApis(apiConfigs, options = {}) {
     setErrors({});
     
     try {
-      const responses = await apiService.batchCallApis(configs, parallel);
+      const responses = await ApiManager.batchCallApis(configs, parallel);
       
       if (isMounted.current) {
         const newResults = {};

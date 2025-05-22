@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Input, Badge, Spin, Empty, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { SearchOutlined } from '@ant-design/icons';
-import apiService from '../../services/apiService';
+import apiManager from '../../services/apiManager';
 import styles from './SiteList.module.scss';
 
 /**
@@ -20,7 +20,7 @@ const SiteList = () => {
     const fetchSites = async () => {
       try {
         // 通过API管理器调用获取站点列表API
-        const response = await apiService.callApi('getSites');
+        const response = await apiManager.callApi('getSites');
         
         if (response && response.success) {
           setSites(response.data || []);

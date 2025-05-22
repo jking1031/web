@@ -61,13 +61,13 @@ import {
   ContentCopy as ContentCopyIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import apiManager from '../../services/apiManager';
-import baseUrlManager from '../../services/baseUrlManager';
+import { ApiManager } from '../../services/api';
+import { BaseUrlManager } from '../../services/api';
 import JsonEditor from '../../components/JsonEditor/JsonEditor';
 import { useAuth } from '../../context/AuthContext';
 
 import ApiDataPage from './ApiDataPage';
-import BaseUrlManager from './components/BaseUrlManager';
+import BaseUrlManagerComponent from './components/BaseUrlManager';
 import ApiSyncTool from '../../components/ApiSyncTool/ApiSyncTool';
 import ApiDbSyncTool from '../../components/ApiDbSyncTool/ApiDbSyncTool';
 
@@ -131,7 +131,7 @@ const ApiManagement = () => {
   // 加载基础URL
   const loadBaseUrls = () => {
     try {
-      const urls = baseUrlManager.getAll();
+      const urls = BaseUrlManager.getAll();
       setBaseUrls(urls);
     } catch (error) {
       console.error('获取基础URL失败:', error);
@@ -141,7 +141,7 @@ const ApiManagement = () => {
   // 加载API配置
   const loadApis = () => {
     try {
-      const allApis = apiManager.registry.getAll();
+      const allApis = ApiManager.registry.getAll();
 
       // 验证返回的数据
       if (allApis) {
@@ -426,9 +426,9 @@ const ApiManagement = () => {
 
     // 保存API配置
     if (isNewApi) {
-      apiManager.registry.register(key, config);
+      ApiManager.registry.register(key, config);
     } else {
-      apiManager.registry.update(key, config);
+      ApiManager.registry.update(key, config);
     }
 
     // 重新加载API配置
@@ -483,7 +483,7 @@ const ApiManagement = () => {
       }
 
       // 测试API
-      const result = await apiManager.test(selectedApi.key, params);
+      const result = await ApiManager.test(selectedApi.key, params);
       setTestResult(result);
     } catch (error) {
       setTestResult({
@@ -515,7 +515,7 @@ const ApiManagement = () => {
     if (!selectedApi) return;
 
     // 删除API配置
-    apiManager.registry.remove(selectedApi.key);
+    ApiManager.registry.remove(selectedApi.key);
 
     // 重新加载API配置
     loadApis();
@@ -538,7 +538,7 @@ const ApiManagement = () => {
     }
 
     // 复制API配置
-    apiManager.registry.register(newKey, { ...api, name: `${api.name} (复制)` });
+    ApiManager.registry.register(newKey, { ...api, name: `${api.name} (复制)` });
 
     // 重新加载API配置
     loadApis();
@@ -713,7 +713,7 @@ const ApiManagement = () => {
           </Paper>
 
           {activeTab === 5 ? (
-            <BaseUrlManager />
+            <BaseUrlManagerComponent />
           ) : activeTab === 6 ? (
             <Box sx={{ p: 2 }}>
               <Typography variant="h6" gutterBottom>系统工具</Typography>

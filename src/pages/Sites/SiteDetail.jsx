@@ -13,7 +13,7 @@ import {
   LinkOutlined,
   DisconnectOutlined
 } from '@ant-design/icons';
-import apiService from '../../services/apiService';
+import apiManager from '../../services/apiManager';
 import { useWebSocket } from '../../context/WebSocketContext';
 import styles from './SiteDetail.module.scss';
 
@@ -37,7 +37,7 @@ const SiteDetail = () => {
     const fetchSiteDetail = async () => {
       try {
         // 通过API管理器调用获取站点详情API
-        const response = await apiService.callApi('getSiteById', { id });
+        const response = await apiManager.callApi('getSiteById', { id });
         
         if (response && response.success) {
           setSite(response.data);

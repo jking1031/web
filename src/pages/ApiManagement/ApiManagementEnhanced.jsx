@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, Tabs, Button, Alert, Typography, Space } from 'antd';
 import { SyncOutlined, LinkOutlined } from '@ant-design/icons';
 import ApiSyncTool from '../../components/ApiSyncTool/ApiSyncTool';

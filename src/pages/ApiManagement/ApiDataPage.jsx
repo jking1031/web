@@ -38,7 +38,7 @@ import {
   ArrowBack as ArrowBackIcon,
   DataObject as DataObjectIcon
 } from '@mui/icons-material';
-import apiManager from '../../services/apiManager';
+import apiManager from "../../services/api/core/apiManager";
 import JsonEditor from '../../components/JsonEditor/JsonEditor';
 
 /**

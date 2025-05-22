@@ -7,8 +7,8 @@
  * 2. 或将此脚本导入到项目中，通过按钮触发执行
  */
 
-import apiManager from '../services/apiManager';
-import { API_CATEGORIES, API_METHODS, API_STATUS } from '../services/apiRegistry';
+import { ApiManager } from '../services/api';
+import { API_CATEGORIES, API_METHODS, API_STATUS } from '../services/api/core/apiRegistry';
 
 /**
  * 同步API注册
@@ -47,7 +47,7 @@ export function clearApiRegistry() {
  * 确保所有环境中都有相同的API列表
  */
 export function registerDefaultApis() {
-  const registry = apiManager.registry;
+  const registry = ApiManager.registry;
   
   // 注册认证相关 API
   registry.register('login', {

@@ -49,8 +49,8 @@ import {
   Storage as StorageIcon,
   Code as CodeIcon
 } from '@mui/icons-material';
-import JsonEditor from '../../components/JsonEditor/JsonEditor';
-import dbService, { DB_EVENTS, DB_STATUS, DB_TYPES } from '../../services/dbService';
+import JsonEditor from '../../../components/JsonEditor/JsonEditor';
+import dbService, { DB_EVENTS, DB_STATUS, DB_TYPES } from '../../../services/dbService';
 import { EventEmitter } from '../../utils/EventEmitter';
 
 /**

@@ -30,9 +30,9 @@ import {
 } from '@mui/icons-material';
 import DataSourceManager from './DataSourceManager';
 import QueryManager from './QueryManager';
-import dbService, { DB_EVENTS, DB_STATUS } from '../../services/dbService';
+import dbService, { DB_EVENTS, DB_STATUS } from '../../../services/dbService';
 import { EventEmitter } from '../../utils/EventEmitter';
-import DatabaseTest from '../../components/DatabaseTest/DatabaseTest';
+import DatabaseTest from '../../../components/DatabaseTest/DatabaseTest';
 
 /**
  * 数据库管理组件

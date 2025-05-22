@@ -20,7 +20,7 @@ import { Line } from '@ant-design/charts';
 import moment from 'moment';
 import { Resizable } from 're-resizable';
 import api from '../../../api/interceptors';
-import apiManager from '../../../services/apiManager';
+import apiManager from '../../../services/api/core/apiManager';
 import styles from './EnhancedTrendChart.module.scss';
 import { useAuth } from '../../../context/AuthContext';
 import AdminCheck from '../../../components/Auth/AdminCheck';

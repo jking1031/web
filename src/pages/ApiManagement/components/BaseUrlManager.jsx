@@ -44,7 +44,7 @@ import {
   Save as SaveIcon,
   Code as CodeIcon
 } from '@mui/icons-material';
-import baseUrlManager from '../../../services/baseUrlManager';
+import baseUrlManager from "../../../services/api/managers/baseUrlManager";
 import axios from 'axios';
 
 /**

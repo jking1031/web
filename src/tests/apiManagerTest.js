@@ -7,7 +7,7 @@
  * 2. 调用 runTests() 函数
  */
 
-import apiManager from '../services/apiManager';
+import { ApiManager } from '../services/api';
 import { API_CATEGORIES, API_METHODS, API_STATUS } from '../services/apiRegistry';
 import { FIELD_TYPES } from '../services/apiFieldManager';
 import { VARIABLE_SCOPES } from '../services/apiVariableManager';

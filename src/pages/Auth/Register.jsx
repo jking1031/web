@@ -3,7 +3,7 @@ import { Form, Input, Button, Card, Typography, Alert, Select, Spin } from 'antd
 import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, BankOutlined, TeamOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import apiService from '../../services/apiService';
+import apiManager from '../../services/apiManager';
 import styles from './Auth.module.scss';
 
 const { Title, Text } = Typography;
@@ -60,7 +60,7 @@ const Register = () => {
       }
 
       // 调用注册API，通过API管理器调用
-      const response = await apiService.callApi('register', {
+      const response = await apiManager.callApi('register', {
         username: values.username,
         password: values.password,
         email: values.email,

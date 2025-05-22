@@ -3,7 +3,7 @@ import { Button, Tooltip, Badge } from 'antd';
 import { ApiOutlined } from '@ant-design/icons';
 import ApiEditorModal from './ApiEditorModal';
 import PropTypes from 'prop-types';
-import apiManager from '../../services/apiManager';
+import apiManager from "../../services/api/core/apiManager";
 
 /**
  * API编辑器按钮组件
