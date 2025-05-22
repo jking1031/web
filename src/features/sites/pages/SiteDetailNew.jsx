@@ -21,6 +21,12 @@ const { Text } = Typography;
 const { TabPane } = Tabs;
 const { Title } = Typography;
 
+// 全局数字格式化函数
+const formatNumber = (value, precision = 2) => {
+  if (value === null || value === undefined) return '0.00';
+  return typeof value === 'number' ? Number(value).toFixed(precision) : value;
+};
+
 /**
  * 站点详情页组件 - 新版本
  * 基于文档重新构建，包含四个主要部分：
@@ -1584,6 +1590,7 @@ const SiteDetailNew = () => {
     return (
       <Card
         hoverable
+        className={styles.sensorCard}
         style={{
           borderTop: '4px solid',
           borderTopColor: data.alarm === 1 ? '#ff4d4f' : '#1890ff'
@@ -1645,7 +1652,9 @@ const SiteDetailNew = () => {
       <Row gutter={[16,16]}>
         {group.data.map((item, idx) => (
           <Col xs={24} sm={12} md={8} lg={6} key={`${group.id}-sensor-${idx}`}>
-            <DataCard data={item} type="sensor" />
+            <div className={styles.sensorCardWrapper}>
+              <DataCard data={item} type="sensor" />
+            </div>
           </Col>
         ))}
       </Row>
@@ -1662,7 +1671,7 @@ const SiteDetailNew = () => {
     });
     
     return (
-      <Row gutter={[16,16]}>
+      <Row gutter={[8, 8]}>
         {group.data.map((item,idx)=>{
           // 确定设备运行状态 - 兼容多种数据格式
           const isRunning = item.status === 'running' || 
@@ -1675,28 +1684,17 @@ const SiteDetailNew = () => {
                          item.fault === true || 
                          item.hasFault === true;
           
-          // 调试输出单个设备状态
-          console.log(`🔌 设备${idx+1}状态:`, {
-            名称: item.name,
-            运行: isRunning ? '✓' : '✗',
-            故障: hasFault ? '✓' : '✗',
-            原始值: { 
-              status: item.status, 
-              run: item.run, 
-              fault: item.fault 
-            }
-          });
-          
           return (
-            <Col xs={24} sm={12} md={8} lg={6} key={idx}>
+            <Col xs={24} sm={12} md={8} lg={4} xl={4} xxl={4} key={idx}>
               <Card
                 hoverable
+                className={styles.deviceCard}
                 style={{
                   borderTop: '4px solid',
                   borderTopColor: isRunning ? '#52c41a' : '#ff4d4f'
                 }}
               >
-                <div style={{ marginBottom: 8 }}>
+                <div style={{ marginBottom: 6 }}>
                   <Text strong>{item.name}</Text>
                   <Badge
                     status={isRunning ? 'success' : 'error'}
@@ -1709,16 +1707,17 @@ const SiteDetailNew = () => {
                 </div>
 
                 {item.location && (
-                  <div style={{ marginBottom: 8, color: 'rgba(0, 0, 0, 0.45)' }}>
+                  <div style={{ marginBottom: 6, color: 'rgba(0, 0, 0, 0.45)', fontSize: 12 }}>
                     <EnvironmentOutlined style={{ marginRight: 4 }} />
                     {item.location}
                   </div>
                 )}
 
-                <div style={{ marginTop: 16 }}>
+                <div style={{ marginTop: 12 }}>
                   <Button
                     type="primary"
-                    style={{ backgroundColor: '#52c41a', marginRight: 8 }}
+                    size="small"
+                    style={{ backgroundColor: '#52c41a', marginRight: 6 }}
                     disabled={isRunning || !hasControlPermission || hasFault}
                     onClick={() => handleDeviceControl(item, 'start')}
                     loading={pendingCommands[item.name]?.status === 'pending'}
@@ -1727,6 +1726,7 @@ const SiteDetailNew = () => {
                   </Button>
                   <Button
                     danger
+                    size="small"
                     disabled={!isRunning || !hasControlPermission || hasFault}
                     onClick={() => handleDeviceControl(item, 'stop')}
                     loading={pendingCommands[item.name]?.status === 'pending'}
@@ -1737,7 +1737,7 @@ const SiteDetailNew = () => {
 
                 {!hasControlPermission && (
                   <div style={{
-                    marginTop: 8,
+                    marginTop: 6,
                     padding: '4px 8px',
                     backgroundColor: 'rgba(0, 0, 0, 0.05)',
                     borderRadius: 4,
@@ -1748,9 +1748,9 @@ const SiteDetailNew = () => {
                   </div>
                 )}
                 
-                {/* 添加命令状态显示 */}
+                {/* 命令状态显示 */}
                 {pendingCommands[item.name] && (
-                  <div style={{ marginTop: 8 }}>
+                  <div style={{ marginTop: 6, fontSize: 12 }}>
                     <Badge 
                       status={
                         pendingCommands[item.name].status === 'pending' ? 'processing' :
@@ -1781,17 +1781,18 @@ const SiteDetailNew = () => {
   };
 
   const renderValveGroup = (group) => (
-    <Row gutter={[16,16]}>
+    <Row gutter={[8, 8]}>
       {group.data.map((item,idx)=>(
-        <Col xs={24} sm={12} md={8} lg={6} key={idx}>
+        <Col xs={24} sm={12} md={8} lg={4} xl={4} xxl={4} key={idx}>
           <Card
             hoverable
+            className={styles.deviceCard}
             style={{
               borderTop: '4px solid',
               borderTopColor: item.status === 1 || item.open === 1 ? '#52c41a' : '#ff4d4f'
             }}
           >
-            <div style={{ marginBottom: 8 }}>
+            <div style={{ marginBottom: 6 }}>
               <Text strong>{item.name}</Text>
               <Badge
                 status={(item.status === 1 || item.open === 1) ? 'success' : 'error'}
@@ -1803,10 +1804,11 @@ const SiteDetailNew = () => {
               )}
             </div>
 
-            <div style={{ marginTop: 16 }}>
+            <div style={{ marginTop: 12 }}>
               <Button
                 type="primary"
-                style={{ backgroundColor: '#52c41a', marginRight: 8 }}
+                size="small"
+                style={{ backgroundColor: '#52c41a', marginRight: 6 }}
                 disabled={(item.status === 1 || item.open === 1) || !hasControlPermission || item.fault === 1}
                 onClick={() => handleValveControl(item, 'open')}
                 loading={pendingCommands[item.name]?.status === 'pending'}
@@ -1815,6 +1817,7 @@ const SiteDetailNew = () => {
               </Button>
               <Button
                 danger
+                size="small"
                 disabled={(item.status !== 1 && item.open !== 1) || !hasControlPermission || item.fault === 1}
                 onClick={() => handleValveControl(item, 'close')}
                 loading={pendingCommands[item.name]?.status === 'pending'}
@@ -1825,7 +1828,7 @@ const SiteDetailNew = () => {
 
             {!hasControlPermission && (
               <div style={{
-                marginTop: 8,
+                marginTop: 6,
                 padding: '4px 8px',
                 backgroundColor: 'rgba(0, 0, 0, 0.05)',
                 borderRadius: 4,
@@ -1844,46 +1847,48 @@ const SiteDetailNew = () => {
   const renderEnergyGroup = (group) => {
     console.log(`渲染能耗组: ${group.id}, 数据项数: ${group.data.length}`, group.data);
     return (
-      <Row gutter={[16,16]}>
+      <Row gutter={[8, 8]}>
         {group.data.map((item, idx) => (
-          <Col xs={24} sm={12} md={8} lg={6} key={`${group.id}-energy-${idx}`}>
+          <Col xs={24} sm={12} md={8} lg={4} xl={4} xxl={4} key={`${group.id}-energy-${idx}`}>
             <Card hoverable style={{ borderTop: '4px solid #1890ff' }}>
-              <div style={{ marginBottom: 8 }}>
-                <Text strong>{item.name}</Text>
+              <div style={{ marginBottom: 6 }}>
+                <Text strong style={{fontSize: 14}}>{item.name}</Text>
               </div>
               <Statistic
                 title="当前值"
-                value={item.value || item.power || 0}
+                value={formatNumber(item.value || item.power || 0)}
                 suffix={item.unit || 'kWh'}
-                precision={1}
+                precision={2}
                 valueStyle={{ 
-                  color: item.threshold && item.value > item.threshold ? '#ff4d4f' : '#1890ff'
+                  color: item.threshold && item.value > item.threshold ? '#ff4d4f' : '#1890ff',
+                  fontSize: 16
                 }}
               />
               {item.threshold && (
-                <div style={{ marginTop: 8 }}>
+                <div style={{ marginTop: 6 }}>
                   <Progress
-                    percent={Math.min(100, ((item.value / item.threshold) * 100).toFixed(1))}
+                    percent={Math.min(100, parseFloat(((item.value / item.threshold) * 100).toFixed(2)))}
                     size="small"
                     status={item.value > item.threshold ? 'exception' : 'normal'}
                   />
                   <div style={{ fontSize: 12, color: 'rgba(0, 0, 0, 0.45)' }}>
-                    阈值: {item.threshold} {item.unit || 'kWh'} 
-                    ({((item.value / item.threshold) * 100).toFixed(1)}%)
+                    阈值: {formatNumber(item.threshold)} {item.unit || 'kWh'} 
+                    ({((item.value / item.threshold) * 100).toFixed(2)}%)
                   </div>
                 </div>
               )}
               {item.trend !== undefined && (
-                <div style={{ marginTop: 8 }}>
+                <div style={{ marginTop: 6 }}>
                   <div style={{ 
                     display: 'flex', 
                     alignItems: 'center', 
-                    color: item.trend > 0 ? '#ff4d4f' : item.trend < 0 ? '#52c41a' : 'inherit' 
+                    color: item.trend > 0 ? '#ff4d4f' : item.trend < 0 ? '#52c41a' : 'inherit',
+                    fontSize: 12
                   }}>
                     {item.trend > 0 ? (
-                      <span>↑ 上升 {Math.abs(item.trend).toFixed(1)}%</span>
+                      <span>↑ 上升 {Math.abs(item.trend).toFixed(2)}%</span>
                     ) : item.trend < 0 ? (
-                      <span>↓ 下降 {Math.abs(item.trend).toFixed(1)}%</span>
+                      <span>↓ 下降 {Math.abs(item.trend).toFixed(2)}%</span>
                     ) : (
                       <span>→ 持平</span>
                     )}
@@ -1891,17 +1896,17 @@ const SiteDetailNew = () => {
                 </div>
               )}
               {item.consumption && (
-                <div style={{ marginTop: 8 }}>
-                  <Text type="secondary">累计: {item.consumption} {item.unit || 'kWh'}</Text>
+                <div style={{ marginTop: 6, fontSize: 12 }}>
+                  <Text type="secondary">累计: {formatNumber(item.consumption)} {item.unit || 'kWh'}</Text>
                 </div>
               )}
               {item.current !== undefined && (
-                <div style={{ marginTop: 4 }}>
+                <div style={{ marginTop: 4, fontSize: 12 }}>
                   <Text type="secondary">电流: {item.current} A</Text>
                 </div>
               )}
               {item.voltage !== undefined && (
-                <div style={{ marginTop: 4 }}>
+                <div style={{ marginTop: 4, fontSize: 12 }}>
                   <Text type="secondary">电压: {item.voltage} V</Text>
                 </div>
               )}
@@ -1915,69 +1920,35 @@ const SiteDetailNew = () => {
   const renderRuntimeGroup = (group) => {
     console.log(`渲染运行时间组: ${group.id}, 数据项数: ${group.data.length}`, group.data);
     return (
-      <Row gutter={[16,16]}>
+      <Row gutter={[8, 8]}>
         {group.data.map((item, idx) => (
-          <Col xs={24} sm={12} md={8} lg={6} key={`${group.id}-runtime-${idx}`}>
+          <Col xs={24} sm={12} md={8} lg={4} xl={4} xxl={4} key={`${group.id}-runtime-${idx}`}>
             <Card hoverable style={{ borderTop: '4px solid #1890ff' }}>
-              <div style={{ marginBottom: 8 }}>
-                <Text strong>{item.name}</Text>
+              <div style={{ marginBottom: 6 }}>
+                <Text strong style={{fontSize: 14}}>{item.name}</Text>
               </div>
               <Statistic
                 title="总运行时间"
-                value={item.totalHours || item.runningTime}
+                value={formatNumber(item.totalHours || item.runningTime)}
                 suffix="小时"
-                precision={1}
-                valueStyle={{ color: '#1890ff' }}
+                precision={2}
+                valueStyle={{ color: '#1890ff', fontSize: 16 }}
               />
               
               {item.dailyHours !== undefined && (
-                <div style={{ marginTop: 8 }}>
-                  <Text type="secondary">今日运行: {item.dailyHours} 小时</Text>
+                <div style={{ marginTop: 6 }}>
+                  <Text type="secondary" style={{fontSize: 12}}>今日运行: {formatNumber(item.dailyHours)} 小时</Text>
                   <Progress 
-                    percent={Math.min(100, (item.dailyHours / 24) * 100)} 
+                    percent={Math.min(100, parseFloat(((item.dailyHours / 24) * 100).toFixed(2)))} 
                     size="small" 
                     status={item.dailyHours > 0 ? (item.dailyHours < 24 ? 'normal' : 'success') : 'exception'} 
                   />
                 </div>
               )}
               
-              {(item.nextMaintenance !== undefined || item.maintenanceDue) && (
-                <div style={{ 
-                  marginTop: 8, 
-                  padding: '4px 8px', 
-                  backgroundColor: 
-                    item.nextMaintenance < 100 || (item.maintenanceDue && new Date(item.maintenanceDue) < new Date())
-                    ? 'rgba(255, 77, 79, 0.1)' 
-                    : 'rgba(0, 0, 0, 0.05)', 
-                  borderRadius: 4
-                }}>
-                  {item.nextMaintenance !== undefined && (
-                    <div style={{ 
-                      color: item.nextMaintenance < 100 ? '#ff4d4f' : 'rgba(0, 0, 0, 0.65)'
-                    }}>
-                      距离下次维护: {item.nextMaintenance} 小时
-                      {item.nextMaintenance < 100 && <span> (需要注意)</span>}
-                    </div>
-                  )}
-                  {item.maintenanceDue && (
-                    <div>
-                      计划维护日期: {new Date(item.maintenanceDue).toLocaleDateString()}
-                    </div>
-                  )}
-                </div>
-              )}
-
               {item.startCount !== undefined && (
-                <div style={{ marginTop: 8 }}>
+                <div style={{ marginTop: 6, fontSize: 12 }}>
                   <Text type="secondary">启动次数: {item.startCount} 次</Text>
-                </div>
-              )}
-              
-              {item.lastStartTime && (
-                <div style={{ marginTop: 4 }}>
-                  <Text type="secondary">
-                    最后启动: {new Date(item.lastStartTime).toLocaleString()}
-                  </Text>
                 </div>
               )}
             </Card>
@@ -1990,9 +1961,9 @@ const SiteDetailNew = () => {
   const renderProcessGroup = (group) => {
     console.log(`渲染工艺参数组: ${group.id}, 数据项数: ${group.data.length}`, group.data);
     return (
-      <Row gutter={[16,16]}>
+      <Row gutter={[8, 8]}>
         {group.data.map((item, idx) => (
-          <Col xs={24} sm={12} md={8} lg={6} key={`${group.id}-process-${idx}`}>
+          <Col xs={24} sm={12} md={8} lg={4} xl={4} xxl={4} key={`${group.id}-process-${idx}`}>
             <Card 
               hoverable 
               style={{ 
@@ -2005,12 +1976,12 @@ const SiteDetailNew = () => {
                     : '#1890ff' 
               }}
             >
-              <div style={{ marginBottom: 8 }}>
-                <Text strong>{item.name}</Text>
+              <div style={{ marginBottom: 6 }}>
+                <Text strong style={{fontSize: 14}}>{item.name}</Text>
                 {item.status && (
                   <Tag 
                     color={item.status === 'normal' ? 'green' : item.status === 'warning' ? 'orange' : 'red'} 
-                    style={{ marginLeft: 8 }}
+                    style={{ marginLeft: 4 }}
                   >
                     {item.status === 'normal' ? '正常' : 
                      item.status === 'warning' ? '警告' : 
@@ -2020,26 +1991,27 @@ const SiteDetailNew = () => {
               </div>
               
               <Statistic
-                value={item.value !== undefined ? item.value : (item.data !== undefined ? item.data : 0)}
+                value={formatNumber(item.value !== undefined ? item.value : (item.data !== undefined ? item.data : 0))}
                 suffix={item.unit || ''}
-                precision={item.unit === '%' ? 1 : 0}
+                precision={2}
                 valueStyle={{ 
                   color: 
                     (item.lowerLimit !== undefined && item.value < item.lowerLimit) || 
                     (item.upperLimit !== undefined && item.value > item.upperLimit) || 
                     item.status === 'abnormal' 
                       ? '#ff4d4f' 
-                      : '#1890ff'
+                      : '#1890ff',
+                  fontSize: 16
                 }}
               />
               
               {(item.lowerLimit !== undefined || item.upperLimit !== undefined) && (
-                <div style={{ marginTop: 8 }}>
+                <div style={{ marginTop: 6 }}>
                   {/* 进度条显示 */}
                   {item.lowerLimit !== undefined && item.upperLimit !== undefined && (
                     <>
                       <Progress
-                        percent={Math.min(100, Math.max(0, ((item.value - item.lowerLimit) / (item.upperLimit - item.lowerLimit)) * 100))}
+                        percent={Math.min(100, Math.max(0, parseFloat(((item.value - item.lowerLimit) / (item.upperLimit - item.lowerLimit) * 100).toFixed(2))))}
                         size="small"
                         status={
                           item.value < item.lowerLimit || item.value > item.upperLimit 
@@ -2048,39 +2020,10 @@ const SiteDetailNew = () => {
                         }
                       />
                       <div style={{ fontSize: 12, color: 'rgba(0, 0, 0, 0.45)' }}>
-                        范围: {item.lowerLimit} - {item.upperLimit} {item.unit || ''}
+                        范围: {formatNumber(item.lowerLimit)} - {formatNumber(item.upperLimit)} {item.unit || ''}
                       </div>
                     </>
                   )}
-                  
-                  {/* 只有下限 */}
-                  {item.lowerLimit !== undefined && item.upperLimit === undefined && (
-                    <div style={{ fontSize: 12, color: 'rgba(0, 0, 0, 0.45)' }}>
-                      最小值: {item.lowerLimit} {item.unit || ''} 
-                      {item.value < item.lowerLimit && <span style={{ color: '#ff4d4f' }}> (低于下限)</span>}
-                    </div>
-                  )}
-                  
-                  {/* 只有上限 */}
-                  {item.upperLimit !== undefined && item.lowerLimit === undefined && (
-                    <div style={{ fontSize: 12, color: 'rgba(0, 0, 0, 0.45)' }}>
-                      最大值: {item.upperLimit} {item.unit || ''} 
-                      {item.value > item.upperLimit && <span style={{ color: '#ff4d4f' }}> (超过上限)</span>}
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              {/* 其他可能的属性 */}
-              {item.time && (
-                <div style={{ marginTop: 4, fontSize: 12, color: 'rgba(0, 0, 0, 0.45)' }}>
-                  时间: {typeof item.time === 'string' ? item.time : new Date(item.time).toLocaleString()}
-                </div>
-              )}
-              
-              {item.description && (
-                <div style={{ marginTop: 4, fontSize: 12 }}>
-                  {item.description}
                 </div>
               )}
             </Card>
@@ -2159,9 +2102,9 @@ const SiteDetailNew = () => {
   const renderLabGroup = (group) => {
     console.log(`渲染实验室数据组: ${group.id}, 数据项数: ${group.data.length}`, group.data);
     return (
-      <Row gutter={[16,16]}>
+      <Row gutter={[8, 8]}>
         {group.data.map((item, idx) => (
-          <Col xs={24} sm={12} md={8} lg={6} key={`${group.id}-lab-${idx}`}>
+          <Col xs={24} sm={12} md={8} lg={4} xl={4} xxl={4} key={`${group.id}-lab-${idx}`}>
             <Card 
               hoverable 
               style={{ 
@@ -2174,8 +2117,8 @@ const SiteDetailNew = () => {
                     : '#1890ff' 
               }}
             >
-              <div style={{ marginBottom: 8 }}>
-                <Text strong>{item.name}</Text>
+              <div style={{ marginBottom: 6 }}>
+                <Text strong style={{fontSize: 14}}>{item.name}</Text>
                 {item.status && (
                   <Tag 
                     color={
@@ -2183,7 +2126,7 @@ const SiteDetailNew = () => {
                       item.status === 'warning' ? 'orange' : 
                       'red'
                     } 
-                    style={{ marginLeft: 8 }}
+                    style={{ marginLeft: 4 }}
                   >
                     {item.status === 'normal' ? '正常' : 
                      item.status === 'warning' ? '警告' : 
@@ -2193,22 +2136,23 @@ const SiteDetailNew = () => {
                 )}
               </div>
               <Statistic
-                value={item.value || item.result || 0}
+                value={formatNumber(item.value || item.result || 0)}
                 suffix={item.unit || ''}
-                precision={1}
+                precision={2}
                 valueStyle={{
                   color: 
                     (item.standard && item.value > item.standard) || 
                     (item.limit && item.value > item.limit) || 
                     (item.status === 'abnormal') 
                       ? '#ff4d4f' 
-                      : '#1890ff'
+                      : '#1890ff',
+                  fontSize: 16
                 }}
               />
               
               {/* 标准值或限值 */}
               {(item.standard || item.limit) && (
-                <div style={{ marginTop: 4 }}>
+                <div style={{ marginTop: 6, fontSize: 12 }}>
                   <Text 
                     type={
                       (item.standard && item.value > item.standard) || 
@@ -2217,32 +2161,12 @@ const SiteDetailNew = () => {
                         : 'secondary'
                     }
                   >
-                    标准值: {item.standard || item.limit} {item.unit || ''}
+                    标准值: {formatNumber(item.standard || item.limit)} {item.unit || ''}
                     {((item.standard && item.value > item.standard) || 
                      (item.limit && item.value > item.limit)) && 
                      <span style={{ color: '#ff4d4f' }}> (超标)</span>
                     }
                   </Text>
-                </div>
-              )}
-              
-              {/* 采样和检测时间 */}
-              <div style={{ marginTop: 8, fontSize: 12, color: 'rgba(0, 0, 0, 0.45)' }}>
-                {item.sampleTime && (
-                  <div>采样时间: {typeof item.sampleTime === 'string' ? item.sampleTime : new Date(item.sampleTime).toLocaleString()}</div>
-                )}
-                {item.testTime && (
-                  <div>检测时间: {typeof item.testTime === 'string' ? item.testTime : new Date(item.testTime).toLocaleString()}</div>
-                )}
-                {(!item.sampleTime && !item.testTime && item.timestamp) && (
-                  <div>数据时间: {typeof item.timestamp === 'string' ? item.timestamp : new Date(item.timestamp).toLocaleString()}</div>
-                )}
-              </div>
-              
-              {/* 备注信息 */}
-              {item.note && (
-                <div style={{ marginTop: 4, fontSize: 12 }}>
-                  <Text type="secondary">备注: {item.note}</Text>
                 </div>
               )}
             </Card>
@@ -2255,9 +2179,9 @@ const SiteDetailNew = () => {
   const renderHealthGroup = (group) => {
     console.log(`渲染健康状态组: ${group.id}, 数据项数: ${group.data.length}`, group.data);
     return (
-      <Row gutter={[16,16]}>
+      <Row gutter={[8, 8]}>
         {group.data.map((item, idx) => (
-          <Col xs={24} sm={12} md={8} lg={6} key={`${group.id}-health-${idx}`}>
+          <Col xs={24} sm={12} md={8} lg={4} xl={4} xxl={4} key={`${group.id}-health-${idx}`}>
             <Card 
               hoverable 
               style={{ 
@@ -2268,34 +2192,35 @@ const SiteDetailNew = () => {
                   item.healthScore >= 40 ? '#faad14' : '#ff4d4f'
               }}
             >
-              <div style={{ marginBottom: 8 }}>
-                <Text strong>{item.name}</Text>
+              <div style={{ marginBottom: 6 }}>
+                <Text strong style={{fontSize: 14}}>{item.name}</Text>
               </div>
               <Statistic
                 title="健康得分"
-                value={item.healthScore}
+                value={formatNumber(item.healthScore)}
                 suffix="/100"
                 precision={0}
                 valueStyle={{
                   color:
                     item.healthScore >= 80 ? '#52c41a' :
                     item.healthScore >= 60 ? '#1890ff' :
-                    item.healthScore >= 40 ? '#faad14' : '#ff4d4f'
+                    item.healthScore >= 40 ? '#faad14' : '#ff4d4f',
+                  fontSize: 16
                 }}
               />
               
               {/* 健康状态进度条 */}
               <Progress
-                percent={item.healthScore}
+                percent={Math.min(100, parseFloat(item.healthScore.toFixed(2)))}
                 size="small"
                 status={
                   item.healthScore >= 80 ? 'success' :
                   item.healthScore >= 40 ? 'normal' : 'exception'
                 }
-                style={{ marginTop: 8 }}
+                style={{ marginTop: 6 }}
               />
               
-              <div style={{ marginTop: 8 }}>
+              <div style={{ marginTop: 6, fontSize: 12 }}>
                 <Badge
                   status={
                     item.status === 'good' ? 'success' :
@@ -2309,54 +2234,6 @@ const SiteDetailNew = () => {
                   }
                 />
               </div>
-              
-              {/* 维护信息 */}
-              {(item.maintenanceDue || item.lastMaintenance || item.nextMaintenance) && (
-                <div style={{
-                  marginTop: 8,
-                  padding: '4px 8px',
-                  backgroundColor: 'rgba(0, 0, 0, 0.05)',
-                  borderRadius: 4
-                }}>
-                  {item.maintenanceDue && (
-                    <div style={{ fontSize: 12, color: 'rgba(0, 0, 0, 0.65)' }}>
-                      下次维护: {
-                        typeof item.maintenanceDue === 'string' 
-                          ? item.maintenanceDue 
-                          : new Date(item.maintenanceDue).toLocaleDateString()
-                      }
-                    </div>
-                  )}
-                  
-                  {item.lastMaintenance && (
-                    <div style={{ fontSize: 12, color: 'rgba(0, 0, 0, 0.65)' }}>
-                      上次维护: {
-                        typeof item.lastMaintenance === 'string' 
-                          ? item.lastMaintenance 
-                          : new Date(item.lastMaintenance).toLocaleDateString()
-                      }
-                    </div>
-                  )}
-                  
-                  {item.nextMaintenance && (
-                    <div style={{ 
-                      fontSize: 12, 
-                      color: item.nextMaintenance < 100 ? '#ff4d4f' : 'rgba(0, 0, 0, 0.65)'
-                    }}>
-                      距离下次维护: {item.nextMaintenance} 小时
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              {/* 故障信息 */}
-              {item.issues && (
-                <div style={{ marginTop: 8 }}>
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    注意事项: {Array.isArray(item.issues) ? item.issues.join(', ') : item.issues}
-                  </Text>
-                </div>
-              )}
             </Card>
           </Col>
         ))}
@@ -2367,9 +2244,9 @@ const SiteDetailNew = () => {
   const renderProductionGroup = (group) => {
     console.log(`渲染生产指标组: ${group.id}, 数据项数: ${group.data.length}`, group.data);
     return (
-      <Row gutter={[16,16]}>
+      <Row gutter={[8, 8]}>
         {group.data.map((item, idx) => (
-          <Col xs={24} sm={12} md={8} lg={6} key={`${group.id}-production-${idx}`}>
+          <Col xs={24} sm={12} md={8} lg={4} xl={4} xxl={4} key={idx}>
             <Card 
               hoverable 
               style={{ 
@@ -2382,28 +2259,29 @@ const SiteDetailNew = () => {
                     '#1890ff'
               }}
             >
-              <div style={{ marginBottom: 8 }}>
-                <Text strong>{item.name}</Text>
+              <div style={{ marginBottom: 6 }}>
+                <Text strong style={{fontSize: 14}}>{item.name}</Text>
                 {item.timeframe && (
-                  <Tag color="blue" style={{ marginLeft: 8 }}>{item.timeframe}</Tag>
+                  <Tag color="blue" style={{ marginLeft: 4 }}>{item.timeframe}</Tag>
                 )}
               </div>
               <Statistic
-                value={item.value}
+                value={formatNumber(item.value)}
                 suffix={item.unit}
-                precision={item.unit === '%' ? 1 : 0}
+                precision={2}
                 valueStyle={{ 
                   color: item.target ? 
                     ((item.value / item.target) >= 1 ? '#52c41a' :
                      (item.value / item.target) >= 0.8 ? '#1890ff' : 
                      '#ff4d4f') :
-                    '#1890ff'
+                    '#1890ff',
+                  fontSize: 16
                 }}
               />
               {item.target && (
-                <div style={{ marginTop: 8 }}>
+                <div style={{ marginTop: 6 }}>
                   <Progress
-                    percent={Math.min(100, ((item.value / item.target) * 100))}
+                    percent={Math.min(100, parseFloat(((item.value / item.target) * 100).toFixed(2)))}
                     size="small"
                     status={
                       (item.value / item.target) >= 1 ? 'success' :
@@ -2411,42 +2289,8 @@ const SiteDetailNew = () => {
                     }
                   />
                   <div style={{ fontSize: 12, color: 'rgba(0, 0, 0, 0.45)' }}>
-                    目标: {item.target} {item.unit} ({((item.value / item.target) * 100).toFixed(1)}%)
+                    目标: {formatNumber(item.target)} {item.unit} ({((item.value / item.target) * 100).toFixed(2)}%)
                   </div>
-                </div>
-              )}
-              
-              {/* 趋势信息 */}
-              {item.trend !== undefined && (
-                <div style={{ marginTop: 8 }}>
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    color: item.trend > 0 ? '#52c41a' : item.trend < 0 ? '#ff4d4f' : 'inherit',
-                    fontSize: 12
-                  }}>
-                    {item.trend > 0 ? (
-                      <span>↑ 上升 {Math.abs(item.trend).toFixed(1)}%</span>
-                    ) : item.trend < 0 ? (
-                      <span>↓ 下降 {Math.abs(item.trend).toFixed(1)}%</span>
-                    ) : (
-                      <span>→ 持平</span>
-                    )}
-                  </div>
-                </div>
-              )}
-              
-              {/* 时间信息 */}
-              {item.date && (
-                <div style={{ marginTop: 4, fontSize: 12, color: 'rgba(0, 0, 0, 0.45)' }}>
-                  日期: {typeof item.date === 'string' ? item.date : new Date(item.date).toLocaleDateString()}
-                </div>
-              )}
-              
-              {/* 描述信息 */}
-              {item.description && (
-                <div style={{ marginTop: 4, fontSize: 12 }}>
-                  <Text type="secondary">{item.description}</Text>
                 </div>
               )}
             </Card>
@@ -2866,31 +2710,32 @@ const SiteDetailNew = () => {
 
   // 添加频率设备渲染组件
   const renderFrequencyGroup = (group) => (
-    <Row gutter={[16,16]}>
+    <Row gutter={[8, 8]}>
       {group.data.map((device, idx) => (
-        <Col xs={24} sm={12} md={8} lg={6} key={idx}>
-          <Card hoverable style={{ borderTop: '4px solid #1890ff' }}>
-            <div style={{ marginBottom: 8 }}>
-              <Text strong>{device.name}</Text>
+        <Col xs={24} sm={12} md={8} lg={4} xl={4} xxl={4} key={idx}>
+          <Card hoverable className={styles.deviceCard} style={{ borderTop: '4px solid #1890ff' }}>
+            <div style={{ marginBottom: 6 }}>
+              <Text strong style={{fontSize: 14}}>{device.name}</Text>
             </div>
 
             <Statistic
               title="当前频率"
-              value={device.hz !== undefined && device.hz !== null ? device.hz.toFixed(2) : '0.00'}
+              value={formatNumber(device.hz)}
               suffix="Hz"
               precision={2}
-              valueStyle={{ color: '#1890ff' }}
+              valueStyle={{ color: '#1890ff', fontSize: 16 }}
             />
 
             {device.sethz !== undefined && (
-              <div style={{ marginTop: 8, color: 'rgba(0, 0, 0, 0.45)' }}>
-                设定值: {device.sethz?.toFixed(2) || '0.00'} Hz
+              <div style={{ marginTop: 6, color: 'rgba(0, 0, 0, 0.45)', fontSize: 12 }}>
+                设定值: {formatNumber(device.sethz)} Hz
               </div>
             )}
 
-            <div style={{ marginTop: 16 }}>
+            <div style={{ marginTop: 12 }}>
               <Button
                 type="primary"
+                size="small"
                 disabled={!hasControlPermission}
                 onClick={() => {
                   setSelectedDevice(device);
@@ -2905,7 +2750,7 @@ const SiteDetailNew = () => {
 
             {!hasControlPermission && (
               <div style={{
-                marginTop: 8,
+                marginTop: 6,
                 padding: '4px 8px',
                 backgroundColor: 'rgba(0, 0, 0, 0.05)',
                 borderRadius: 4,
@@ -3542,109 +3387,125 @@ const SiteDetailRenderer = ({
     <div className={styles.siteDetailContainer}>
       {/* 页面头部 */}
       <div className={styles.header}>
-        <div className={styles.backButton}>
+        <div className={styles.headerLeft}>
           <Button
             icon={<LeftOutlined />}
             onClick={() => navigate('/sites')}
+            className={styles.backButton}
           >
             返回
           </Button>
+          <h1 className={styles.pageTitle}>{dataGroups.name}</h1>
         </div>
-        <h1 className={styles.pageTitle}>{dataGroups.name}</h1>
-        <div className={styles.actions}>
-          <Space>
-            <ApiEditorButton
-              pageKey="siteDetail"
-              tooltip="编辑站点详情页API"
-            />
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={handleRefresh}
-            >
-              刷新
-            </Button>
-          </Space>
+        <div className={styles.headerActions}>
+          <ApiEditorButton
+            pageKey="siteDetail"
+            tooltip="编辑站点详情页API"
+            className={styles.actionButton}
+          />
+          <Button
+            type="primary"
+            icon={<ReloadOutlined />}
+            onClick={handleRefresh}
+            loading={refreshing}
+            className={styles.actionButton}
+          >
+            刷新
+          </Button>
         </div>
       </div>
 
       {/* 第一部分：站点信息区（由站点列表自动传入的基本信息或通过getSiteList API获取） */}
       <Row gutter={[16, 16]}>
         <Col xs={24}>
-          <Card>
-            <Descriptions
-              title={
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#2E7D32', width: '100%' }}>
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <AppstoreOutlined style={{ marginRight: 8 }} />
-                  <span>站点信息</span>
-                  </div>
-                  <div className={styles.connectionStatus}>
-                    <Badge
-                      status={wsConnected ? 'success' : 'error'}
-                      text={wsConnected ? '设备控制已连接' : '设备控制未连接'}
-                    />
-                    {!wsConnected && (
-                      <Button
-                        type="primary"
-                        size="small"
-                        onClick={() => connect(siteId)}
-                        style={{ marginLeft: 8 }}
-                      >
-                        连接
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              }
-              bordered
-              column={{ xxl: 3, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }}
-              labelStyle={{ fontWeight: 500 }}
-            >
-              <Descriptions.Item label="站点名称">
-                <Text strong>{dataGroups.site?.name || dataGroups.name || '未知站点'}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label="站点状态">
-                <Badge
+          <Card className={styles.siteInfoCard}>
+            <div className={styles.siteInfoHeader}>
+              <div className={styles.siteTitle}>
+                <DashboardOutlined className={styles.siteTitleIcon} />
+                <Text strong style={{ fontSize: 18, color: '#2E7D32' }}>{dataGroups.site?.name || dataGroups.name || '未知站点'}</Text>
+                <Badge 
                   status={(dataGroups.site?.status || dataGroups.status) === '在线' ? 'success' : 'error'}
-                  text={dataGroups.site?.status || dataGroups.status || '离线'}
+                  text={dataGroups.site?.status || dataGroups.status || '离线'} 
+                  style={{ marginLeft: 12 }}
                 />
-              </Descriptions.Item>
-              <Descriptions.Item label="设施状态">
                 <Tag color={
                   (dataGroups.site?.alarm || dataGroups.alarm) === '设施正常' ? 'success' :
                   (dataGroups.site?.alarm || dataGroups.alarm) === '设施停用' ? 'warning' : 'error'
-                }>
+                } style={{ marginLeft: 8 }}>
                   {dataGroups.site?.alarm || dataGroups.alarm || '未知状态'}
                 </Tag>
-              </Descriptions.Item>
-                <Descriptions.Item label="总进水量">
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <DashboardOutlined style={{ marginRight: 4, color: '#2E7D32' }} />
-                  {(dataGroups.site?.totalInflow !== undefined && dataGroups.site?.totalInflow !== null) ? 
-                    `${dataGroups.site.totalInflow.toFixed(2)} 吨` : 
-                    (dataGroups.totalInflow !== undefined && dataGroups.totalInflow !== null) ? 
-                    `${dataGroups.totalInflow.toFixed(2)} 吨` : '0.00 吨'}
-                  </div>
-                </Descriptions.Item>
-              <Descriptions.Item label="最后更新时间">
-                {dataGroups.site?.lastUpdateTime || dataGroups.lastUpdate || new Date().toLocaleString()}
-                </Descriptions.Item>
-              <Descriptions.Item label="管理部门">
-                {(dataGroups.site?.departments || dataGroups.departments) && 
-                 (dataGroups.site?.departments || dataGroups.departments).length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    {(dataGroups.site?.departments || dataGroups.departments).map((dept, index) => (
-                      <Tag key={index} color="blue" style={{ marginBottom: 4 }}>
-                        <TeamOutlined style={{ marginRight: 4 }} />
-                        {dept}
-                      </Tag>
-                    ))}
-                  </div>
-                ) : (
-                  <Text type="secondary">暂无管理部门信息</Text>
+              </div>
+              <div className={styles.connectionStatus}>
+                <Badge
+                  status={wsConnected ? 'success' : 'error'}
+                  text={wsConnected ? '设备控制已连接' : '设备控制未连接'}
+                />
+                {!wsConnected && (
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={() => connect(siteId)}
+                    style={{ marginLeft: 8 }}
+                  >
+                    连接
+                  </Button>
                 )}
-              </Descriptions.Item>
-            </Descriptions>
+              </div>
+            </div>
+            
+            <Divider style={{ margin: '16px 0 20px' }} />
+            
+            <Row gutter={[24, 16]}>
+              <Col xs={24} sm={12} md={8}>
+                <div className={styles.infoItem}>
+                  <DashboardOutlined className={styles.infoIcon} />
+                  <div className={styles.infoContent}>
+                    <div className={styles.infoLabel}>总进水量</div>
+                    <div className={styles.infoValue}>
+                      {(dataGroups.site?.totalInflow !== undefined && dataGroups.site?.totalInflow !== null) ? 
+                        `${formatNumber(dataGroups.site.totalInflow)} 吨` : 
+                        (dataGroups.totalInflow !== undefined && dataGroups.totalInflow !== null) ? 
+                        `${formatNumber(dataGroups.totalInflow)} 吨` : '0.00 吨'}
+                    </div>
+                  </div>
+                </div>
+              </Col>
+              
+              <Col xs={24} sm={12} md={8}>
+                <div className={styles.infoItem}>
+                  <ClockCircleOutlined className={styles.infoIcon} />
+                  <div className={styles.infoContent}>
+                    <div className={styles.infoLabel}>最后更新时间</div>
+                    <div className={styles.infoValue}>
+                      {dataGroups.site?.lastUpdateTime || dataGroups.lastUpdate || new Date().toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              </Col>
+              
+              <Col xs={24} sm={24} md={8}>
+                <div className={styles.infoItem}>
+                  <TeamOutlined className={styles.infoIcon} />
+                  <div className={styles.infoContent}>
+                    <div className={styles.infoLabel}>管理部门</div>
+                    <div className={styles.infoValue}>
+                      {(dataGroups.site?.departments || dataGroups.departments) && 
+                      (dataGroups.site?.departments || dataGroups.departments).length > 0 ? (
+                        <div className={styles.departmentTags}>
+                          {(dataGroups.site?.departments || dataGroups.departments).map((dept, index) => (
+                            <Tag key={index} color="blue" style={{ marginRight: 8, marginBottom: 4 }}>
+                              {dept}
+                            </Tag>
+                          ))}
+                        </div>
+                      ) : (
+                        <Text type="secondary">暂无管理部门信息</Text>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </Col>
+            </Row>
           </Card>
         </Col>
       </Row>
@@ -3652,48 +3513,42 @@ const SiteDetailRenderer = ({
       {/* 站点统计信息 */}
       <Row gutter={[16, 16]} className={styles.statsRow}>
         <Col xs={24} sm={8}>
-          <Card hoverable style={{ borderTop: '4px solid #2E7D32' }}>
-            <Statistic
-              title={
-                <div style={{ display: 'flex', alignItems: 'center', color: '#2E7D32' }}>
-                  <ApartmentOutlined style={{ marginRight: 8 }} />
-                  <span>设备总数</span>
-                </div>
-              }
-              value={stats.deviceTotal}
-              valueStyle={{ color: '#2E7D32', fontSize: '24px' }}
-            />
+          <Card hoverable className={styles.statCard}>
+            <div className={styles.statContent}>
+              <div className={styles.statIconWrapper}>
+                <ApartmentOutlined className={styles.statIcon} />
+              </div>
+              <div>
+                <div className={styles.statLabel}>设备总数</div>
+                <div className={styles.statValue}>{stats.deviceTotal}</div>
+              </div>
+            </div>
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card hoverable style={{ borderTop: '4px solid #52c41a' }}>
-            <Statistic
-              title={
-                <div style={{ display: 'flex', alignItems: 'center', color: '#52c41a' }}>
-                  <Badge status="success" style={{ marginRight: 8 }} />
-                  <span>运行中设备</span>
-                </div>
-              }
-              value={stats.deviceRunning}
-              valueStyle={{ color: '#52c41a', fontSize: '24px' }}
-            />
+          <Card hoverable className={styles.statCard}>
+            <div className={styles.statContent}>
+              <div className={styles.statIconWrapper} style={{ backgroundColor: 'rgba(82, 196, 26, 0.15)' }}>
+                <ThunderboltOutlined className={styles.statIcon} style={{ color: '#52c41a' }} />
+              </div>
+              <div>
+                <div className={styles.statLabel}>运行中设备</div>
+                <div className={styles.statValue} style={{ color: '#52c41a' }}>{stats.deviceRunning}</div>
+              </div>
+            </div>
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card hoverable style={{ borderTop: '4px solid #ff4d4f' }}>
-            <Statistic
-              title={
-                <div style={{ display: 'flex', alignItems: 'center', color: stats.alarmTotal > 0 ? '#ff4d4f' : 'rgba(0, 0, 0, 0.45)' }}>
-                  <AlertOutlined style={{ marginRight: 8 }} />
-                  <span>告警总数</span>
-                </div>
-              }
-              value={stats.alarmTotal}
-              valueStyle={{
-                color: stats.alarmTotal > 0 ? '#ff4d4f' : 'rgba(0, 0, 0, 0.45)',
-                fontSize: '24px'
-              }}
-            />
+          <Card hoverable className={styles.statCard}>
+            <div className={styles.statContent}>
+              <div className={styles.statIconWrapper} style={{ backgroundColor: stats.alarmTotal > 0 ? 'rgba(255, 77, 79, 0.15)' : 'rgba(0, 0, 0, 0.06)' }}>
+                <AlertOutlined className={styles.statIcon} style={{ color: stats.alarmTotal > 0 ? '#ff4d4f' : 'rgba(0, 0, 0, 0.45)' }} />
+              </div>
+              <div>
+                <div className={styles.statLabel}>告警总数</div>
+                <div className={styles.statValue} style={{ color: stats.alarmTotal > 0 ? '#ff4d4f' : 'rgba(0, 0, 0, 0.45)' }}>{stats.alarmTotal}</div>
+              </div>
+            </div>
           </Card>
         </Col>
       </Row>
@@ -3701,10 +3556,10 @@ const SiteDetailRenderer = ({
       {/* 第二部分：设备信息区（由后端API推送，可通过WebSocket控制） */}
       <Card
         title={
-          <div style={{ display: 'flex', alignItems: 'center', color: '#2E7D32' }}>
-            <ApartmentOutlined style={{ marginRight: 8 }} />
+          <div className={styles.sectionCardTitle}>
+            <ApartmentOutlined className={styles.sectionCardIcon} />
             <span>设备信息</span>
-            <Tag color="blue" style={{ marginLeft: 8 }}>API获取 + WebSocket控制</Tag>
+            <Tag color="blue" className={styles.sectionCardTag}>API获取 + WebSocket控制</Tag>
           </div>
         }
         className={styles.sectionCard}
@@ -3818,7 +3673,7 @@ const SiteDetailRenderer = ({
               activeKey={activeDeviceTab} 
               onChange={setActiveDeviceTab}
               type="card"
-              className={styles.deviceTabs}
+              className={`${styles.deviceTabs} ${styles.modernTabs}`}
               tabBarExtraContent={
                 <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)', marginRight: 8 }}>
                   提示: 双击选项卡可设为默认
@@ -3912,10 +3767,10 @@ const SiteDetailRenderer = ({
       {/* 第三部分：工艺数据区（由后端API获取） */}
       <Card
         title={
-          <div style={{ display: 'flex', alignItems: 'center', color: '#2E7D32' }}>
-            <DashboardOutlined style={{ marginRight: 8 }} />
+          <div className={styles.sectionCardTitle}>
+            <DashboardOutlined className={styles.sectionCardIcon} />
             <span>工艺数据</span>
-            <Tag color="blue" style={{ marginLeft: 8 }}>API获取</Tag>
+            <Tag color="blue" className={styles.sectionCardTag}>API获取</Tag>
           </div>
         }
         className={styles.sectionCard}
@@ -4027,7 +3882,7 @@ const SiteDetailRenderer = ({
               activeKey={activeProcessTab} 
               onChange={setActiveProcessTab}
               type="card"
-              className={styles.processTabs}
+              className={`${styles.processTabs} ${styles.modernTabs}`}
               tabBarExtraContent={
                 <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)', marginRight: 8 }}>
                   提示: 双击选项卡可设为默认
@@ -4121,10 +3976,10 @@ const SiteDetailRenderer = ({
       {/* 第四部分：告警信息和历史趋势区（使用API调用） */}
       <Card
         title={
-          <div style={{ display: 'flex', alignItems: 'center', color: '#2E7D32' }}>
-            <AlertOutlined style={{ marginRight: 8 }} />
+          <div className={styles.sectionCardTitle}>
+            <AlertOutlined className={styles.sectionCardIcon} />
             <span>告警信息和历史趋势</span>
-            <Tag color="green" style={{ marginLeft: 8 }}>API调用</Tag>
+            <Tag color="green" className={styles.sectionCardTag}>API调用</Tag>
           </div>
         }
         className={styles.sectionCard}
@@ -4132,6 +3987,7 @@ const SiteDetailRenderer = ({
         <Tabs 
           activeKey={activeTab} 
           onChange={setActiveTab}
+          className={styles.modernTabs}
           tabBarExtraContent={
             <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)', marginRight: 8 }}>
               提示: 双击选项卡可设为默认
@@ -4190,6 +4046,7 @@ const SiteDetailRenderer = ({
               const renderAlarmItem = (alarm, index) => (
                 <Alert
                   key={index}
+                  className={styles.alarmAlert}
                   message={alarm.name || (alarm.device ? `${alarm.device}: ${alarm.message}` : alarm.message)}
                   description={
                     <div>
@@ -4217,13 +4074,12 @@ const SiteDetailRenderer = ({
                     'warning'
                   }
                   showIcon
-                  className={styles.alarmAlert}
                   style={{ marginBottom: 16 }}
                 />
               );
               
               return (
-                <Tabs defaultActiveKey="all" type="card" className={styles.alarmSubTabs}>
+                <Tabs defaultActiveKey="all" type="card" className={`${styles.alarmSubTabs} ${styles.modernTabs}`}>
                   <TabPane
                     tab={
                       <span>
@@ -4315,6 +4171,7 @@ const SiteDetailRenderer = ({
         title={`设置 ${selectedDevice?.name} 的频率`}
         visible={modalVisible}
         onCancel={() => setModalVisible(false)}
+        className={styles.frequencyModal}
         footer={[
           <Button key="cancel" onClick={() => setModalVisible(false)}>
             取消
