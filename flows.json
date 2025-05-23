@@ -2880,8 +2880,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 700,
-        "y": 1360,
+        "x": 740,
+        "y": 1340,
         "wires": []
     },
     {
@@ -3297,15 +3297,16 @@
         "type": "http in",
         "z": "7c14288f4889ff67",
         "name": "",
-        "url": "/api/getGongYiData",
+        "url": "/api/getgongyidata",
         "method": "get",
         "upload": false,
         "swaggerDoc": "",
-        "x": 150,
+        "x": 140,
         "y": 1020,
         "wires": [
             [
-                "ca28ac10d3a51528"
+                "ca28ac10d3a51528",
+                "5c8a5832aba1afa2"
             ]
         ]
     },
@@ -3316,8 +3317,24 @@
         "name": "",
         "statusCode": "",
         "headers": {},
-        "x": 630,
-        "y": 1400,
+        "x": 710,
+        "y": 1380,
+        "wires": []
+    },
+    {
+        "id": "5c8a5832aba1afa2",
+        "type": "debug",
+        "z": "7c14288f4889ff67",
+        "name": "debug 7",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 390,
+        "y": 1000,
         "wires": []
     },
     {
