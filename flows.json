@@ -2959,7 +2959,7 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "payload": "1",
+        "payload": "3",
         "payloadType": "num",
         "x": 110,
         "y": 1100,
