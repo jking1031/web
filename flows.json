@@ -21847,7 +21847,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 550,
+        "x": 830,
         "y": 1120,
         "wires": [
             [
@@ -21886,7 +21886,7 @@
         "wires": [
             [
                 "6b05c2b56416a058",
-                "b9b65205d3bea87d"
+                "98d702470616371b"
             ]
         ]
     },
@@ -21902,7 +21902,7 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 580,
+        "x": 700,
         "y": 1180,
         "wires": []
     },
@@ -21922,6 +21922,26 @@
         "wires": [
             [
                 "fce3854ab45bd22c"
+            ]
+        ]
+    },
+    {
+        "id": "98d702470616371b",
+        "type": "function",
+        "z": "db-api-flow",
+        "name": "调整时间",
+        "func": "let rows = msg.payload;\n\nrows.forEach(row => {\n  if (row.date) {\n    let t = new Date(row.date);\n    t.setHours(t.getHours() + 8); // 加 8 小时（UTC → 北京时间）\n    row.date = t.toISOString().replace('T', ' ').slice(0, 19); // 格式化\n  }\n});\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 1120,
+        "wires": [
+            [
+                "b9b65205d3bea87d"
             ]
         ]
     },
