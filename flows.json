@@ -3097,7 +3097,7 @@
         "type": "function",
         "z": "7c14288f4889ff67",
         "name": "function 88",
-        "func": "\nflow.set(\"ao\",msg.payload.ao);\nreturn msg;\n",
+        "func": "\nflow.set(\"ao\",parseFloat(msg.payload.ao));\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -3255,8 +3255,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1020,
-        "y": 1000,
+        "x": 680,
+        "y": 960,
         "wires": []
     },
     {
