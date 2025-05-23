@@ -1939,23 +1939,6 @@
         ]
     },
     {
-        "id": "3b32cdc2f49b2489",
-        "type": "debug",
-        "z": "7c14288f4889ff67",
-        "name": "debug 7",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 660,
-        "y": 60,
-        "wires": []
-    },
-    {
         "id": "de6f1681ddafb8ef",
         "type": "modbus-flex-getter",
         "z": "7c14288f4889ff67",
@@ -2818,8 +2801,7 @@
         "y": 480,
         "wires": [
             [
-                "80ec8bca607f5403",
-                "12f2531638de29d2"
+                "80ec8bca607f5403"
             ]
         ]
     },
@@ -2838,27 +2820,8 @@
         "x": 430,
         "y": 100,
         "wires": [
-            [
-                "3b32cdc2f49b2489"
-            ]
+            []
         ]
-    },
-    {
-        "id": "12f2531638de29d2",
-        "type": "debug",
-        "z": "7c14288f4889ff67",
-        "name": "debug 26",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 760,
-        "y": 520,
-        "wires": []
     },
     {
         "id": "ff992f66f3fd4ec8",
