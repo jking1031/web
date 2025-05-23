@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>水厂运行热力图</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+  <style>
+    html, body, #main {
+      height: 100%;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="main"></div>
+  <script>
+    const rawData = [
+      {"time":"2025-05-16","进水COD平均值":241,"出水COD平均值":6.78,"出水总氮平均值":6.66,"碳源投加量 (L/d)":906.2,"污泥产量 (吨/d)":6.81},
+      {"time":"2025-05-17","进水COD平均值":156,"出水COD平均值":7.69,"出水总氮平均值":5.364,"碳源投加量 (L/d)":436,"污泥产量 (吨/d)":6.39},
+      {"time":"2025-05-18","进水COD平均值":127,"出水COD平均值":9.93,"出水总氮平均值":7.69,"碳源投加量 (L/d)":2034,"污泥产量 (吨/d)":6.32},
+      {"time":"2025-05-19","进水COD平均值":135,"出水COD平均值":8.56,"出水总氮平均值":8.536,"碳源投加量 (L/d)":2073,"污泥产量 (吨/d)":8.93},
+      {"time":"2025-05-20","进水COD平均值":151,"出水COD平均值":8.18,"出水总氮平均值":6.45,"碳源投加量 (L/d)":2002,"污泥产量 (吨/d)":0},
+      {"time":"2025-05-21","进水COD平均值":193,"出水COD平均值":7.45,"出水总氮平均值":8.094,"碳源投加量 (L/d)":1841,"污泥产量 (吨/d)":9.19},
+      {"time":"2025-05-22","进水COD平均值":181.15,"出水COD平均值":9.22,"出水总氮平均值":7.81,"碳源投加量 (L/d)":1842,"污泥产量 (吨/d)":8.12}
+    ];
+
+    const metrics = ["进水COD平均值", "出水COD平均值", "出水总氮平均值", "碳源投加量 (L/d)", "污泥产量 (吨/d)"];
+    const times = rawData.map(d => d.time);
+
+    const data = [];
+    rawData.forEach((row, y) => {
+      metrics.forEach((m, x) => {
+        data.push([x, y, row[m]]);
+      });
+    });
+
+    const option = {
+      title: { text: '水厂指标趋势热力图', left: 'center' },
+      tooltip: {
+        position: 'top',
+        formatter: params => {
+          const [x, y, value] = params.value;
+          return `${times[y]}<br/>${metrics[x]}: ${value}`;
+        }
+      },
+      grid: { top: 80, left: 120, right: 40, bottom: 40 },
+      xAxis: {
+        type: 'category',
+        data: metrics,
+        axisLabel: { rotate: 30 }
+      },
+      yAxis: {
+        type: 'category',
+        data: times
+      },
+      visualMap: {
+        min: 0,
+        max: 2500,
+        calculable: true,
+        orient: 'vertical',
+        left: 'right',
+        top: 'center'
+      },
+      series: [{
+        name: '指标热度',
+        type: 'heatmap',
+        data: data,
+        label: { show: true },
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowColor: 'rgba(0,0,0,0.5)'
+          }
+        }
+      }]
+    };
+
+    const chart = echarts.init(document.getElementById('main'));
+    chart.setOption(option);
+  </script>
+</body>
+</html>
+

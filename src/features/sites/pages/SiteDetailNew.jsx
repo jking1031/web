@@ -3415,23 +3415,24 @@ const SiteDetailRenderer = ({
         </div>
       </div>
 
-      {/* 第一部分：站点信息区（由站点列表自动传入的基本信息或通过getSiteList API获取） */}
+      {/* 合并站点信息区和统计信息到同一行 */}
       <Row gutter={[16, 16]}>
-        <Col xs={24}>
+        {/* 站点信息区 - 占左侧较大部分 */}
+        <Col xs={24} md={16}>
           <Card className={styles.siteInfoCard}>
             <div className={styles.siteInfoHeader}>
               <div className={styles.siteTitle}>
                 <DashboardOutlined className={styles.siteTitleIcon} />
-                <Text strong style={{ fontSize: 18, color: '#2E7D32' }}>{dataGroups.site?.name || dataGroups.name || '未知站点'}</Text>
+                <Text strong style={{ fontSize: 22, color: '#2E7D32' }}>{dataGroups.site?.name || dataGroups.name || '未知站点'}</Text>
                 <Badge 
                   status={(dataGroups.site?.status || dataGroups.status) === '在线' ? 'success' : 'error'}
                   text={dataGroups.site?.status || dataGroups.status || '离线'} 
-                  style={{ marginLeft: 12 }}
+                  style={{ marginLeft: 14, fontSize: 16 }}
                 />
                 <Tag color={
                   (dataGroups.site?.alarm || dataGroups.alarm) === '设施正常' ? 'success' :
                   (dataGroups.site?.alarm || dataGroups.alarm) === '设施停用' ? 'warning' : 'error'
-                } style={{ marginLeft: 8 }}>
+                } style={{ marginLeft: 10, fontSize: 14, padding: '2px 10px' }}>
                   {dataGroups.site?.alarm || dataGroups.alarm || '未知状态'}
                 </Tag>
               </div>
@@ -3443,9 +3444,9 @@ const SiteDetailRenderer = ({
                 {!wsConnected && (
                   <Button
                     type="primary"
-                    size="small"
+                    size="middle"
                     onClick={() => connect(siteId)}
-                    style={{ marginLeft: 8 }}
+                    style={{ marginLeft: 10, height: 32, fontSize: 14 }}
                   >
                     连接
                   </Button>
@@ -3453,10 +3454,10 @@ const SiteDetailRenderer = ({
               </div>
             </div>
             
-            <Divider style={{ margin: '16px 0 20px' }} />
+            <Divider style={{ margin: '14px 0 18px' }} />
             
             <Row gutter={[24, 16]}>
-              <Col xs={24} sm={12} md={8}>
+              <Col xs={24} sm={8}>
                 <div className={styles.infoItem}>
                   <DashboardOutlined className={styles.infoIcon} />
                   <div className={styles.infoContent}>
@@ -3471,7 +3472,7 @@ const SiteDetailRenderer = ({
                 </div>
               </Col>
               
-              <Col xs={24} sm={12} md={8}>
+              <Col xs={24} sm={8}>
                 <div className={styles.infoItem}>
                   <ClockCircleOutlined className={styles.infoIcon} />
                   <div className={styles.infoContent}>
@@ -3483,7 +3484,7 @@ const SiteDetailRenderer = ({
                 </div>
               </Col>
               
-              <Col xs={24} sm={24} md={8}>
+              <Col xs={24} sm={8}>
                 <div className={styles.infoItem}>
                   <TeamOutlined className={styles.infoIcon} />
                   <div className={styles.infoContent}>
@@ -3493,13 +3494,13 @@ const SiteDetailRenderer = ({
                       (dataGroups.site?.departments || dataGroups.departments).length > 0 ? (
                         <div className={styles.departmentTags}>
                           {(dataGroups.site?.departments || dataGroups.departments).map((dept, index) => (
-                            <Tag key={index} color="blue" style={{ marginRight: 8, marginBottom: 4 }}>
+                            <Tag key={index} color="blue" style={{ marginRight: 10, marginBottom: 6, fontSize: 14 }}>
                               {dept}
                             </Tag>
                           ))}
                         </div>
                       ) : (
-                        <Text type="secondary">暂无管理部门信息</Text>
+                        <Text type="secondary" style={{ fontSize: 16 }}>暂无管理部门信息</Text>
                       )}
                     </div>
                   </div>
@@ -3508,12 +3509,12 @@ const SiteDetailRenderer = ({
             </Row>
           </Card>
         </Col>
-      </Row>
 
-      {/* 站点统计信息 */}
-      <Row gutter={[16, 16]} className={styles.statsRow}>
-        <Col xs={24} sm={8}>
-          <Card hoverable className={styles.statCard}>
+        {/* 站点统计信息 - 占右侧较小部分 */}
+        <Col xs={24} md={8}>
+          <Row gutter={[16, 16]} style={{ height: '100%' }}>
+            <Col xs={24} sm={8} md={24} lg={8} style={{ height: 'calc(100% / 3)' }}>
+              <Card hoverable className={`${styles.statCard}`} style={{ height: '100%', margin: 0 }}>
             <div className={styles.statContent}>
               <div className={styles.statIconWrapper}>
                 <ApartmentOutlined className={styles.statIcon} />
@@ -3525,31 +3526,33 @@ const SiteDetailRenderer = ({
             </div>
           </Card>
         </Col>
-        <Col xs={24} sm={8}>
-          <Card hoverable className={styles.statCard}>
+            <Col xs={24} sm={8} md={24} lg={8} style={{ height: 'calc(100% / 3)' }}>
+              <Card hoverable className={`${styles.statCard}`} style={{ height: '100%', margin: 0 }}>
             <div className={styles.statContent}>
               <div className={styles.statIconWrapper} style={{ backgroundColor: 'rgba(82, 196, 26, 0.15)' }}>
                 <ThunderboltOutlined className={styles.statIcon} style={{ color: '#52c41a' }} />
               </div>
               <div>
-                <div className={styles.statLabel}>运行中设备</div>
+                    <div className={styles.statLabel}>运行中</div>
                 <div className={styles.statValue} style={{ color: '#52c41a' }}>{stats.deviceRunning}</div>
               </div>
             </div>
           </Card>
         </Col>
-        <Col xs={24} sm={8}>
-          <Card hoverable className={styles.statCard}>
+            <Col xs={24} sm={8} md={24} lg={8} style={{ height: 'calc(100% / 3)' }}>
+              <Card hoverable className={`${styles.statCard}`} style={{ height: '100%', margin: 0 }}>
             <div className={styles.statContent}>
               <div className={styles.statIconWrapper} style={{ backgroundColor: stats.alarmTotal > 0 ? 'rgba(255, 77, 79, 0.15)' : 'rgba(0, 0, 0, 0.06)' }}>
                 <AlertOutlined className={styles.statIcon} style={{ color: stats.alarmTotal > 0 ? '#ff4d4f' : 'rgba(0, 0, 0, 0.45)' }} />
               </div>
               <div>
-                <div className={styles.statLabel}>告警总数</div>
+                    <div className={styles.statLabel}>告警数</div>
                 <div className={styles.statValue} style={{ color: stats.alarmTotal > 0 ? '#ff4d4f' : 'rgba(0, 0, 0, 0.45)' }}>{stats.alarmTotal}</div>
               </div>
             </div>
           </Card>
+            </Col>
+          </Row>
         </Col>
       </Row>
 

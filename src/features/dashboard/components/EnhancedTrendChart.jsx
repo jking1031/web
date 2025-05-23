@@ -10,12 +10,17 @@ import {
   Alert,
   Snackbar,
   Switch,
-  FormControlLabel
+  FormControlLabel,
+  Paper,
+  Divider,
+  ToggleButtonGroup,
+  ToggleButton
 } from '@mui/material';
 import {
   ReloadOutlined,
   SettingOutlined,
-  LineChartOutlined
+  LineChartOutlined,
+  RadarChartOutlined
 } from '@ant-design/icons';
 import * as echarts from 'echarts/core';
 import {
@@ -26,9 +31,10 @@ import {
   LegendComponent,
   DataZoomComponent,
   MarkLineComponent,
-  MarkPointComponent
+  MarkPointComponent,
+  RadarComponent
 } from 'echarts/components';
-import { LineChart } from 'echarts/charts';
+import { LineChart, RadarChart } from 'echarts/charts';
 import { UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
 import moment from 'moment';
@@ -45,10 +51,15 @@ echarts.use([
   DataZoomComponent,
   MarkLineComponent,
   MarkPointComponent,
+  RadarComponent,
   LineChart,
+  RadarChart,
   CanvasRenderer,
   UniversalTransition
 ]);
+
+// 定义主题色
+const THEME_COLOR = '#2E7D32';
 
 /**
  * 趋势图组件
@@ -59,7 +70,9 @@ const EnhancedTrendChart = ({ refreshMode = 'realtime', refreshInterval = 10 }) 
   const [error, setError] = useState(null);
   const [data, setData] = useState([]);
   const [notification, setNotification] = useState({ open: false, message: '', severity: 'info' });
-  const [zoomEnabled, setZoomEnabled] = useState(true);
+  const [zoomEnabled, setZoomEnabled] = useState(false);
+  const [chartType, setChartType] = useState('line'); // 默认为折线图
+  const [selectedIndicator, setSelectedIndicator] = useState(null); // 当前选中的指标
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
 
@@ -176,98 +189,319 @@ const EnhancedTrendChart = ({ refreshMode = 'realtime', refreshInterval = 10 }) 
     return fieldNames[field] || field;
   };
 
+  // 格式化数据值显示
+  const formatValue = (value) => {
+    if (value === undefined || value === null) return '-';
+    
+    if (typeof value !== 'number') {
+      return value.toString();
+    }
+    
+    if (value > 1000000) {
+      return (value / 1000000).toFixed(2) + 'M';
+    } else if (value > 1000) {
+      return (value / 1000).toFixed(1) + 'k';
+    } else if (value < 0.01) {
+      return value.toExponential(1);
+    } else if (value > 100) {
+      return Math.round(value);
+    } else {
+      return value.toFixed(2);
+    }
+  };
+
+  // 准备雷达图数据
+  const prepareRadarChartData = () => {
+    if (!Array.isArray(data) || data.length === 0) {
+      return { indicator: [], series: [] };
+    }
+
+    // 获取所有时间点，作为雷达图的维度
+    const allTimes = new Set();
+    data.forEach(series => {
+      series.data.forEach(item => {
+        if (Array.isArray(item) && item.length > 0) {
+          allTimes.add(item[0]);
+        }
+      });
+    });
+
+    // 按时间排序
+    const times = Array.from(allTimes).sort();
+    
+    // 如果时间点太多，取最近的几个时间点
+    const recentTimes = times.slice(-8); // 最多取8个时间点，避免雷达图太复杂
+    
+    // 过滤选中的指标或者显示前5个指标
+    let filteredSeries;
+    if (selectedIndicator) {
+      filteredSeries = data.filter(s => s.name === selectedIndicator);
+    } else {
+      filteredSeries = data.slice(0, 5); // 最多显示5个指标
+    }
+
+    // 设置雷达图的指标（时间点）
+    const indicator = recentTimes.map(time => {
+      const date = new Date(time);
+      return {
+        name: date.toLocaleString('zh-CN', {
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        max: null // 将在后面设置
+      };
+    });
+
+    // 准备雷达图数据
+    const radarData = filteredSeries.map(series => {
+      // 创建时间到值的映射
+      const timeValueMap = {};
+      series.data.forEach(item => {
+        if (Array.isArray(item) && item.length > 1) {
+          timeValueMap[item[0]] = item[1];
+        }
+      });
+
+      // 获取该系列在每个时间点的值
+      const values = recentTimes.map(time => {
+        return timeValueMap[time] !== undefined ? timeValueMap[time] : 0;
+      });
+
+      return {
+        name: series.name,
+        value: values,
+        symbolSize: 5,
+        lineStyle: {
+          width: 2
+        },
+        areaStyle: {
+          opacity: 0.3
+        }
+      };
+    });
+
+    // 计算每个时间点的最大值
+    const maxValues = {};
+    filteredSeries.forEach(series => {
+      series.data.forEach(item => {
+        if (Array.isArray(item) && item.length > 1 && recentTimes.includes(item[0])) {
+          const time = item[0];
+          const value = item[1];
+          if (value !== undefined && value !== null) {
+            maxValues[time] = Math.max(maxValues[time] || 0, value * 1.2); // 增加20%余量
+          }
+        }
+      });
+    });
+
+    // 设置每个指标的最大值
+    indicator.forEach((ind, index) => {
+      ind.max = maxValues[recentTimes[index]] || 100;
+    });
+
+    return {
+      indicator,
+      series: [{
+        type: 'radar',
+        data: radarData
+      }]
+    };
+  };
+
   // 初始化图表
   const initChart = () => {
     if (chartRef.current && data.length > 0) {
-      const chart = echarts.init(chartRef.current);
+      if (chartInstance.current) {
+        chartInstance.current.dispose();
+      }
       
-      const option = {
-        tooltip: {
-          trigger: 'axis',
-          axisPointer: {
-            type: 'cross',
-            label: {
-              backgroundColor: '#6a7985'
-            }
-          },
-          formatter: function(params) {
-            const time = new Date(params[0].value[0]);
-            const formattedTime = time.toLocaleString('zh-CN', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit'
-            });
-            let result = `${formattedTime}<br/>`;
-            params.forEach(param => {
-              result += `${param.seriesName}: ${param.value[1]}<br/>`;
-            });
-            return result;
-          }
-        },
-        legend: {
-          data: data.map(item => item.name),
-          top: 0,
-          padding: [0, 0, 0, 0]
-        },
-        toolbox: {
-          feature: {
-            saveAsImage: {},
-            dataZoom: {
-              yAxisIndex: 'none'
+      const chart = echarts.init(chartRef.current);
+      let option;
+      
+      if (chartType === 'line') {
+        // 折线图配置
+        option = {
+          tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+              type: 'cross',
+              label: {
+                backgroundColor: '#6a7985'
+              }
             },
-            restore: {}
-          },
-          top: 0,
-          right: 0
-        },
-        grid: {
-          top: '40px',
-          left: '3%',
-          right: '4%',
-          bottom: '3%',
-          containLabel: true
-        },
-        dataZoom: [
-          {
-            type: 'inside',
-            start: 0,
-            end: 100,
-            zoomLock: !zoomEnabled
-          },
-          {
-            start: 0,
-            end: 100
-          }
-        ],
-        xAxis: {
-          type: 'time',
-          boundaryGap: false,
-          axisLabel: {
-            formatter: function(value) {
-              const date = new Date(value);
-              return date.toLocaleString('zh-CN', {
+            formatter: function(params) {
+              const time = new Date(params[0].value[0]);
+              const formattedTime = time.toLocaleString('zh-CN', {
+                year: 'numeric',
                 month: '2-digit',
                 day: '2-digit',
                 hour: '2-digit',
                 minute: '2-digit'
               });
+              let result = `${formattedTime}<br/>`;
+              params.forEach(param => {
+                result += `${param.seriesName}: ${formatValue(param.value[1])}<br/>`;
+              });
+              return result;
+            }
+          },
+          legend: {
+            data: data.map(item => item.name),
+            top: 0,
+            left: 'center',
+            type: 'scroll',
+            pageButtonPosition: 'end',
+            selector: ['all', 'inverse'],
+            selectorLabel: {
+              all: '全选',
+              inverse: '反选'
             },
-            rotate: 45
-          }
-        },
-        yAxis: {
-          type: 'value',
-          axisLabel: {
-            formatter: '{value}'
-          }
-        },
-        series: data
-      };
+            textStyle: {
+              fontSize: 12
+            },
+            width: '80%'
+          },
+          toolbox: {
+            feature: {
+              saveAsImage: {},
+              dataZoom: {
+                yAxisIndex: 'none'
+              },
+              restore: {}
+            },
+            right: 20,
+            top: 25
+          },
+          grid: {
+            top: '80px',
+            left: '3%',
+            right: '4%',
+            bottom: '3%',
+            containLabel: true
+          },
+          dataZoom: [
+            {
+              type: 'inside',
+              start: 0,
+              end: 100,
+              zoomLock: !zoomEnabled
+            },
+            {
+              start: 0,
+              end: 100,
+              show: zoomEnabled
+            }
+          ],
+          xAxis: {
+            type: 'time',
+            boundaryGap: false,
+            axisLabel: {
+              formatter: function(value) {
+                const date = new Date(value);
+                return date.toLocaleString('zh-CN', {
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+              },
+              rotate: 30
+            }
+          },
+          yAxis: {
+            type: 'value',
+            axisLabel: {
+              formatter: function(value) {
+                return formatValue(value);
+              }
+            }
+          },
+          series: data.map(series => ({
+            ...series,
+            itemStyle: {
+              opacity: selectedIndicator ? (selectedIndicator === series.name ? 1 : 0.25) : 1
+            },
+            lineStyle: selectedIndicator === series.name ? { width: 4 } : undefined
+          }))
+        };
+      } else {
+        // 雷达图配置
+        const { indicator, series } = prepareRadarChartData();
+        
+        option = {
+          tooltip: {
+            trigger: 'item'
+          },
+          legend: {
+            data: series[0].data.map(item => item.name),
+            top: 0,
+            left: 'center',
+            type: 'scroll',
+            textStyle: {
+              fontSize: 12
+            },
+            width: '80%'
+          },
+          radar: {
+            indicator: indicator,
+            radius: '60%',
+            center: ['50%', '55%'],
+            splitNumber: 5,
+            name: {
+              formatter: '{value}',
+              textStyle: {
+                color: '#333'
+              }
+            },
+            splitArea: {
+              areaStyle: {
+                color: ['rgba(114, 172, 209, 0.1)', 'rgba(114, 172, 209, 0.2)'],
+                shadowColor: 'rgba(0, 0, 0, 0.2)',
+                shadowBlur: 10
+              }
+            },
+            axisName: {
+              color: '#333',
+              fontSize: 12
+            }
+          },
+          series: series
+        };
+      }
 
-      chart.setOption(option);
-      chartInstance.current = chart;
+      // 安全地设置选项
+      try {
+        chart.setOption(option);
+        chartInstance.current = chart;
+        
+        // 添加事件处理
+        chart.on('click', function(params) {
+          if (params.componentType === 'series' && chartType === 'line') {
+            const newSelected = selectedIndicator === params.seriesName ? null : params.seriesName;
+            setSelectedIndicator(newSelected);
+            
+            if (newSelected) {
+              setNotification({
+                open: true,
+                message: `已选中指标：${params.seriesName}`,
+                severity: 'info'
+              });
+            }
+          }
+        });
+      } catch (error) {
+        console.error('[EnhancedTrendChart] 图表渲染错误:', error);
+        setError('图表渲染失败: ' + error.message);
+      }
+    }
+  };
+
+  // 处理图表类型变更
+  const handleChartTypeChange = (event, newType) => {
+    if (newType) {
+      setChartType(newType);
     }
   };
 
@@ -276,7 +510,7 @@ const EnhancedTrendChart = ({ refreshMode = 'realtime', refreshInterval = 10 }) 
     if (data.length > 0) {
       initChart();
     }
-  }, [data]);
+  }, [data, zoomEnabled, chartType, selectedIndicator]);
 
   // 监听窗口大小变化
   useEffect(() => {
@@ -315,93 +549,108 @@ const EnhancedTrendChart = ({ refreshMode = 'realtime', refreshInterval = 10 }) 
   // 处理缩放开关变化
   const handleZoomToggle = (event) => {
     setZoomEnabled(event.target.checked);
-    if (chartInstance.current) {
-      chartInstance.current.setOption({
-        dataZoom: [
-          {
-            type: 'inside',
-            zoomLock: !event.target.checked
-          }
-        ]
-      });
-    }
   };
 
-      return (
+  return (
     <Box className={styles.enhancedTrendChart}>
-      <Box className={styles.header}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <LineChartOutlined style={{ fontSize: 20, marginRight: 8, color: '#2E7D32' }} />
-          <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
-            生产数据趋势
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={zoomEnabled}
-                onChange={handleZoomToggle}
-                size="small"
-              />
-            }
-            label="启用缩放"
-          />
-          <Tooltip title="刷新">
-            <IconButton
+      <Paper elevation={0} sx={{ borderRadius: '8px', overflow: 'hidden', mb: 1, border: '1px solid #e0e0e0' }}>
+        <Box className={styles.header} sx={{ p: 1.5, backgroundColor: '#f9f9f9' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {chartType === 'line' && <LineChartOutlined style={{ fontSize: 20, marginRight: 8, color: THEME_COLOR }} />}
+            {chartType === 'radar' && <RadarChartOutlined style={{ fontSize: 20, marginRight: 8, color: THEME_COLOR }} />}
+            <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
+              水质数据趋势
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <ToggleButtonGroup
+              value={chartType}
+              exclusive
+              onChange={handleChartTypeChange}
               size="small"
-              onClick={handleRefresh}
-              disabled={loading}
-              sx={{ 
-                color: '#666',
-                '&:hover': { color: '#2E7D32' },
-                '&.Mui-disabled': { color: '#ccc' }
-              }}
+              aria-label="图表类型"
+              sx={{ mr: 2 }}
             >
-              <ReloadOutlined />
-            </IconButton>
-          </Tooltip>
+              <ToggleButton value="line" aria-label="折线图">
+                <Tooltip title="折线图">
+                  <LineChartOutlined />
+                </Tooltip>
+              </ToggleButton>
+              <ToggleButton value="radar" aria-label="雷达图">
+                <Tooltip title="雷达图">
+                  <RadarChartOutlined />
+                </Tooltip>
+              </ToggleButton>
+            </ToggleButtonGroup>
+            
+            {chartType === 'line' && (
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={zoomEnabled}
+                    onChange={handleZoomToggle}
+                    size="small"
+                  />
+                }
+                label="启用缩放"
+              />
+            )}
+            <Tooltip title="刷新">
+              <IconButton
+                size="small"
+                onClick={handleRefresh}
+                disabled={loading}
+                sx={{ 
+                  color: '#666',
+                  '&:hover': { color: THEME_COLOR },
+                  '&.Mui-disabled': { color: '#ccc' }
+                }}
+              >
+                <ReloadOutlined />
+              </IconButton>
+            </Tooltip>
           </Box>
         </Box>
 
         {loading ? (
-        <Box className={styles.loading}>
-            <CircularProgress />
+          <Box className={styles.loading} sx={{ height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <CircularProgress sx={{ color: THEME_COLOR }} />
           </Box>
-      ) : error ? (
-        <Alert severity="error" className={styles.error}>
-          {error}
-        </Alert>
-      ) : (
-        <Card className={styles.trendChartCard}>
-          <CardContent>
+        ) : error ? (
+          <Box sx={{ p: 2 }}>
+            <Alert severity="error" className={styles.error}>
+              {error}
+            </Alert>
+          </Box>
+        ) : (
+          <Box sx={{ p: 2 }}>
             <div
               ref={chartRef}
               style={{
                 width: '100%',
                 height: '400px',
-                minHeight: '300px'
+                minHeight: '400px'
               }}
             />
-          </CardContent>
-        </Card>
-      )}
-
-        <Snackbar
-          open={notification.open}
-          autoHideDuration={6000}
-          onClose={() => setNotification({ ...notification, open: false })}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert
-            onClose={() => setNotification({ ...notification, open: false })}
-            severity={notification.severity}
-            sx={{ width: '100%' }}
-          >
-            {notification.message}
-          </Alert>
-        </Snackbar>
           </Box>
+        )}
+      </Paper>
+
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={6000}
+        onClose={() => setNotification({ ...notification, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setNotification({ ...notification, open: false })}
+          severity={notification.severity}
+          sx={{ width: '100%' }}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
+    </Box>
   );
 };
 

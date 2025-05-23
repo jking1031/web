@@ -9,6 +9,7 @@ export { default as Dashboard } from './components/Dashboard';
 export { default as EnhancedDashboard } from './components/EnhancedDashboard';
 export { default as TrendChart } from './components/TrendChart';
 export { default as EnhancedTrendChart } from './components/EnhancedTrendChart';
+export { default as RealtimeTrendChart } from './components/RealtimeTrendChart';
 export { default as DeviceStatus } from './components/DeviceStatus';
 export { default as DailyProcessAnalysis } from './components/DailyProcessAnalysis';
 export { default as AlarmList } from './components/AlarmList';

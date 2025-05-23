@@ -7,6 +7,7 @@
   - 使用组件：
     - `ProductionStats` - 生产数据统计
     - `EnhancedTrendChart` - 趋势图
+    -  RealtimeTrendChart  - 趋势图2
     - `DailyProcessAnalysis` - 工艺数据
     - Material-UI: `Box`, `Typography`, `Button`, `Grid`
     - Ant Design Icons: `AppstoreOutlined`, `UserOutlined`
