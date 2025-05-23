@@ -21385,8 +21385,7 @@
         "y": 1020,
         "wires": [
             [
-                "7a90504a96a8fc53",
-                "b9a5b1ca35f08439"
+                "7a90504a96a8fc53"
             ]
         ]
     },
@@ -21752,23 +21751,6 @@
         ]
     },
     {
-        "id": "b9a5b1ca35f08439",
-        "type": "debug",
-        "z": "db-api-flow",
-        "name": "debug 7",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 690,
-        "y": 1080,
-        "wires": []
-    },
-    {
         "id": "fce3854ab45bd22c",
         "type": "function",
         "z": "db-api-flow",
@@ -21818,7 +21800,8 @@
         "y": 560,
         "wires": [
             [
-                "8e6980b25babb8bd"
+                "8e6980b25babb8bd",
+                "ceff7fafa36ff482"
             ]
         ]
     },
@@ -21841,6 +21824,42 @@
                 "bd518f9ac926055e"
             ]
         ]
+    },
+    {
+        "id": "ceff7fafa36ff482",
+        "type": "function",
+        "z": "db-api-flow",
+        "name": "function 40",
+        "func": "let rows = msg.payload;\nlet raw = [];\n\nrows.forEach(row => {\n    let in_quality = row.in_quality || '';\n    let out_quality = row.out_quality || '';\n\n    let data = {\n        date: row.date,\n        operator: row.operator,\n\n        // ✅ 进出水水量\n        inflow: parseFloat(row.inflow),\n        outflow: parseFloat(row.outflow),\n\n        // ✅ 进水水质\n        in_cod_avg: parseFloat((in_quality.match(/进水COD平均值(\\d+(\\.\\d+)?)/) || [])[1]),\n        in_cod_max: parseFloat((in_quality.match(/最高COD(\\d+(\\.\\d+)?)/) || [])[1]),\n        in_nh3_avg: parseFloat((in_quality.match(/氨氮平均值(\\d+(\\.\\d+)?)/) || [])[1]),\n\n        // ✅ 出水水质\n        out_cod_avg: parseFloat((out_quality.match(/COD平均值(\\d+(\\.\\d+)?)/) || [])[1]),\n        out_nh3_avg: parseFloat((out_quality.match(/氨氮平均值(\\d+(\\.\\d+)?)/) || [])[1]),\n        out_tp_avg: parseFloat((out_quality.match(/总磷平均值(\\d+(\\.\\d+)?)/) || [])[1]),\n        out_tn_avg: parseFloat((out_quality.match(/总氮平均值(\\d+(\\.\\d+)?)/) || [])[1]),\n\n        // ✅ 药剂投加\n        carbon_source: parseFloat(row.carbon_source),\n        phosphorus_removal: parseFloat(row.phosphorus_removal),\n        disinfectant: parseFloat(row.disinfectant),\n\n        // ✅ 污泥产量\n        sludge_quantity: parseFloat(row.sludge_quantity)\n    };\n\n    raw.push(data);\n});\n\n// ✅ 字段映射表\nconst labelMap = {\n    inflow: \"进水流量 (m³/d)\",\n    outflow: \"出水流量 (m³/d)\",\n    in_cod_avg: \"进水COD平均值\",\n    in_cod_max: \"进水COD最大值\",\n    in_nh3_avg: \"进水氨氮平均值\",\n    out_cod_avg: \"出水COD平均值\",\n    out_nh3_avg: \"出水氨氮平均值\",\n    out_tp_avg: \"出水总磷平均值\",\n    out_tn_avg: \"出水总氮平均值\",\n    carbon_source: \"碳源投加量 (L/d)\",\n    phosphorus_removal: \"除磷剂投加量 (L/d)\",\n    disinfectant: \"消毒剂投加量 (L/d)\",\n    sludge_quantity: \"污泥产量 (吨/d)\"\n};\n\nconst keys = Object.keys(labelMap);\n\n// 构造系列数组（使用中文名）\nlet series = keys.map(key => ({\n    name: labelMap[key],\n    data: []\n}));\n\n// 填充每个系列的数据\nraw.forEach(row => {\n    keys.forEach(key => {\n        const value = row[key];\n        if (!isNaN(value)) {\n            const label = labelMap[key];\n            const seriesItem = series.find(s => s.name === label);\n            seriesItem.data.push({ time: row.date, value });\n        }\n    });\n});\n\nmsg.payload = series;\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 750,
+        "y": 620,
+        "wires": [
+            [
+                "f03332f8149be09e"
+            ]
+        ]
+    },
+    {
+        "id": "f03332f8149be09e",
+        "type": "debug",
+        "z": "db-api-flow",
+        "name": "debug 7",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 910,
+        "y": 600,
+        "wires": []
     },
     {
         "id": "api-configs-save",
