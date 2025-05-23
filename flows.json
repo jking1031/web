@@ -2622,8 +2622,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 140,
-        "y": 980,
+        "x": 300,
+        "y": 780,
         "wires": [
             [],
             []
@@ -2862,7 +2862,8 @@
         "y": 1360,
         "wires": [
             [
-                "debug_output"
+                "debug_output",
+                "7a90504a96a8fc53"
             ]
         ]
     },
@@ -2879,7 +2880,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 580,
+        "x": 700,
         "y": 1360,
         "wires": []
     },
@@ -2934,31 +2935,6 @@
         "wires": [
             [
                 "70bf7c73112cb8f5"
-            ]
-        ]
-    },
-    {
-        "id": "2cf1c31a9fe81a55",
-        "type": "inject",
-        "z": "7c14288f4889ff67",
-        "name": "1",
-        "props": [
-            {
-                "p": "payload"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "3",
-        "payloadType": "num",
-        "x": 110,
-        "y": 1100,
-        "wires": [
-            [
-                "ca28ac10d3a51528"
             ]
         ]
     },
@@ -3086,8 +3062,7 @@
         "y": 1360,
         "wires": [
             [
-                "calc_fm_srt",
-                "79377c78e6aa16c9"
+                "calc_fm_srt"
             ]
         ]
     },
@@ -3197,7 +3172,7 @@
         "type": "function",
         "z": "7c14288f4889ff67",
         "name": "function 88",
-        "func": "flow.set(\"ao\",msg.payload);\nreturn msg;\n",
+        "func": "msg.payload = 1\nflow.set(\"ao\",msg.payload);\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -3318,38 +3293,30 @@
         ]
     },
     {
-        "id": "79377c78e6aa16c9",
-        "type": "function",
+        "id": "7cb69147b7b08ab3",
+        "type": "http in",
         "z": "7c14288f4889ff67",
-        "name": "function 90",
-        "func": "// === 输入参数 ===\nlet Q = flow.get(\"avg_data.gt_in_ll\");                // m³/d\nlet COD = flow.get(\"avg_data.gt_in_cod\");             // mg/L\nlet SS_out = parseFloat(flow.get(\"OUT_SS\"));          // mg/L\nlet SV30 = flow.get(\"sludge_data[0].settling_ratio\") * 10; // mL/L，调整后\nlet MLSS = flow.get(\"sludge_data[0].concentration\");  // mg/L\nlet sludge_mass = flow.get(\"daily_data.sludge_quantity\");  // 吨/天\nlet water_content = flow.get(\"sludge_data[1].water_content\"); // %\nlet V = flow.get(\"v\");                                // m³\nlet carbon_dose = flow.get(\"daily_data.carbon_source\"); // L/d\n\n// 新增总氮参数 mg/L\nlet TN_in = flow.get(\"tn_data[0].tn\");\nlet TN_out = flow.get(\"avg_data.gt_out_tn\");\n\n// === 参数合理性检查 ===\nif ([Q, COD, SS_out, SV30, MLSS, sludge_mass, water_content, V, carbon_dose, TN_in, TN_out]\n    .some(v => v === undefined || isNaN(v))) {\n    node.error(\"缺少必要参数或参数格式不正确！\", msg);\n    return null;\n}\n\n// === 核心计算 ===\n// MLVSS 通常为 MLSS 的 0.7 倍\nlet MLVSS = MLSS * 0.7;\n\n// F/M 比 = 有机负荷 / 微生物量\nlet FM = (Q * COD) / (V * MLVSS);\n\n// 干污泥质量（kg/d）\nlet dry_sludge = sludge_mass * 1000 * (1 - water_content / 100);\n\n// 出水悬浮物负荷（kg/d）\nlet SS_out_load = Q * SS_out / 1000;\n\n// 系统总污泥量（kg）\nlet total_mass = V * MLSS / 1000;\n\n// SRT = 系统总污泥量 / 每日排泥量\nlet SRT = total_mass / (dry_sludge + SS_out_load);\n\n// SVI = SV30 * 1000 / MLSS（单位 mL/g）\nlet SVI = SV30 * 1000 / MLSS;\n\n// COD负荷目标计算\nlet target_FM = 0.25;\nlet target_COD_load = target_FM * V * MLVSS; // mg\nlet target_COD_kg = target_COD_load / 1000; // kg/d\n\n// 当前碳源COD投加\nlet carbon_COD_kg = carbon_dose * 200 / 1000; // 200g/L = 200000 mg/L\n\n// 建议列表\nlet suggestions = [];\n\n// F/M 比建议\nif (FM < 0.1) {\n    suggestions.push(`F/M值为 ${FM.toFixed(2)}，偏低，系统可能碳源不足。建议增加碳源。`);\n}\nif (FM > 0.4) {\n    suggestions.push(`F/M值为 ${FM.toFixed(2)}，偏高，系统可能负荷过重。可考虑优化进水或碳源控制。`);\n}\n\n// SRT 建议\nif (SRT < 8) {\n    suggestions.push(`SRT为 ${SRT.toFixed(1)} 天，偏低。建议减少排泥或增加污泥回流。`);\n} else if (SRT > 20) {\n    suggestions.push(`SRT为 ${SRT.toFixed(1)} 天，偏高。可适当增加排泥量。`);\n}\n\n// SVI 建议\nif (SVI > 150) {\n    suggestions.push(`SVI为 ${SVI.toFixed(1)} mL/g，沉降性较差，建议检查泥龄控制或回流系统。`);\n}\n\n// 碳源投加建议（定量）\nlet carbon_diff_kg = target_COD_kg - carbon_COD_kg;\nlet carbon_diff_L = carbon_diff_kg / 0.2; // 200g/L\n\nif (carbon_diff_L > 1) {\n    suggestions.push(`碳源（乙酸钠）当前投加为 ${carbon_dose} L/d，建议增加 ${carbon_diff_L.toFixed(1)} L/d，以满足目标F/M比 ${target_FM}。`);\n} else if (carbon_diff_L < -1) {\n    suggestions.push(`碳源（乙酸钠）当前投加为 ${carbon_dose} L/d，建议减少 ${Math.abs(carbon_diff_L).toFixed(1)} L/d，避免碳源浪费。`);\n} else {\n    suggestions.push(\"碳源投加接近合理范围，无需调整。\");\n}\n\n// 污泥产量合理性评估\nlet COD_load_kg = Q * COD / 1000; // kg/d\nlet expected_sludge_kg = COD_load_kg * 0.6; // kg/d\nlet expected_sludge_t = expected_sludge_kg / 1000; // 吨/天\n\nlet sludge_range_min = expected_sludge_t * 0.8;\nlet sludge_range_max = expected_sludge_t * 1.2;\n\nif (sludge_mass < sludge_range_min) {\n    let diff = (sludge_range_min - sludge_mass).toFixed(2);\n    suggestions.push(`当前产泥量为 ${sludge_mass} 吨/天，偏少。建议增加产泥量约 ${diff} 吨/天。`);\n} else if (sludge_mass > sludge_range_max) {\n    let diff = (sludge_mass - sludge_range_max).toFixed(2);\n    suggestions.push(`当前产泥量为 ${sludge_mass} 吨/天，偏多。建议减少产泥量约 ${diff} 吨/天。`);\n} else {\n    suggestions.push(\"污泥产量在合理范围内，无需调整。\");\n}\n\n// 进出水总氮去除率\nlet tn_removal_rate = ((TN_in - TN_out) / TN_in) * 100;\n\n// 总氮去除情况建议\nif (tn_removal_rate < 50) {\n    suggestions.push(`总氮去除率为 ${tn_removal_rate.toFixed(1)}%，偏低，建议检查氮去除工艺和碳源供应。`);\n} else {\n    suggestions.push(`总氮去除率为 ${tn_removal_rate.toFixed(1)}%，处于合理范围。`);\n}\n\n// === 输出 ===\nmsg.payload = {\n    input_data: {\n        Q, COD, SS_out, SV30, MLSS, sludge_mass, water_content, V, carbon_dose, TN_in, TN_out\n    },\n    result: {\n        F_M: parseFloat(FM.toFixed(2)),\n        SRT_days: parseFloat(SRT.toFixed(1)),\n        SVI: parseFloat(SVI.toFixed(1)),\n        carbon_COD_kg: parseFloat(carbon_COD_kg.toFixed(1)),\n        target_COD_kg: parseFloat(target_COD_kg.toFixed(1)),\n        TN_removal_rate: parseFloat(tn_removal_rate.toFixed(1)),\n        建议: suggestions\n    }\n};\n\nreturn msg;\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 330,
-        "y": 1400,
+        "name": "",
+        "url": "/api/getGongYiData",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 150,
+        "y": 1020,
         "wires": [
             [
-                "a4f21526d027e5eb"
+                "ca28ac10d3a51528"
             ]
         ]
     },
     {
-        "id": "a4f21526d027e5eb",
-        "type": "debug",
+        "id": "7a90504a96a8fc53",
+        "type": "http response",
         "z": "7c14288f4889ff67",
-        "name": "debug 7",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 530,
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 630,
         "y": 1400,
         "wires": []
     },
