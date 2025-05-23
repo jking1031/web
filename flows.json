@@ -21836,6 +21836,93 @@
         "wires": []
     },
     {
+        "id": "b9b65205d3bea87d",
+        "type": "function",
+        "z": "db-api-flow",
+        "name": "function 40",
+        "func": "let rows = msg.payload;\nlet result = [];\n\nrows.forEach(row => {\n    let in_quality = row.in_quality || '';\n    let out_quality = row.out_quality || '';\n\n    let data = {\n        date: row.date,\n        operator: row.operator,\n\n        // ✅ 进出水水量\n        inflow: parseFloat(row.inflow),\n        outflow: parseFloat(row.outflow),\n\n        // ✅ 进水水质\n        in_cod_avg: parseFloat((in_quality.match(/进水COD平均值(\\d+(\\.\\d+)?)/) || [])[1]),\n        in_cod_max: parseFloat((in_quality.match(/最高COD(\\d+(\\.\\d+)?)/) || [])[1]),\n        in_nh3_avg: parseFloat((in_quality.match(/氨氮平均值(\\d+(\\.\\d+)?)/) || [])[1]),\n\n        // ✅ 出水水质\n        out_cod_avg: parseFloat((out_quality.match(/COD平均值(\\d+(\\.\\d+)?)/) || [])[1]),\n        out_nh3_avg: parseFloat((out_quality.match(/氨氮平均值(\\d+(\\.\\d+)?)/) || [])[1]),\n        out_tp_avg: parseFloat((out_quality.match(/总磷平均值(\\d+(\\.\\d+)?)/) || [])[1]),\n        out_tn_avg: parseFloat((out_quality.match(/总氮平均值(\\d+(\\.\\d+)?)/) || [])[1]),\n\n        // ✅ 药剂投加\n        carbon_source: parseFloat(row.carbon_source),\n        phosphorus_removal: parseFloat(row.phosphorus_removal),\n        disinfectant: parseFloat(row.disinfectant),\n\n        // ✅ 污泥产量\n        sludge_quantity: parseFloat(row.sludge_quantity)\n    };\n\n    result.push(data);\n});\n\nmsg.payload = result;\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 550,
+        "y": 1120,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "fce3854ab45bd22c",
+        "type": "function",
+        "z": "db-api-flow",
+        "name": "function 87",
+        "func": "\n\n\n// 昨天 08:00 到今天 08:00\nconst sql = `\n  SELECT\n  id,\n  date,\n  operator,\n  inflow,\n  outflow,\n  in_quality,\n  out_quality,\n  water_quality_anomalies,\n  equipment_status,\n  equipment_issues,\n  carbon_source,\n  phosphorus_removal,\n  disinfectant,\n  chemical_effect,\n  sludge_quantity,\n  other_notes,\n  report_id,\n  imagesurl,\n  created_at\nFROM daily_report\nWHERE date >= CURDATE() - INTERVAL 3 DAY\nORDER BY date ASC\n`;\nmsg.topic = sql;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 210,
+        "y": 1080,
+        "wires": [
+            [
+                "8a99d933237306ce"
+            ]
+        ]
+    },
+    {
+        "id": "8a99d933237306ce",
+        "type": "mysql",
+        "z": "db-api-flow",
+        "mydb": "e3d5e9572467c502",
+        "name": "日报数据",
+        "x": 360,
+        "y": 1120,
+        "wires": [
+            [
+                "6b05c2b56416a058"
+            ]
+        ]
+    },
+    {
+        "id": "6b05c2b56416a058",
+        "type": "debug",
+        "z": "db-api-flow",
+        "name": "debug 26",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 580,
+        "y": 1180,
+        "wires": []
+    },
+    {
+        "id": "668e8d25c7ed1cac",
+        "type": "inject",
+        "z": "db-api-flow",
+        "name": "",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 70,
+        "y": 1080,
+        "wires": [
+            [
+                "fce3854ab45bd22c"
+            ]
+        ]
+    },
+    {
         "id": "api-configs-save",
         "type": "http in",
         "z": "api-configs-individual-flow",
