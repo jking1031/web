@@ -871,6 +871,13 @@
         "charset": "UTF8"
     },
     {
+        "id": "de99c047ec3d8eb7",
+        "type": "users_config",
+        "appPath": "/users",
+        "jwtCookieName": "nr.nodeUsers.jwt",
+        "jwtHttpsOnly": false
+    },
+    {
         "id": "0e2a1edf01b6f98a",
         "type": "function",
         "z": "1dbac401a15b31e3",
