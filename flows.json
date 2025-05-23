@@ -2876,12 +2876,12 @@
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
+        "complete": "true",
+        "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 740,
-        "y": 1340,
+        "x": 920,
+        "y": 1320,
         "wires": []
     },
     {
@@ -3317,7 +3317,7 @@
         "name": "",
         "statusCode": "",
         "headers": {},
-        "x": 710,
+        "x": 690,
         "y": 1380,
         "wires": []
     },
