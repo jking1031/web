@@ -2858,14 +2858,15 @@
         "type": "function",
         "z": "7c14288f4889ff67",
         "name": "计算F/M、SRT、SVI",
-        "func": "// 获取输入参数\nlet Q = msg.payload.Q;             // m³/d\nlet COD = msg.payload.COD;         // mg/L\nlet SS_out = msg.payload.SS_out;   // mg/L\nlet SV30 = msg.payload.SV30;       // mL/L\nlet MLSS = msg.payload.MLSS;       // mg/L\nlet sludge_mass = msg.payload.sludge_mass;  // kg/d（湿重）\nlet water_content = msg.payload.water_content; // 0~1\nlet V = msg.payload.V;             // m³\n\n// 合理性检查\nif (!Q || !COD || !SV30 || !MLSS || !sludge_mass || !water_content || !V) {\n    node.error(\"缺少必要参数！\", msg);\n    return null;\n}\n\n// MLVSS 通常约为 MLSS 的 0.7 倍\nlet MLVSS = MLSS * 0.7;\n\n// F/M 比计算 (单位 COD负荷 / 微生物量)\nlet FM = (Q * COD) / (V * MLVSS); // mg/L 可简化为无单位\n\n// 干污泥质量（kg/d）\nlet dry_sludge = sludge_mass * (1 - water_content); // kg/d\n\n// 出水悬浮物负荷（kg/d）\nlet SS_out_load = Q * SS_out / 1000; // mg/L -> kg/d\n\n// SRT = 系统总污泥量 / 日排泥量（含出水）\nlet total_mass = V * MLSS / 1000; // mg/L -> kg\nlet SRT = total_mass / (dry_sludge + SS_out_load); // d\n\n// SVI = SV30 * 1000 / MLSS（单位：mL/g）\nlet SVI = SV30 * 1000 / MLSS;\n\nmsg.payload = {\n    \"F_M\": FM.toFixed(2),\n    \"SRT_days\": SRT.toFixed(1),\n    \"SVI\": SVI.toFixed(1),\n    \"备注\": \"F/M建议范围为0.1~0.4；SRT典型为8~20天；SVI <150为好沉降性\"\n};\nreturn msg;",
+        "func": "// 获取输入参数\nlet Q = flow.get(\"avg_data.gt_in_ll\");                // m³/d\nlet COD = flow.get(\"avg_data.gt_in_cod\");             // mg/L\nlet SS_out = flow.get(\"OUT_SS\");                      // mg/L\nlet SV30 = flow.get(\"sludge_data[0].settling_ratio\"); // mL/L\nlet MLSS = flow.get(\"sludge_data[0].concentration\");  // mg/L\nlet sludge_mass = flow.get(\"daily_data.sludge_quantity\");  // 吨/天\nlet water_content = flow.get(\"sludge_data[1].water_content\"); // 含水率百分比\nlet V = flow.get(\"v\");                                // m³\n\n// 合理性检查\nif ([Q, COD, SS_out, SV30, MLSS, sludge_mass, water_content, V].some(v => v === undefined || isNaN(v))) {\n    node.error(\"缺少必要参数或参数格式不正确！\", msg);\n    return null;\n}\n\n// MLVSS 通常约为 MLSS 的 0.7 倍\nlet MLVSS = MLSS * 0.7;\n\n// F/M 比 = 有机负荷（mg/L * m³/d） / 微生物量（mg/L * m³） -> 无单位\nlet FM = (Q * COD) / (V * MLVSS);\n\n// 干污泥质量（kg/d） = 污泥总量（吨/天）× 1000 × (1 - 含水率%)\nlet dry_sludge = sludge_mass * 1000 * (1 - water_content / 100);\n\n// 出水悬浮物负荷（kg/d）\nlet SS_out_load = Q * SS_out / 1000;\n\n// 系统总污泥量（kg） = MLSS × V / 1000\nlet total_mass = V * MLSS / 1000;\n\n// SRT = 系统总污泥量 / 每日排泥量（含出水）\nlet SRT = total_mass / (dry_sludge + SS_out_load);\n\n// SVI = SV30 * 1000 / MLSS（单位：mL/g）\nlet SVI = SV30 * 1000 / MLSS;\n\nmsg.payload = {\n    \"F_M\": parseFloat(FM.toFixed(2)),\n    \"SRT_days\": parseFloat(SRT.toFixed(1)),\n    \"SVI\": parseFloat(SVI.toFixed(1)),\n    \"备注\": \"F/M建议范围为0.1~0.4；SRT典型为8~20天；SVI <150为好沉降性\"\n};\n\nreturn msg;\n",
         "outputs": 1,
+        "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 340,
-        "y": 1480,
+        "x": 360,
+        "y": 1320,
         "wires": [
             [
                 "debug_output"
@@ -2886,7 +2887,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 580,
-        "y": 1480,
+        "y": 1320,
         "wires": []
     },
     {
@@ -2901,8 +2902,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 360,
-        "y": 1040,
+        "x": 460,
+        "y": 1100,
         "wires": [
             [
                 "a0a9c2806ebb0353"
@@ -2921,12 +2922,11 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 460,
+        "x": 780,
         "y": 1100,
         "wires": [
             [
-                "a7aed324db089d31",
-                "99788777f0881d28"
+                "a7aed324db089d31"
             ]
         ]
     },
@@ -2936,7 +2936,7 @@
         "z": "7c14288f4889ff67",
         "mydb": "e3d5e9572467c502",
         "name": "实时数据",
-        "x": 280,
+        "x": 620,
         "y": 1100,
         "wires": [
             [
@@ -2961,8 +2961,8 @@
         "topic": "",
         "payload": "1",
         "payloadType": "num",
-        "x": 90,
-        "y": 1120,
+        "x": 110,
+        "y": 1100,
         "wires": [
             [
                 "ca28ac10d3a51528"
@@ -3093,7 +3093,7 @@
         "y": 1320,
         "wires": [
             [
-                "88347ebef3b8e2c6"
+                "calc_fm_srt"
             ]
         ]
     },
@@ -3109,8 +3109,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 900,
-        "y": 1120,
+        "x": 940,
+        "y": 1100,
         "wires": [
             [
                 "aao_sql_function"
@@ -3153,9 +3153,7 @@
         "y": 1260,
         "wires": [
             [
-                "calc_fm_srt",
-                "f28286ea7224bbc3",
-                "7bcd258701e1fb27"
+                "f28286ea7224bbc3"
             ]
         ]
     },
@@ -3175,62 +3173,10 @@
         "y": 1260,
         "wires": [
             [
-                "053fcdef290f072f",
-                "432fec35e993b778"
+                "053fcdef290f072f"
             ],
             []
         ]
-    },
-    {
-        "id": "88347ebef3b8e2c6",
-        "type": "debug",
-        "z": "7c14288f4889ff67",
-        "name": "debug 28",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 340,
-        "y": 1320,
-        "wires": []
-    },
-    {
-        "id": "99788777f0881d28",
-        "type": "debug",
-        "z": "7c14288f4889ff67",
-        "name": "debug 33",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 660,
-        "y": 1020,
-        "wires": []
-    },
-    {
-        "id": "2a0cc71c5f0b17a9",
-        "type": "debug",
-        "z": "7c14288f4889ff67",
-        "name": "debug 36",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 850,
-        "y": 1080,
-        "wires": []
     },
     {
         "id": "1f7cb3703d5de164",
@@ -3248,44 +3194,9 @@
         "y": 1180,
         "wires": [
             [
-                "0846db67ac736c93",
-                "2a0cc71c5f0b17a9"
+                "0846db67ac736c93"
             ]
         ]
-    },
-    {
-        "id": "7bcd258701e1fb27",
-        "type": "debug",
-        "z": "7c14288f4889ff67",
-        "name": "debug 38",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 200,
-        "y": 1380,
-        "wires": []
-    },
-    {
-        "id": "432fec35e993b778",
-        "type": "debug",
-        "z": "7c14288f4889ff67",
-        "name": "debug 39",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 820,
-        "y": 1380,
-        "wires": []
     },
     {
         "id": "ca28ac10d3a51528",
@@ -3299,8 +3210,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 190,
-        "y": 1040,
+        "x": 270,
+        "y": 1100,
         "wires": [
             [
                 "75f52ce4e215ccd2"
