@@ -21860,7 +21860,7 @@
         "type": "function",
         "z": "db-api-flow",
         "name": "function 87",
-        "func": "\n\n\n// 昨天 08:00 到今天 08:00\nconst sql = `\n  SELECT\n  id,\n  date,\n  operator,\n  inflow,\n  outflow,\n  in_quality,\n  out_quality,\n  water_quality_anomalies,\n  equipment_status,\n  equipment_issues,\n  carbon_source,\n  phosphorus_removal,\n  disinfectant,\n  chemical_effect,\n  sludge_quantity,\n  other_notes,\n  report_id,\n  imagesurl,\n  created_at\nFROM daily_report\nWHERE date >= CURDATE() - INTERVAL 3 DAY\nORDER BY date ASC\n`;\nmsg.topic = sql;\nreturn msg;",
+        "func": "\n\n\n// 昨天 08:00 到今天 08:00\nconst sql = `\n  SELECT\n  id,\n  date,\n  operator,\n  inflow,\n  outflow,\n  in_quality,\n  out_quality,\n  water_quality_anomalies,\n  equipment_status,\n  equipment_issues,\n  carbon_source,\n  phosphorus_removal,\n  disinfectant,\n  chemical_effect,\n  sludge_quantity,\n  other_notes,\n  report_id,\n  imagesurl,\n  created_at\nFROM daily_report\nWHERE date >= CURDATE() - INTERVAL 7 DAY\nORDER BY date ASC\n`;\nmsg.topic = sql;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
