@@ -2847,268 +2847,6 @@
         ]
     },
     {
-        "id": "calc_fm_srt",
-        "type": "function",
-        "z": "7c14288f4889ff67",
-        "name": "计算F/M、SRT、SVI",
-        "func": "// === 输入参数 ===\nlet Q = flow.get(\"avg_data.gt_in_ll\");                // m³/d\nlet COD = flow.get(\"avg_data.gt_in_cod\");             // mg/L\nlet SS_out = parseFloat(flow.get(\"OUT_SS\"));          // mg/L\nlet SV30 = flow.get(\"sludge_data[0].settling_ratio\") * 10; // mL/L\nlet MLSS = flow.get(\"sludge_data[0].concentration\");  // mg/L\nlet sludge_mass = flow.get(\"daily_data.sludge_quantity\");  // 吨/天\nlet water_content = flow.get(\"sludge_data[1].water_content\"); // %\nlet V = flow.get(\"v\");                                // m³\nlet carbon_dose = flow.get(\"daily_data.carbon_source\"); // L/d\n\n// 新增总氮参数 mg/L\nlet TN_in = flow.get(\"tn_data[0].tn\");\nlet TN_out = flow.get(\"avg_data.gt_out_tn\");\n\n// === 校验 ===\nif ([Q, COD, SS_out, SV30, MLSS, sludge_mass, water_content, V, carbon_dose, TN_in, TN_out].some(v => v === undefined || isNaN(v))) {\n    msg.payload = { error: \"缺少必要参数或格式错误！\" };\n    return msg; // 不 return null，而是继续返回 msg 到 http response\n}\n\n\n// === 核心计算 ===\nlet MLVSS = MLSS * 0.7;\nlet FM = (Q * COD) / (V * MLVSS);\nlet dry_sludge = sludge_mass * 1000 * (1 - water_content / 100);\nlet SS_out_load = Q * SS_out / 1000;\nlet total_mass = V * MLSS / 1000;\nlet SRT = total_mass / (dry_sludge + SS_out_load);\nlet SVI = SV30 * 1000 / MLSS;\n\n// === COD负荷目标计算 ===\nlet target_FM = 0.25; // 可调\nlet target_COD_load = target_FM * V * MLVSS; // mg\nlet target_COD_kg = target_COD_load / 1000; // kg/d\n\n// === 当前碳源COD投加 ===\nlet carbon_COD_kg = carbon_dose * 200 / 1000; // 200g/L = 200000 mg/L\n\n// === 总氮去除效率计算 ===\nlet TN_removal_eff = ((TN_in - TN_out) / TN_in) * 100;\n\n// === 建议 ===\nlet suggestions = [];\n\n// —— F/M 比建议 ——\nif (FM < 0.1) {\n    suggestions.push(\"F/M值为 \" + FM.toFixed(2) + \"，偏低，系统可能碳源不足。建议增加碳源。\");\n}\nif (FM > 0.4) {\n    suggestions.push(\"F/M值为 \" + FM.toFixed(2) + \"，偏高，系统可能负荷过重。可考虑优化进水或碳源控制。\");\n}\n\n// —— SRT 建议 ——\nif (SRT < 8) {\n    suggestions.push(`SRT为 ${SRT.toFixed(1)} 天，偏低。建议减少排泥或增加污泥回流。`);\n} else if (SRT > 20) {\n    suggestions.push(`SRT为 ${SRT.toFixed(1)} 天，偏高。可适当增加排泥量。`);\n}\n\n// —— SVI 建议 ——\nif (SVI > 150) {\n    suggestions.push(`SVI为 ${SVI.toFixed(1)} mL/g，沉降性较差，建议检查泥龄控制或回流系统。`);\n}\n\n// —— 碳源投加建议（定量） ——\nlet carbon_diff_kg = target_COD_kg - carbon_COD_kg;\nlet carbon_diff_L = carbon_diff_kg / 0.2; // 200g/L\n\nif (carbon_diff_L > 1) {\n    suggestions.push(`碳源（乙酸钠）当前投加为 ${carbon_dose} L/d，建议增加 ${carbon_diff_L.toFixed(1)} L/d，以满足目标F/M比 ${target_FM}。`);\n} else if (carbon_diff_L < -1) {\n    suggestions.push(`碳源（乙酸钠）当前投加为 ${carbon_dose} L/d，建议减少 ${Math.abs(carbon_diff_L).toFixed(1)} L/d，避免碳源浪费。`);\n} else {\n    suggestions.push(\"碳源投加接近合理范围，无需调整。\");\n}\n\n// —— 脱氮效率建议 —— \nif (TN_removal_eff < 50) {\n    suggestions.push(`脱氮效率为 ${TN_removal_eff.toFixed(1)}%，远低于合理值（建议 ≥70%）。建议检查碳源充足性、反硝化条件及运行参数。`);\n} else if (TN_removal_eff < 70) {\n    suggestions.push(`脱氮效率为 ${TN_removal_eff.toFixed(1)}%，偏低，建议复查碳源投加和反硝化控制策略。`);\n} else {\n    suggestions.push(`脱氮效率为 ${TN_removal_eff.toFixed(1)}%，表现良好。`);\n}\n\n// === 污泥产量合理性评估 ===\nlet COD_load_kg = Q * COD / 1000; // mg/L -> kg/d\nlet expected_sludge_kg = COD_load_kg * 0.6; // kg/d\nlet expected_sludge_t = expected_sludge_kg / 1000; // 吨/天\n\nlet sludge_range_min = expected_sludge_t * 0.8;\nlet sludge_range_max = expected_sludge_t * 1.2;\n\nif (sludge_mass < sludge_range_min) {\n    let diff = (sludge_range_min - sludge_mass).toFixed(2);\n    suggestions.push(`当前产泥量为 ${sludge_mass} 吨/天，偏少。建议增加产泥量约 ${diff} 吨/天。`);\n} else if (sludge_mass > sludge_range_max) {\n    let diff = (sludge_mass - sludge_range_max).toFixed(2);\n    suggestions.push(`当前产泥量为 ${sludge_mass} 吨/天，偏多。建议减少产泥量约 ${diff} 吨/天。`);\n} else {\n    suggestions.push(\"污泥产量在合理范围内，无需调整。\");\n}\n\n// === 输出 ===\nmsg.payload = {\n    input_data: {\n        Q, COD, SS_out, SV30, MLSS, sludge_mass, water_content, V, carbon_dose, TN_in, TN_out\n    },\n    result: {\n        F_M: parseFloat(FM.toFixed(2)),\n        SRT_days: parseFloat(SRT.toFixed(1)),\n        SVI: parseFloat(SVI.toFixed(1)),\n        carbon_COD_kg: parseFloat(carbon_COD_kg.toFixed(1)),\n        target_COD_kg: parseFloat(target_COD_kg.toFixed(1)),\n        TN_removal_efficiency: parseFloat(TN_removal_eff.toFixed(1)),\n        建议: suggestions\n    }\n};\n\nreturn msg;\n\n\n\n",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 420,
-        "y": 1360,
-        "wires": [
-            [
-                "7a90504a96a8fc53"
-            ]
-        ]
-    },
-    {
-        "id": "75f52ce4e215ccd2",
-        "type": "function",
-        "z": "7c14288f4889ff67",
-        "name": "查询实时数据",
-        "func": "// 昨天 08:00 到今天 08:00\nconst sql = `\n  SELECT \n    time,\n    gt_in_ll, gt_in_nh3, gt_in_cod,\n     gt_out_ll, gt_out_nh3, gt_out_cod, gt_out_tn, gt_out_tp\n  FROM gt_data\n  WHERE time >= DATE_SUB(CURDATE(), INTERVAL 1 DAY) + INTERVAL 8 HOUR\n    AND time < CURDATE() + INTERVAL 8 HOUR\n  ORDER BY time ASC\n`;\n\nmsg.topic = sql;\nreturn msg;\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 520,
-        "y": 1100,
-        "wires": [
-            [
-                "a0a9c2806ebb0353"
-            ]
-        ]
-    },
-    {
-        "id": "70bf7c73112cb8f5",
-        "type": "function",
-        "z": "7c14288f4889ff67",
-        "name": "实时数据平均数",
-        "func": "let rows = msg.payload; // 数据数组\nlet sum = {};\nlet count = rows.length;\n\nif (count === 0) {\n    node.warn(\"没有查询到任何数据\");\n    return [[], []];\n}\n\n// 要统计的字段列表\nlet fields = [\n   \"gt_in_ll\", \"gt_in_nh3\", \"gt_in_cod\",\n   \"gt_out_ll\", \"gt_out_nh3\", \"gt_out_cod\",\n   \"gt_out_tn\", \"gt_out_tp\"\n];\n\n// 初始化累加器\nfields.forEach(f => sum[f] = 0);\n\n// 逐行处理\nrows.forEach(row => {\n  if (row.time) {\n    let t = new Date(row.time);\n    t.setHours(t.getHours() + 8);\n    row.time = t.toISOString().replace('T', ' ').slice(0, 19);\n  }\n  fields.forEach(f => {\n    let val = parseFloat(row[f]);\n    if (!isNaN(val)) {\n      sum[f] += val;\n    }\n  });\n});\n\n// 计算平均值（保持为浮点数）\nlet avg = {};\nfields.forEach(f => {\n  avg[f] = parseFloat((sum[f] / count).toFixed(2));\n});\nvar ao = flow.get(\"ao\")\n// 统一做单位换算（*6 和 *3.6*6）\nif (ao === 1 || ao === 2 || ao === 3) {\n  if (!isNaN(avg.gt_in_ll)) avg.gt_in_ll = avg.gt_in_ll * 6;\n  if (!isNaN(avg.gt_out_ll)) avg.gt_out_ll = avg.gt_out_ll * 3.6 * 6;\n\n  // ao=3时再乘以2\n  if (ao === 3) {\n    if (!isNaN(avg.gt_in_ll)) avg.gt_in_ll = avg.gt_in_ll * 2;\n    if (!isNaN(avg.gt_out_ll)) avg.gt_out_ll = avg.gt_out_ll * 2;\n  }\n\n  // 保留两位小数\n  if (!isNaN(avg.gt_in_ll)) avg.gt_in_ll = parseFloat(avg.gt_in_ll.toFixed(2));\n  if (!isNaN(avg.gt_out_ll)) avg.gt_out_ll = parseFloat(avg.gt_out_ll.toFixed(2));\n}\nflow.set(\"avg_data\", avg);\nreturn msg;\n\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 860,
-        "y": 1100,
-        "wires": [
-            [
-                "aao_sql_function"
-            ]
-        ]
-    },
-    {
-        "id": "a0a9c2806ebb0353",
-        "type": "mysql",
-        "z": "7c14288f4889ff67",
-        "mydb": "e3d5e9572467c502",
-        "name": "实时数据",
-        "x": 700,
-        "y": 1100,
-        "wires": [
-            [
-                "70bf7c73112cb8f5"
-            ]
-        ]
-    },
-    {
-        "id": "aao_sql_function",
-        "type": "function",
-        "z": "7c14288f4889ff67",
-        "name": "查询ao池mlss、sv30和污泥压榨含水率",
-        "func": "\nvar ao = flow.get(\"ao\")\nlet pool = \"1号ao池\"; // 默认值\nif (ao === 1) {\n  pool = \"1号ao池\";\n} else if (ao === 2) {\n  pool = \"2号ao池\";\n} else if (ao === 3) {\n  pool = \"3号ao池\";\n}\n\nmsg.topic = `\n  SELECT time, sample_name, concentration, settling_ratio, water_content\n  FROM sludge_data\n  WHERE time = CURDATE() - INTERVAL 1 DAY\n    AND sample_name IN ('${pool}', '污泥压榨含水率')\n`;\n\nreturn msg;\n",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 210,
-        "y": 1180,
-        "wires": [
-            [
-                "aao_mysql"
-            ]
-        ]
-    },
-    {
-        "id": "aao_mysql",
-        "type": "mysql",
-        "z": "7c14288f4889ff67",
-        "mydb": "e3d5e9572467c502",
-        "name": "查询污泥化验表",
-        "x": 460,
-        "y": 1180,
-        "wires": [
-            [
-                "80f4ee772636aed4"
-            ]
-        ]
-    },
-    {
-        "id": "4bd6f9e12d4065d8",
-        "type": "function",
-        "z": "7c14288f4889ff67",
-        "name": "查询日报中的污泥产量和药剂投加量",
-        "func": "msg.topic = `\nSELECT\n  date,\n  sludge_quantity,\n  carbon_source,\n  phosphorus_removal,\n  disinfectant\nFROM daily_report\nWHERE date >= CURDATE() - INTERVAL 3 DAY;\n`;\nreturn msg;\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 210,
-        "y": 1280,
-        "wires": [
-            [
-                "20d0c65fcbaf98de"
-            ]
-        ]
-    },
-    {
-        "id": "20d0c65fcbaf98de",
-        "type": "mysql",
-        "z": "7c14288f4889ff67",
-        "mydb": "e3d5e9572467c502",
-        "name": "日报数据",
-        "x": 460,
-        "y": 1280,
-        "wires": [
-            [
-                "59b32c83a53461fc"
-            ]
-        ]
-    },
-    {
-        "id": "59b32c83a53461fc",
-        "type": "function",
-        "z": "7c14288f4889ff67",
-        "name": "调整时间",
-        "func": "let rows = msg.payload;\n\nrows.forEach(row => {\n  if (row.date) {\n    let t = new Date(row.date);\n    t.setHours(t.getHours() + 8); // 加 8 小时（UTC → 北京时间）\n    row.date = t.toISOString().replace('T', ' ').slice(0, 19); // 格式化\n  }\n});\n\nreturn msg;\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 600,
-        "y": 1280,
-        "wires": [
-            [
-                "0bf84c24144405a0"
-            ]
-        ]
-    },
-    {
-        "id": "80f4ee772636aed4",
-        "type": "function",
-        "z": "7c14288f4889ff67",
-        "name": "调整时间",
-        "func": "let rows = msg.payload; // 数据数组\n\nrows.forEach(row => {\n  if (row.time) {\n    let t = new Date(row.time);\n    t.setHours(t.getHours() + 8); // 加 8 小时\n    row.time = t.toISOString().replace('T', ' ').slice(0, 19); // 格式化为 'YYYY-MM-DD HH:mm:ss'\n  }\n});\n\nreturn msg;\n\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 620,
-        "y": 1180,
-        "wires": [
-            [
-                "0846db67ac736c93"
-            ]
-        ]
-    },
-    {
-        "id": "f28286ea7224bbc3",
-        "type": "function",
-        "z": "7c14288f4889ff67",
-        "name": "输入好氧池容积",
-        "func": "var ao = flow.get(\"ao\")\n// 解析 ao 值\nlet a = parseInt(ao);\n\n// 根据 ao 设置 v 的值\nif (a === 1 || a === 2) {\n    flow.set(\"v\", 1064.5);\n} else if (a === 3) {\n    flow.set(\"v\", 2653.6);\n} else {\n    node.warn(\"未识别的 ao 值\");\n}\n\nreturn msg;\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 140,
-        "y": 1360,
-        "wires": [
-            [
-                "calc_fm_srt"
-            ]
-        ]
-    },
-    {
-        "id": "0846db67ac736c93",
-        "type": "function",
-        "z": "7c14288f4889ff67",
-        "name": "sludge_data",
-        "func": "// 假设 msg.payload 是上面的 JSON\nflow.set(\"sludge_data\", msg.payload);\nreturn msg;\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 830,
-        "y": 1180,
-        "wires": [
-            [
-                "2efe2ef07d80cd42"
-            ]
-        ]
-    },
-    {
-        "id": "0bf84c24144405a0",
-        "type": "function",
-        "z": "7c14288f4889ff67",
-        "name": "function 86",
-        "func": "let rows = msg.payload; // 数据数组\nlet count = rows.length;\n\nif (count === 0) {\n    node.warn(\"没有数据\");\n    return [null, null];\n}\n\nlet sum = {\n    sludge_quantity: 0,\n    carbon_source: 0,\n    phosphorus_removal: 0,\n    disinfectant: 0\n};\n\n// 累加每一行的数值\nrows.forEach(row => {\n    sum.sludge_quantity += parseFloat(row.sludge_quantity) || 0;\n    sum.carbon_source += parseFloat(row.carbon_source) || 0;\n    sum.phosphorus_removal += parseFloat(row.phosphorus_removal) || 0;\n    sum.disinfectant += parseFloat(row.disinfectant) || 0;\n});\n\n// 计算平均值\nlet avg = {};\nfor (let key in sum) {\n    avg[key] = parseFloat((sum[key] / count).toFixed(2));\n}\n\n// 拷贝一份用于缩放处理\nlet scaled = { ...avg };\nvar a = flow.get(\"ao\")\n// 根据 msg.ao 进行缩放\nlet ao = parseInt(a);\nif (ao === 1 || ao === 2) {\n    for (let key in scaled) {\n        scaled[key] = parseFloat((scaled[key] / 3).toFixed(2));\n    }\n} else if (ao === 3) {\n    for (let key in scaled) {\n        scaled[key] = parseFloat((scaled[key] / 2).toFixed(2));\n    }\n}\n\n// 假设 msg.payload 是上面的 JSON\nflow.set(\"daily_data\", scaled);\nreturn msg;\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 750,
-        "y": 1280,
-        "wires": [
-            [
-                "f28286ea7224bbc3"
-            ]
-        ]
-    },
-    {
-        "id": "ca28ac10d3a51528",
-        "type": "function",
-        "z": "7c14288f4889ff67",
-        "name": "function 88",
-        "func": "\nflow.set(\"ao\",parseFloat(msg.payload.ao));\nreturn msg;\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 330,
-        "y": 1100,
-        "wires": [
-            [
-                "75f52ce4e215ccd2"
-            ]
-        ]
-    },
-    {
         "id": "974cab9b8d94e60f",
         "type": "subflow:1dbac401a15b31e3",
         "z": "7c14288f4889ff67",
@@ -3118,108 +2856,6 @@
         "wires": [
             []
         ]
-    },
-    {
-        "id": "2efe2ef07d80cd42",
-        "type": "function",
-        "z": "7c14288f4889ff67",
-        "name": "查询进水总氮",
-        "func": "\nmsg.topic = `\nSELECT sample_name, tn, time\nFROM huayan_data\nWHERE sample_name = '高铁厂进水'\n  AND DATE(time) = CURDATE() - INTERVAL 1 DAY;\n`;\n\nreturn msg;\n",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 140,
-        "y": 1220,
-        "wires": [
-            [
-                "7b1e0fbc520b1ba2"
-            ]
-        ]
-    },
-    {
-        "id": "7b1e0fbc520b1ba2",
-        "type": "mysql",
-        "z": "7c14288f4889ff67",
-        "mydb": "e3d5e9572467c502",
-        "name": "查询污泥化验表",
-        "x": 340,
-        "y": 1220,
-        "wires": [
-            [
-                "b9b7f39e150efa4a"
-            ]
-        ]
-    },
-    {
-        "id": "b9b7f39e150efa4a",
-        "type": "function",
-        "z": "7c14288f4889ff67",
-        "name": "调整时间",
-        "func": "let rows = msg.payload; // 数据数组\n\nrows.forEach(row => {\n  if (row.time) {\n    let t = new Date(row.time);\n    t.setHours(t.getHours() + 8); // 加 8 小时\n    row.time = t.toISOString().replace('T', ' ').slice(0, 19); // 格式化为 'YYYY-MM-DD HH:mm:ss'\n  }\n});\n\nreturn msg;\n\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 520,
-        "y": 1220,
-        "wires": [
-            [
-                "e3099b58e795cb8b"
-            ]
-        ]
-    },
-    {
-        "id": "e3099b58e795cb8b",
-        "type": "function",
-        "z": "7c14288f4889ff67",
-        "name": "tn_data",
-        "func": "// 假设 msg.payload 是上面的 JSON\nflow.set(\"tn_data\", msg.payload);\nreturn msg;\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 720,
-        "y": 1220,
-        "wires": [
-            [
-                "4bd6f9e12d4065d8"
-            ]
-        ]
-    },
-    {
-        "id": "7cb69147b7b08ab3",
-        "type": "http in",
-        "z": "7c14288f4889ff67",
-        "name": "",
-        "url": "/api/getgongyidata",
-        "method": "get",
-        "upload": false,
-        "swaggerDoc": "",
-        "x": 140,
-        "y": 1100,
-        "wires": [
-            [
-                "ca28ac10d3a51528"
-            ]
-        ]
-    },
-    {
-        "id": "7a90504a96a8fc53",
-        "type": "http response",
-        "z": "7c14288f4889ff67",
-        "name": "",
-        "statusCode": "",
-        "headers": {},
-        "x": 730,
-        "y": 1360,
-        "wires": []
     },
     {
         "id": "6823b1ca63511eb3",
@@ -21691,7 +21327,7 @@
         "z": "db-api-flow",
         "mydb": "e3d5e9572467c502",
         "name": "查询数据",
-        "x": 600,
+        "x": 460,
         "y": 520,
         "wires": [
             [
@@ -21711,7 +21347,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 850,
+        "x": 630,
         "y": 520,
         "wires": [
             [
@@ -21728,7 +21364,7 @@
         "headers": {
             "content-type": "application/json"
         },
-        "x": 1200,
+        "x": 820,
         "y": 520,
         "wires": []
     },
@@ -21744,7 +21380,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 370,
+        "x": 320,
         "y": 520,
         "wires": [
             [
@@ -21753,124 +21389,343 @@
         ]
     },
     {
-        "id": "ef49eb3dd36031a4",
-        "type": "http in",
+        "id": "calc_fm_srt",
+        "type": "function",
         "z": "db-api-flow",
-        "name": "",
-        "url": "/custom-query",
-        "method": "post",
-        "upload": false,
-        "swaggerDoc": "",
-        "x": 140,
-        "y": 620,
+        "name": "计算F/M、SRT、SVI",
+        "func": "// === 输入参数 ===\nlet Q = flow.get(\"avg_data.gt_in_ll\");                // m³/d\nlet COD = flow.get(\"avg_data.gt_in_cod\");             // mg/L\nlet SS_out = parseFloat(flow.get(\"OUT_SS\"));          // mg/L\nlet SV30 = flow.get(\"sludge_data[0].settling_ratio\") * 10; // mL/L\nlet MLSS = flow.get(\"sludge_data[0].concentration\");  // mg/L\nlet sludge_mass = flow.get(\"daily_data.sludge_quantity\");  // 吨/天\nlet water_content = flow.get(\"sludge_data[1].water_content\"); // %\nlet V = flow.get(\"v\");                                // m³\nlet carbon_dose = flow.get(\"daily_data.carbon_source\"); // L/d\n\n// 新增总氮参数 mg/L\nlet TN_in = flow.get(\"tn_data[0].tn\");\nlet TN_out = flow.get(\"avg_data.gt_out_tn\");\n\n// === 校验 ===\nif ([Q, COD, SS_out, SV30, MLSS, sludge_mass, water_content, V, carbon_dose, TN_in, TN_out].some(v => v === undefined || isNaN(v))) {\n    msg.payload = { error: \"缺少必要参数或格式错误！\" };\n    return msg; // 不 return null，而是继续返回 msg 到 http response\n}\n\n\n// === 核心计算 ===\nlet MLVSS = MLSS * 0.7;\nlet FM = (Q * COD) / (V * MLVSS);\nlet dry_sludge = sludge_mass * 1000 * (1 - water_content / 100);\nlet SS_out_load = Q * SS_out / 1000;\nlet total_mass = V * MLSS / 1000;\nlet SRT = total_mass / (dry_sludge + SS_out_load);\nlet SVI = SV30 * 1000 / MLSS;\n\n// === COD负荷目标计算 ===\nlet target_FM = 0.25; // 可调\nlet target_COD_load = target_FM * V * MLVSS; // mg\nlet target_COD_kg = target_COD_load / 1000; // kg/d\n\n// === 当前碳源COD投加 ===\nlet carbon_COD_kg = carbon_dose * 200 / 1000; // 200g/L = 200000 mg/L\n\n// === 总氮去除效率计算 ===\nlet TN_removal_eff = ((TN_in - TN_out) / TN_in) * 100;\n\n// === 建议 ===\nlet suggestions = [];\n\n// —— F/M 比建议 ——\nif (FM < 0.1) {\n    suggestions.push(\"F/M值为 \" + FM.toFixed(2) + \"，偏低，系统可能碳源不足。建议增加碳源。\");\n}\nif (FM > 0.4) {\n    suggestions.push(\"F/M值为 \" + FM.toFixed(2) + \"，偏高，系统可能负荷过重。可考虑优化进水或碳源控制。\");\n}\n\n// —— SRT 建议 ——\nif (SRT < 8) {\n    suggestions.push(`SRT为 ${SRT.toFixed(1)} 天，偏低。建议减少排泥或增加污泥回流。`);\n} else if (SRT > 20) {\n    suggestions.push(`SRT为 ${SRT.toFixed(1)} 天，偏高。可适当增加排泥量。`);\n}\n\n// —— SVI 建议 ——\nif (SVI > 150) {\n    suggestions.push(`SVI为 ${SVI.toFixed(1)} mL/g，沉降性较差，建议检查泥龄控制或回流系统。`);\n}\n\n// —— 碳源投加建议（定量） ——\nlet carbon_diff_kg = target_COD_kg - carbon_COD_kg;\nlet carbon_diff_L = carbon_diff_kg / 0.2; // 200g/L\n\nif (carbon_diff_L > 1) {\n    suggestions.push(`碳源（乙酸钠）当前投加为 ${carbon_dose} L/d，建议增加 ${carbon_diff_L.toFixed(1)} L/d，以满足目标F/M比 ${target_FM}。`);\n} else if (carbon_diff_L < -1) {\n    suggestions.push(`碳源（乙酸钠）当前投加为 ${carbon_dose} L/d，建议减少 ${Math.abs(carbon_diff_L).toFixed(1)} L/d，避免碳源浪费。`);\n} else {\n    suggestions.push(\"碳源投加接近合理范围，无需调整。\");\n}\n\n// —— 脱氮效率建议 —— \nif (TN_removal_eff < 50) {\n    suggestions.push(`脱氮效率为 ${TN_removal_eff.toFixed(1)}%，远低于合理值（建议 ≥70%）。建议检查碳源充足性、反硝化条件及运行参数。`);\n} else if (TN_removal_eff < 70) {\n    suggestions.push(`脱氮效率为 ${TN_removal_eff.toFixed(1)}%，偏低，建议复查碳源投加和反硝化控制策略。`);\n} else {\n    suggestions.push(`脱氮效率为 ${TN_removal_eff.toFixed(1)}%，表现良好。`);\n}\n\n// === 污泥产量合理性评估 ===\nlet COD_load_kg = Q * COD / 1000; // mg/L -> kg/d\nlet expected_sludge_kg = COD_load_kg * 0.6; // kg/d\nlet expected_sludge_t = expected_sludge_kg / 1000; // 吨/天\n\nlet sludge_range_min = expected_sludge_t * 0.8;\nlet sludge_range_max = expected_sludge_t * 1.2;\n\nif (sludge_mass < sludge_range_min) {\n    let diff = (sludge_range_min - sludge_mass).toFixed(2);\n    suggestions.push(`当前产泥量为 ${sludge_mass} 吨/天，偏少。建议增加产泥量约 ${diff} 吨/天。`);\n} else if (sludge_mass > sludge_range_max) {\n    let diff = (sludge_mass - sludge_range_max).toFixed(2);\n    suggestions.push(`当前产泥量为 ${sludge_mass} 吨/天，偏多。建议减少产泥量约 ${diff} 吨/天。`);\n} else {\n    suggestions.push(\"污泥产量在合理范围内，无需调整。\");\n}\n\n// === 输出 ===\nmsg.payload = {\n    input_data: {\n        Q, COD, SS_out, SV30, MLSS, sludge_mass, water_content, V, carbon_dose, TN_in, TN_out\n    },\n    result: {\n        F_M: parseFloat(FM.toFixed(2)),\n        SRT_days: parseFloat(SRT.toFixed(1)),\n        SVI: parseFloat(SVI.toFixed(1)),\n        carbon_COD_kg: parseFloat(carbon_COD_kg.toFixed(1)),\n        target_COD_kg: parseFloat(target_COD_kg.toFixed(1)),\n        TN_removal_efficiency: parseFloat(TN_removal_eff.toFixed(1)),\n        建议: suggestions\n    }\n};\n\nreturn msg;\n\n\n\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 460,
+        "y": 1020,
         "wires": [
             [
-                "cc69e81a3a3609eb",
-                "92d31555703d15ba"
+                "7a90504a96a8fc53"
             ]
         ]
     },
     {
-        "id": "d5d9a8876d316217",
+        "id": "75f52ce4e215ccd2",
+        "type": "function",
+        "z": "db-api-flow",
+        "name": "查询实时数据",
+        "func": "// 昨天 08:00 到今天 08:00\nconst sql = `\n  SELECT \n    time,\n    gt_in_ll, gt_in_nh3, gt_in_cod,\n     gt_out_ll, gt_out_nh3, gt_out_cod, gt_out_tn, gt_out_tp\n  FROM gt_data\n  WHERE time >= DATE_SUB(CURDATE(), INTERVAL 1 DAY) + INTERVAL 8 HOUR\n    AND time < CURDATE() + INTERVAL 8 HOUR\n  ORDER BY time ASC\n`;\n\nmsg.topic = sql;\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 760,
+        "wires": [
+            [
+                "a0a9c2806ebb0353"
+            ]
+        ]
+    },
+    {
+        "id": "70bf7c73112cb8f5",
+        "type": "function",
+        "z": "db-api-flow",
+        "name": "实时数据平均数",
+        "func": "let rows = msg.payload; // 数据数组\nlet sum = {};\nlet count = rows.length;\n\nif (count === 0) {\n    node.warn(\"没有查询到任何数据\");\n    return [[], []];\n}\n\n// 要统计的字段列表\nlet fields = [\n   \"gt_in_ll\", \"gt_in_nh3\", \"gt_in_cod\",\n   \"gt_out_ll\", \"gt_out_nh3\", \"gt_out_cod\",\n   \"gt_out_tn\", \"gt_out_tp\"\n];\n\n// 初始化累加器\nfields.forEach(f => sum[f] = 0);\n\n// 逐行处理\nrows.forEach(row => {\n  if (row.time) {\n    let t = new Date(row.time);\n    t.setHours(t.getHours() + 8);\n    row.time = t.toISOString().replace('T', ' ').slice(0, 19);\n  }\n  fields.forEach(f => {\n    let val = parseFloat(row[f]);\n    if (!isNaN(val)) {\n      sum[f] += val;\n    }\n  });\n});\n\n// 计算平均值（保持为浮点数）\nlet avg = {};\nfields.forEach(f => {\n  avg[f] = parseFloat((sum[f] / count).toFixed(2));\n});\nvar ao = flow.get(\"ao\")\n// 统一做单位换算（*6 和 *3.6*6）\nif (ao === 1 || ao === 2 || ao === 3) {\n  if (!isNaN(avg.gt_in_ll)) avg.gt_in_ll = avg.gt_in_ll * 6;\n  if (!isNaN(avg.gt_out_ll)) avg.gt_out_ll = avg.gt_out_ll * 3.6 * 6;\n\n  // ao=3时再乘以2\n  if (ao === 3) {\n    if (!isNaN(avg.gt_in_ll)) avg.gt_in_ll = avg.gt_in_ll * 2;\n    if (!isNaN(avg.gt_out_ll)) avg.gt_out_ll = avg.gt_out_ll * 2;\n  }\n\n  // 保留两位小数\n  if (!isNaN(avg.gt_in_ll)) avg.gt_in_ll = parseFloat(avg.gt_in_ll.toFixed(2));\n  if (!isNaN(avg.gt_out_ll)) avg.gt_out_ll = parseFloat(avg.gt_out_ll.toFixed(2));\n}\nflow.set(\"avg_data\", avg);\nreturn msg;\n\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 900,
+        "y": 760,
+        "wires": [
+            [
+                "aao_sql_function"
+            ]
+        ]
+    },
+    {
+        "id": "a0a9c2806ebb0353",
         "type": "mysql",
         "z": "db-api-flow",
         "mydb": "e3d5e9572467c502",
-        "name": "",
-        "x": 580,
-        "y": 660,
-        "wires": [
-            [
-                "55f509a1768f68b4"
-            ]
-        ]
-    },
-    {
-        "id": "cc69e81a3a3609eb",
-        "type": "function",
-        "z": "db-api-flow",
-        "name": "function 8",
-        "func": "let sql = msg.payload.sql;\nmsg.topic = sql;\nreturn msg;\n\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 380,
-        "y": 660,
-        "wires": [
-            [
-                "d5d9a8876d316217"
-            ]
-        ]
-    },
-    {
-        "id": "ea29576243f50454",
-        "type": "http response",
-        "z": "db-api-flow",
-        "name": "",
-        "statusCode": "",
-        "headers": {},
-        "x": 910,
-        "y": 700,
-        "wires": []
-    },
-    {
-        "id": "92d31555703d15ba",
-        "type": "debug",
-        "z": "db-api-flow",
-        "name": "debug 30",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 380,
-        "y": 620,
-        "wires": []
-    },
-    {
-        "id": "55f509a1768f68b4",
-        "type": "function",
-        "z": "db-api-flow",
-        "name": "function 9",
-        "func": "// 检查是否有数据\nif (!msg.payload || msg.payload.length === 0) {\n    // 如果没有数据，返回空数组\n    msg.payload = [];\n    return msg;\n}\n\n// 记录原始数据\nnode.log(\"原始数据: \" + JSON.stringify(msg.payload.slice(0, 2)));\n\n// 返回原始数据，趋势图组件会自动处理格式\n// 确保数据包含时间字段和数值字段\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
+        "name": "实时数据",
         "x": 740,
-        "y": 660,
+        "y": 760,
         "wires": [
             [
-                "ea29576243f50454",
-                "eadf81c3c74cb94f"
+                "70bf7c73112cb8f5"
             ]
         ]
     },
     {
-        "id": "eadf81c3c74cb94f",
-        "type": "debug",
+        "id": "aao_sql_function",
+        "type": "function",
         "z": "db-api-flow",
-        "name": "debug 31",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 920,
-        "y": 660,
-        "wires": []
+        "name": "查询ao池mlss、sv30和污泥压榨含水率",
+        "func": "\nvar ao = flow.get(\"ao\")\nlet pool = \"1号ao池\"; // 默认值\nif (ao === 1) {\n  pool = \"1号ao池\";\n} else if (ao === 2) {\n  pool = \"2号ao池\";\n} else if (ao === 3) {\n  pool = \"3号ao池\";\n}\n\nmsg.topic = `\n  SELECT time, sample_name, concentration, settling_ratio, water_content\n  FROM sludge_data\n  WHERE time = CURDATE() - INTERVAL 1 DAY\n    AND sample_name IN ('${pool}', '污泥压榨含水率')\n`;\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 250,
+        "y": 840,
+        "wires": [
+            [
+                "aao_mysql"
+            ]
+        ]
     },
     {
-        "id": "1eac315e39b1df9c",
+        "id": "aao_mysql",
+        "type": "mysql",
+        "z": "db-api-flow",
+        "mydb": "e3d5e9572467c502",
+        "name": "查询污泥化验表",
+        "x": 500,
+        "y": 840,
+        "wires": [
+            [
+                "80f4ee772636aed4"
+            ]
+        ]
+    },
+    {
+        "id": "4bd6f9e12d4065d8",
+        "type": "function",
+        "z": "db-api-flow",
+        "name": "查询日报中的污泥产量和药剂投加量",
+        "func": "msg.topic = `\nSELECT\n  date,\n  sludge_quantity,\n  carbon_source,\n  phosphorus_removal,\n  disinfectant\nFROM daily_report\nWHERE date >= CURDATE() - INTERVAL 3 DAY;\n`;\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 250,
+        "y": 940,
+        "wires": [
+            [
+                "20d0c65fcbaf98de"
+            ]
+        ]
+    },
+    {
+        "id": "20d0c65fcbaf98de",
+        "type": "mysql",
+        "z": "db-api-flow",
+        "mydb": "e3d5e9572467c502",
+        "name": "日报数据",
+        "x": 500,
+        "y": 940,
+        "wires": [
+            [
+                "59b32c83a53461fc"
+            ]
+        ]
+    },
+    {
+        "id": "59b32c83a53461fc",
+        "type": "function",
+        "z": "db-api-flow",
+        "name": "调整时间",
+        "func": "let rows = msg.payload;\n\nrows.forEach(row => {\n  if (row.date) {\n    let t = new Date(row.date);\n    t.setHours(t.getHours() + 8); // 加 8 小时（UTC → 北京时间）\n    row.date = t.toISOString().replace('T', ' ').slice(0, 19); // 格式化\n  }\n});\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 640,
+        "y": 940,
+        "wires": [
+            [
+                "0bf84c24144405a0"
+            ]
+        ]
+    },
+    {
+        "id": "80f4ee772636aed4",
+        "type": "function",
+        "z": "db-api-flow",
+        "name": "调整时间",
+        "func": "let rows = msg.payload; // 数据数组\n\nrows.forEach(row => {\n  if (row.time) {\n    let t = new Date(row.time);\n    t.setHours(t.getHours() + 8); // 加 8 小时\n    row.time = t.toISOString().replace('T', ' ').slice(0, 19); // 格式化为 'YYYY-MM-DD HH:mm:ss'\n  }\n});\n\nreturn msg;\n\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 660,
+        "y": 840,
+        "wires": [
+            [
+                "0846db67ac736c93"
+            ]
+        ]
+    },
+    {
+        "id": "f28286ea7224bbc3",
+        "type": "function",
+        "z": "db-api-flow",
+        "name": "输入好氧池容积",
+        "func": "var ao = flow.get(\"ao\")\n// 解析 ao 值\nlet a = parseInt(ao);\n\n// 根据 ao 设置 v 的值\nif (a === 1 || a === 2) {\n    flow.set(\"v\", 1064.5);\n} else if (a === 3) {\n    flow.set(\"v\", 2653.6);\n} else {\n    node.warn(\"未识别的 ao 值\");\n}\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 180,
+        "y": 1020,
+        "wires": [
+            [
+                "calc_fm_srt"
+            ]
+        ]
+    },
+    {
+        "id": "0846db67ac736c93",
+        "type": "function",
+        "z": "db-api-flow",
+        "name": "sludge_data",
+        "func": "// 假设 msg.payload 是上面的 JSON\nflow.set(\"sludge_data\", msg.payload);\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 870,
+        "y": 840,
+        "wires": [
+            [
+                "2efe2ef07d80cd42"
+            ]
+        ]
+    },
+    {
+        "id": "0bf84c24144405a0",
+        "type": "function",
+        "z": "db-api-flow",
+        "name": "function 86",
+        "func": "let rows = msg.payload; // 数据数组\nlet count = rows.length;\n\nif (count === 0) {\n    node.warn(\"没有数据\");\n    return [null, null];\n}\n\nlet sum = {\n    sludge_quantity: 0,\n    carbon_source: 0,\n    phosphorus_removal: 0,\n    disinfectant: 0\n};\n\n// 累加每一行的数值\nrows.forEach(row => {\n    sum.sludge_quantity += parseFloat(row.sludge_quantity) || 0;\n    sum.carbon_source += parseFloat(row.carbon_source) || 0;\n    sum.phosphorus_removal += parseFloat(row.phosphorus_removal) || 0;\n    sum.disinfectant += parseFloat(row.disinfectant) || 0;\n});\n\n// 计算平均值\nlet avg = {};\nfor (let key in sum) {\n    avg[key] = parseFloat((sum[key] / count).toFixed(2));\n}\n\n// 拷贝一份用于缩放处理\nlet scaled = { ...avg };\nvar a = flow.get(\"ao\")\n// 根据 msg.ao 进行缩放\nlet ao = parseInt(a);\nif (ao === 1 || ao === 2) {\n    for (let key in scaled) {\n        scaled[key] = parseFloat((scaled[key] / 3).toFixed(2));\n    }\n} else if (ao === 3) {\n    for (let key in scaled) {\n        scaled[key] = parseFloat((scaled[key] / 2).toFixed(2));\n    }\n}\n\n// 假设 msg.payload 是上面的 JSON\nflow.set(\"daily_data\", scaled);\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 790,
+        "y": 940,
+        "wires": [
+            [
+                "f28286ea7224bbc3"
+            ]
+        ]
+    },
+    {
+        "id": "ca28ac10d3a51528",
+        "type": "function",
+        "z": "db-api-flow",
+        "name": "function 88",
+        "func": "\nflow.set(\"ao\",parseFloat(msg.payload.ao));\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 390,
+        "y": 760,
+        "wires": [
+            [
+                "75f52ce4e215ccd2"
+            ]
+        ]
+    },
+    {
+        "id": "2efe2ef07d80cd42",
+        "type": "function",
+        "z": "db-api-flow",
+        "name": "查询进水总氮",
+        "func": "\nmsg.topic = `\nSELECT sample_name, tn, time\nFROM huayan_data\nWHERE sample_name = '高铁厂进水'\n  AND DATE(time) = CURDATE() - INTERVAL 1 DAY;\n`;\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 180,
+        "y": 880,
+        "wires": [
+            [
+                "7b1e0fbc520b1ba2"
+            ]
+        ]
+    },
+    {
+        "id": "7b1e0fbc520b1ba2",
+        "type": "mysql",
+        "z": "db-api-flow",
+        "mydb": "e3d5e9572467c502",
+        "name": "查询污泥化验表",
+        "x": 380,
+        "y": 880,
+        "wires": [
+            [
+                "b9b7f39e150efa4a"
+            ]
+        ]
+    },
+    {
+        "id": "b9b7f39e150efa4a",
+        "type": "function",
+        "z": "db-api-flow",
+        "name": "调整时间",
+        "func": "let rows = msg.payload; // 数据数组\n\nrows.forEach(row => {\n  if (row.time) {\n    let t = new Date(row.time);\n    t.setHours(t.getHours() + 8); // 加 8 小时\n    row.time = t.toISOString().replace('T', ' ').slice(0, 19); // 格式化为 'YYYY-MM-DD HH:mm:ss'\n  }\n});\n\nreturn msg;\n\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 880,
+        "wires": [
+            [
+                "e3099b58e795cb8b"
+            ]
+        ]
+    },
+    {
+        "id": "e3099b58e795cb8b",
+        "type": "function",
+        "z": "db-api-flow",
+        "name": "tn_data",
+        "func": "// 假设 msg.payload 是上面的 JSON\nflow.set(\"tn_data\", msg.payload);\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 760,
+        "y": 880,
+        "wires": [
+            [
+                "4bd6f9e12d4065d8"
+            ]
+        ]
+    },
+    {
+        "id": "7cb69147b7b08ab3",
         "type": "http in",
         "z": "db-api-flow",
         "name": "",
@@ -21878,44 +21733,108 @@
         "method": "get",
         "upload": false,
         "swaggerDoc": "",
-        "x": 260,
-        "y": 1120,
+        "x": 180,
+        "y": 760,
         "wires": [
             [
-                "cdd6036e1e1fba1d"
+                "ca28ac10d3a51528"
             ]
         ]
     },
     {
-        "id": "cdd6036e1e1fba1d",
+        "id": "7a90504a96a8fc53",
+        "type": "http response",
+        "z": "db-api-flow",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 770,
+        "y": 1020,
+        "wires": []
+    },
+    {
+        "id": "1397edf588902067",
+        "type": "http in",
+        "z": "db-api-flow",
+        "name": "趋势图数据请求",
+        "url": "/api/trend-data2",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 140,
+        "y": 560,
+        "wires": [
+            [
+                "8a359dcc5ec77a5e"
+            ]
+        ]
+    },
+    {
+        "id": "d5a2708c209628dd",
+        "type": "mysql",
+        "z": "db-api-flow",
+        "mydb": "e3d5e9572467c502",
+        "name": "查询数据",
+        "x": 460,
+        "y": 560,
+        "wires": [
+            [
+                "753f075b8b25fdab"
+            ]
+        ]
+    },
+    {
+        "id": "753f075b8b25fdab",
+        "type": "function",
+        "z": "db-api-flow",
+        "name": "格式化数据",
+        "func": "// 原始数据库查询结果\nconst data = msg.payload;\n\n// 定义字段与中文名称的映射表\nconst fieldMap = {\n    avg_gt_in_lj: \"进水流量（累计）\",\n    avg_gt_in_ll: \"进水流量（瞬时）\",\n    avg_gt_in_nh3: \"进水氨氮\",\n    avg_gt_in_cod: \"进水COD\",\n    avg_gt_out_lj: \"出水流量（累计）\",\n    avg_gt_out_ll: \"出水流量（瞬时）\",\n    avg_gt_out_nh3: \"出水氨氮\",\n    avg_gt_out_cod: \"出水COD\",\n    avg_gt_out_tn: \"出水总氮\",\n    avg_gt_out_tp: \"出水总磷\"\n};\n\n// 初始化分类后的结果\nlet result = {};\n\n// 遍历每个字段\nfor (const field in fieldMap) {\n    result[field] = {\n        name: fieldMap[field],\n        field: field,\n        data: []  // 用于存储时间序列\n    };\n}\n\n// 遍历每一条记录（每小时）\nfor (const row of data) {\n    const time = row.hour;\n    for (const field in fieldMap) {\n        if (row.hasOwnProperty(field)) {\n            result[field].data.push({\n                time: time,\n                value: parseFloat(row[field].toFixed(2))\n            });\n        }\n    }\n}\n\n// 最终将分类后的数据转换成数组（便于后续 UI 或图表处理）\nmsg.payload = Object.values(result);\nreturn msg;\n\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 630,
+        "y": 560,
+        "wires": [
+            [
+                "0f0aaea9a2066ce7"
+            ]
+        ]
+    },
+    {
+        "id": "0f0aaea9a2066ce7",
+        "type": "http response",
+        "z": "db-api-flow",
+        "name": "返回趋势图数据",
+        "statusCode": "200",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 820,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "8a359dcc5ec77a5e",
         "type": "function",
         "z": "db-api-flow",
         "name": "function 83",
-        "func": "// 生成模拟数据\nfunction generateDataPoints(count, min, max, unit) {\n    const data = [];\n    const now = new Date();\n    \n    for (let i = 0; i < count; i++) {\n        const time = new Date(now.getTime() - (count - i) * 3600000); // 每小时一个数据点\n        data.push({\n            time: time.toISOString(),\n            value: (Math.random() * (max - min) + min).toFixed(2)\n        });\n    }\n    return data;\n}\n\n// 构建返回数据\nconst responseData = {\n    aoPool: {\n        do: generateDataPoints(24, 1.5, 3.5),      // 溶解氧 1.5-3.5 mg/L\n        mlss: generateDataPoints(24, 2000, 4000),  // MLSS 2000-4000 mg/L\n        temperature: generateDataPoints(24, 15, 30) // 温度 15-30 °C\n    },\n    sludge: {\n        sv30: generateDataPoints(24, 20, 40),      // SV30 20-40%\n        svi: generateDataPoints(24, 50, 150),      // SVI 50-150 mL/g\n        concentration: generateDataPoints(24, 3, 8) // 浓度 3-8 g/L\n    }\n};\n\n// 设置响应头（Node-RED中通常不用这一步，除非是处理HTTP请求）\nmsg.headers = {\n    \"Content-Type\": \"application/json\",\n    \"Access-Control-Allow-Origin\": \"*\"\n};\n\n// 设置响应状态码（如果是HTTP请求响应需要）\nmsg.statusCode = 200;\n\n// 将构建的数据赋值给msg.payload\nmsg.payload = responseData;\n\n// 返回msg对象\nreturn msg;\n",
+        "func": "msg.topic = `\n  SELECT\n    DATE_FORMAT(time, '%Y-%m-%d %H:00:00') AS hour,\n    AVG(gt_in_lj)   AS avg_gt_in_lj,\n    AVG(gt_in_ll)   AS avg_gt_in_ll,\n    AVG(gt_in_nh3)  AS avg_gt_in_nh3,\n    AVG(gt_in_cod)  AS avg_gt_in_cod,\n    AVG(gt_out_lj)  AS avg_gt_out_lj,\n    AVG(gt_out_ll)  AS avg_gt_out_ll,\n    AVG(gt_out_nh3) AS avg_gt_out_nh3,\n    AVG(gt_out_cod) AS avg_gt_out_cod,\n    AVG(gt_out_tn)  AS avg_gt_out_tn,\n    AVG(gt_out_tp)  AS avg_gt_out_tp\n  FROM\n    gt_data\n  WHERE\n    time >= NOW() - INTERVAL 24 HOUR\n  GROUP BY\n    DATE_FORMAT(time, '%Y-%m-%d %H:00:00')\n  ORDER BY\n    hour;\n`;\nreturn msg;\n\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 530,
-        "y": 1120,
+        "x": 320,
+        "y": 560,
         "wires": [
             [
-                "0686fefca5238a9b"
+                "d5a2708c209628dd"
             ]
         ]
-    },
-    {
-        "id": "0686fefca5238a9b",
-        "type": "http response",
-        "z": "db-api-flow",
-        "name": "",
-        "statusCode": "",
-        "headers": {},
-        "x": 850,
-        "y": 1120,
-        "wires": []
     },
     {
         "id": "api-configs-save",
