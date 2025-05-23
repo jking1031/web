@@ -3258,6 +3258,35 @@
         "wires": []
     },
     {
+        "id": "18be6b15ea271f06",
+        "type": "inject",
+        "z": "7c14288f4889ff67",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 120,
+        "y": 1020,
+        "wires": [
+            [
+                "ca28ac10d3a51528"
+            ]
+        ]
+    },
+    {
         "id": "6823b1ca63511eb3",
         "type": "function",
         "z": "859f41f963de2747",
