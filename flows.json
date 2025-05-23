@@ -3094,14 +3094,14 @@
         "type": "function",
         "z": "7c14288f4889ff67",
         "name": "function 88",
-        "func": "msg.payload = 1\nflow.set(\"ao\",msg.payload);\nreturn msg;\n",
+        "func": "\nflow.set(\"ao\",msg.payload.ao);\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 350,
+        "x": 370,
         "y": 1100,
         "wires": [
             [
@@ -3207,8 +3207,7 @@
         "y": 1100,
         "wires": [
             [
-                "ca28ac10d3a51528",
-                "b94c936649e62cc3"
+                "ca28ac10d3a51528"
             ]
         ]
     },
@@ -3221,23 +3220,6 @@
         "headers": {},
         "x": 730,
         "y": 1360,
-        "wires": []
-    },
-    {
-        "id": "b94c936649e62cc3",
-        "type": "debug",
-        "z": "7c14288f4889ff67",
-        "name": "debug 7",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 310,
-        "y": 1040,
         "wires": []
     },
     {
@@ -3256,35 +3238,6 @@
         "x": 630,
         "y": 1420,
         "wires": []
-    },
-    {
-        "id": "18be6b15ea271f06",
-        "type": "inject",
-        "z": "7c14288f4889ff67",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "",
-        "payloadType": "date",
-        "x": 120,
-        "y": 1020,
-        "wires": [
-            [
-                "ca28ac10d3a51528"
-            ]
-        ]
     },
     {
         "id": "6823b1ca63511eb3",
