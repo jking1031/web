@@ -3016,7 +3016,7 @@
         "finalize": "",
         "libs": [],
         "x": 210,
-        "y": 1300,
+        "y": 1280,
         "wires": [
             [
                 "20d0c65fcbaf98de"
@@ -3030,7 +3030,7 @@
         "mydb": "e3d5e9572467c502",
         "name": "日报数据",
         "x": 460,
-        "y": 1300,
+        "y": 1280,
         "wires": [
             [
                 "59b32c83a53461fc"
@@ -3050,7 +3050,7 @@
         "finalize": "",
         "libs": [],
         "x": 600,
-        "y": 1300,
+        "y": 1280,
         "wires": [
             [
                 "0bf84c24144405a0"
@@ -3133,7 +3133,7 @@
         "y": 1180,
         "wires": [
             [
-                "4bd6f9e12d4065d8"
+                "2efe2ef07d80cd42"
             ]
         ]
     },
@@ -3170,7 +3170,7 @@
         "finalize": "",
         "libs": [],
         "x": 750,
-        "y": 1300,
+        "y": 1280,
         "wires": [
             [
                 "053fcdef290f072f"
@@ -3259,45 +3259,69 @@
         "y": 1220,
         "wires": [
             [
-                "aafcb320dc90730f"
+                "b9b7f39e150efa4a"
             ]
         ]
     },
     {
-        "id": "f4867ced35178955",
-        "type": "inject",
+        "id": "b9b7f39e150efa4a",
+        "type": "function",
         "z": "7c14288f4889ff67",
-        "name": "",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 20,
-        "y": 1240,
+        "name": "调整时间",
+        "func": "let rows = msg.payload; // 数据数组\n\nrows.forEach(row => {\n  if (row.time) {\n    let t = new Date(row.time);\n    t.setHours(t.getHours() + 8); // 加 8 小时\n    row.time = t.toISOString().replace('T', ' ').slice(0, 19); // 格式化为 'YYYY-MM-DD HH:mm:ss'\n  }\n});\n\nreturn msg;\n\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 520,
+        "y": 1220,
         "wires": [
             [
-                "2efe2ef07d80cd42"
+                "c30e708002a78e27"
             ]
         ]
     },
     {
-        "id": "aafcb320dc90730f",
-        "type": "debug",
+        "id": "c30e708002a78e27",
+        "type": "function",
         "z": "7c14288f4889ff67",
-        "name": "debug 7",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 550,
+        "name": "function 89",
+        "func": "var tn = msg.payload\nreturn { tn: tn };",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 690,
         "y": 1220,
-        "wires": []
+        "wires": [
+            [
+                "e3099b58e795cb8b"
+            ]
+        ]
+    },
+    {
+        "id": "e3099b58e795cb8b",
+        "type": "function",
+        "z": "7c14288f4889ff67",
+        "name": "tn_data",
+        "func": "// 假设 msg.payload 是上面的 JSON\nflow.set(\"tn_data\", msg.tn);\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 860,
+        "y": 1220,
+        "wires": [
+            [
+                "4bd6f9e12d4065d8"
+            ]
+        ]
     },
     {
         "id": "6823b1ca63511eb3",
