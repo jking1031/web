@@ -21404,7 +21404,8 @@
         "y": 1020,
         "wires": [
             [
-                "7a90504a96a8fc53"
+                "7a90504a96a8fc53",
+                "b9a5b1ca35f08439"
             ]
         ]
     },
@@ -21835,6 +21836,23 @@
                 "d5a2708c209628dd"
             ]
         ]
+    },
+    {
+        "id": "b9a5b1ca35f08439",
+        "type": "debug",
+        "z": "db-api-flow",
+        "name": "debug 7",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 690,
+        "y": 1080,
+        "wires": []
     },
     {
         "id": "api-configs-save",
