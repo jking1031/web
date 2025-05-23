@@ -2892,7 +2892,7 @@
         "type": "function",
         "z": "7c14288f4889ff67",
         "name": "实时数据平均数",
-        "func": "let rows = msg.payload; // 数据数组\nlet sum = {};\nlet count = rows.length;\n\nif (count === 0) {\n    node.warn(\"没有查询到任何数据\");\n    return [[], []];\n}\n\n// 要统计的字段列表\nlet fields = [\n   \"gt_in_ll\", \"gt_in_nh3\", \"gt_in_cod\",\n   \"gt_out_ll\", \"gt_out_nh3\", \"gt_out_cod\",\n   \"gt_out_tn\", \"gt_out_tp\"\n];\n\n// 初始化累加器\nfields.forEach(f => sum[f] = 0);\n\n// 逐行处理\nrows.forEach(row => {\n  if (row.time) {\n    let t = new Date(row.time);\n    t.setHours(t.getHours() + 8);\n    row.time = t.toISOString().replace('T', ' ').slice(0, 19);\n  }\n  fields.forEach(f => {\n    let val = parseFloat(row[f]);\n    if (!isNaN(val)) {\n      sum[f] += val;\n    }\n  });\n});\n\n// 计算平均值（保持为浮点数）\nlet avg = {};\nfields.forEach(f => {\n  avg[f] = parseFloat((sum[f] / count).toFixed(2));\n});\nvar ao = flow.get(\"ao\")\n// 统一做单位换算（*6 和 *3.6*6）\nif (ao === 1 || ao === 2 || ao === 3) {\n  if (!isNaN(avg.gt_in_ll)) avg.gt_in_ll = avg.gt_in_ll * 6;\n  if (!isNaN(avg.gt_out_ll)) avg.gt_out_ll = avg.gt_out_ll * 3.6 * 6;\n\n  // ao=3时再乘以2\n  if (ao === 3) {\n    if (!isNaN(avg.gt_in_ll)) avg.gt_in_ll = avg.gt_in_ll * 2;\n    if (!isNaN(avg.gt_out_ll)) avg.gt_out_ll = avg.gt_out_ll * 2;\n  }\n\n  // 保留两位小数\n  if (!isNaN(avg.gt_in_ll)) avg.gt_in_ll = parseFloat(avg.gt_in_ll.toFixed(2));\n  if (!isNaN(avg.gt_out_ll)) avg.gt_out_ll = parseFloat(avg.gt_out_ll.toFixed(2));\n}\n\nreturn { avg: avg };\n\n",
+        "func": "let rows = msg.payload; // 数据数组\nlet sum = {};\nlet count = rows.length;\n\nif (count === 0) {\n    node.warn(\"没有查询到任何数据\");\n    return [[], []];\n}\n\n// 要统计的字段列表\nlet fields = [\n   \"gt_in_ll\", \"gt_in_nh3\", \"gt_in_cod\",\n   \"gt_out_ll\", \"gt_out_nh3\", \"gt_out_cod\",\n   \"gt_out_tn\", \"gt_out_tp\"\n];\n\n// 初始化累加器\nfields.forEach(f => sum[f] = 0);\n\n// 逐行处理\nrows.forEach(row => {\n  if (row.time) {\n    let t = new Date(row.time);\n    t.setHours(t.getHours() + 8);\n    row.time = t.toISOString().replace('T', ' ').slice(0, 19);\n  }\n  fields.forEach(f => {\n    let val = parseFloat(row[f]);\n    if (!isNaN(val)) {\n      sum[f] += val;\n    }\n  });\n});\n\n// 计算平均值（保持为浮点数）\nlet avg = {};\nfields.forEach(f => {\n  avg[f] = parseFloat((sum[f] / count).toFixed(2));\n});\nvar ao = flow.get(\"ao\")\n// 统一做单位换算（*6 和 *3.6*6）\nif (ao === 1 || ao === 2 || ao === 3) {\n  if (!isNaN(avg.gt_in_ll)) avg.gt_in_ll = avg.gt_in_ll * 6;\n  if (!isNaN(avg.gt_out_ll)) avg.gt_out_ll = avg.gt_out_ll * 3.6 * 6;\n\n  // ao=3时再乘以2\n  if (ao === 3) {\n    if (!isNaN(avg.gt_in_ll)) avg.gt_in_ll = avg.gt_in_ll * 2;\n    if (!isNaN(avg.gt_out_ll)) avg.gt_out_ll = avg.gt_out_ll * 2;\n  }\n\n  // 保留两位小数\n  if (!isNaN(avg.gt_in_ll)) avg.gt_in_ll = parseFloat(avg.gt_in_ll.toFixed(2));\n  if (!isNaN(avg.gt_out_ll)) avg.gt_out_ll = parseFloat(avg.gt_out_ll.toFixed(2));\n}\nflow.set(\"avg_data\", avg);\nreturn msg;\n\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2903,7 +2903,7 @@
         "y": 1100,
         "wires": [
             [
-                "a7aed324db089d31"
+                "aao_sql_function"
             ]
         ]
     },
@@ -3025,7 +3025,7 @@
         "y": 1180,
         "wires": [
             [
-                "1f7cb3703d5de164"
+                "0846db67ac736c93"
             ]
         ]
     },
@@ -3050,38 +3050,18 @@
         ]
     },
     {
-        "id": "a7aed324db089d31",
-        "type": "function",
-        "z": "7c14288f4889ff67",
-        "name": "avg_data",
-        "func": "// 假设 msg.payload 是上面的 JSON\nflow.set(\"avg_data\", msg.avg);\nreturn msg;\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1020,
-        "y": 1100,
-        "wires": [
-            [
-                "aao_sql_function"
-            ]
-        ]
-    },
-    {
         "id": "0846db67ac736c93",
         "type": "function",
         "z": "7c14288f4889ff67",
         "name": "sludge_data",
-        "func": "// 假设 msg.payload 是上面的 JSON\nflow.set(\"sludge_data\", msg.a);\nreturn msg;\n",
+        "func": "// 假设 msg.payload 是上面的 JSON\nflow.set(\"sludge_data\", msg.payload);\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 950,
+        "x": 830,
         "y": 1180,
         "wires": [
             [
@@ -3090,32 +3070,12 @@
         ]
     },
     {
-        "id": "053fcdef290f072f",
-        "type": "function",
-        "z": "7c14288f4889ff67",
-        "name": "daily_data",
-        "func": "// 假设 msg.payload 是上面的 JSON\nflow.set(\"daily_data\", msg.report);\nreturn msg;\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 930,
-        "y": 1260,
-        "wires": [
-            [
-                "f28286ea7224bbc3"
-            ]
-        ]
-    },
-    {
         "id": "0bf84c24144405a0",
         "type": "function",
         "z": "7c14288f4889ff67",
         "name": "function 86",
-        "func": "let rows = msg.payload; // 数据数组\nlet count = rows.length;\n\nif (count === 0) {\n    node.warn(\"没有数据\");\n    return [null, null];\n}\n\nlet sum = {\n    sludge_quantity: 0,\n    carbon_source: 0,\n    phosphorus_removal: 0,\n    disinfectant: 0\n};\n\n// 累加每一行的数值\nrows.forEach(row => {\n    sum.sludge_quantity += parseFloat(row.sludge_quantity) || 0;\n    sum.carbon_source += parseFloat(row.carbon_source) || 0;\n    sum.phosphorus_removal += parseFloat(row.phosphorus_removal) || 0;\n    sum.disinfectant += parseFloat(row.disinfectant) || 0;\n});\n\n// 计算平均值\nlet avg = {};\nfor (let key in sum) {\n    avg[key] = parseFloat((sum[key] / count).toFixed(2));\n}\n\n// 拷贝一份用于缩放处理\nlet scaled = { ...avg };\nvar a = flow.get(\"ao\")\n// 根据 msg.ao 进行缩放\nlet ao = parseInt(a);\nif (ao === 1 || ao === 2) {\n    for (let key in scaled) {\n        scaled[key] = parseFloat((scaled[key] / 3).toFixed(2));\n    }\n} else if (ao === 3) {\n    for (let key in scaled) {\n        scaled[key] = parseFloat((scaled[key] / 2).toFixed(2));\n    }\n}\n\n// 第一个输出：根据 ao 缩放后的平均值\n// 第二个输出：原始平均值\nreturn [\n    { report: scaled },\n    { report: avg }\n];\n\n",
-        "outputs": 2,
+        "func": "let rows = msg.payload; // 数据数组\nlet count = rows.length;\n\nif (count === 0) {\n    node.warn(\"没有数据\");\n    return [null, null];\n}\n\nlet sum = {\n    sludge_quantity: 0,\n    carbon_source: 0,\n    phosphorus_removal: 0,\n    disinfectant: 0\n};\n\n// 累加每一行的数值\nrows.forEach(row => {\n    sum.sludge_quantity += parseFloat(row.sludge_quantity) || 0;\n    sum.carbon_source += parseFloat(row.carbon_source) || 0;\n    sum.phosphorus_removal += parseFloat(row.phosphorus_removal) || 0;\n    sum.disinfectant += parseFloat(row.disinfectant) || 0;\n});\n\n// 计算平均值\nlet avg = {};\nfor (let key in sum) {\n    avg[key] = parseFloat((sum[key] / count).toFixed(2));\n}\n\n// 拷贝一份用于缩放处理\nlet scaled = { ...avg };\nvar a = flow.get(\"ao\")\n// 根据 msg.ao 进行缩放\nlet ao = parseInt(a);\nif (ao === 1 || ao === 2) {\n    for (let key in scaled) {\n        scaled[key] = parseFloat((scaled[key] / 3).toFixed(2));\n    }\n} else if (ao === 3) {\n    for (let key in scaled) {\n        scaled[key] = parseFloat((scaled[key] / 2).toFixed(2));\n    }\n}\n\n// 假设 msg.payload 是上面的 JSON\nflow.set(\"daily_data\", scaled);\nreturn msg;\n",
+        "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
@@ -3125,28 +3085,7 @@
         "y": 1280,
         "wires": [
             [
-                "053fcdef290f072f"
-            ],
-            []
-        ]
-    },
-    {
-        "id": "1f7cb3703d5de164",
-        "type": "function",
-        "z": "7c14288f4889ff67",
-        "name": "function 87",
-        "func": "var a = msg.payload\nreturn { a: a };",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 770,
-        "y": 1180,
-        "wires": [
-            [
-                "0846db67ac736c93"
+                "f28286ea7224bbc3"
             ]
         ]
     },
@@ -3231,26 +3170,6 @@
         "y": 1220,
         "wires": [
             [
-                "c30e708002a78e27"
-            ]
-        ]
-    },
-    {
-        "id": "c30e708002a78e27",
-        "type": "function",
-        "z": "7c14288f4889ff67",
-        "name": "function 89",
-        "func": "var tn = msg.payload\nreturn { tn: tn };",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 690,
-        "y": 1220,
-        "wires": [
-            [
                 "e3099b58e795cb8b"
             ]
         ]
@@ -3260,14 +3179,14 @@
         "type": "function",
         "z": "7c14288f4889ff67",
         "name": "tn_data",
-        "func": "// 假设 msg.payload 是上面的 JSON\nflow.set(\"tn_data\", msg.tn);\nreturn msg;\n",
+        "func": "// 假设 msg.payload 是上面的 JSON\nflow.set(\"tn_data\", msg.payload);\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 860,
+        "x": 720,
         "y": 1220,
         "wires": [
             [
