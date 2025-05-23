@@ -21847,8 +21847,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 830,
-        "y": 1120,
+        "x": 730,
+        "y": 1180,
         "wires": [
             [
                 "6b05c2b56416a058"
@@ -21885,7 +21885,6 @@
         "y": 1120,
         "wires": [
             [
-                "6b05c2b56416a058",
                 "98d702470616371b"
             ]
         ]
@@ -21902,8 +21901,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 700,
-        "y": 1180,
+        "x": 920,
+        "y": 1160,
         "wires": []
     },
     {
@@ -21941,7 +21940,28 @@
         "y": 1120,
         "wires": [
             [
-                "b9b65205d3bea87d"
+                "b9b65205d3bea87d",
+                "8e6980b25babb8bd"
+            ]
+        ]
+    },
+    {
+        "id": "8e6980b25babb8bd",
+        "type": "function",
+        "z": "db-api-flow",
+        "name": "function 89",
+        "func": "let rows = msg.payload;\nlet raw = [];\n\nrows.forEach(row => {\n    let in_quality = row.in_quality || '';\n    let out_quality = row.out_quality || '';\n\n    let data = {\n        time: row.date,  // ✅ 改为 time 字段，适配统一结构\n        operator: row.operator,\n\n        inflow: parseFloat(row.inflow),\n        outflow: parseFloat(row.outflow),\n\n        in_cod_avg: parseFloat((in_quality.match(/进水COD平均值(\\d+(\\.\\d+)?)/) || [])[1]),\n        in_cod_max: parseFloat((in_quality.match(/最高COD(\\d+(\\.\\d+)?)/) || [])[1]),\n        in_nh3_avg: parseFloat((in_quality.match(/氨氮平均值(\\d+(\\.\\d+)?)/) || [])[1]),\n\n        out_cod_avg: parseFloat((out_quality.match(/COD平均值(\\d+(\\.\\d+)?)/) || [])[1]),\n        out_nh3_avg: parseFloat((out_quality.match(/氨氮平均值(\\d+(\\.\\d+)?)/) || [])[1]),\n        out_tp_avg: parseFloat((out_quality.match(/总磷平均值(\\d+(\\.\\d+)?)/) || [])[1]),\n        out_tn_avg: parseFloat((out_quality.match(/总氮平均值(\\d+(\\.\\d+)?)/) || [])[1]),\n\n        carbon_source: parseFloat(row.carbon_source),\n        phosphorus_removal: parseFloat(row.phosphorus_removal),\n        disinfectant: parseFloat(row.disinfectant),\n\n        sludge_quantity: parseFloat(row.sludge_quantity)\n    };\n\n    raw.push(data);\n});\n\n// ✅ 字段映射表（英文键 → 中文字段名）\nconst labelMap = {\n    inflow: \"进水流量 (m³/d)\",\n    outflow: \"出水流量 (m³/d)\",\n    in_cod_avg: \"进水COD平均值\",\n    in_cod_max: \"进水COD最大值\",\n    in_nh3_avg: \"进水氨氮平均值\",\n    out_cod_avg: \"出水COD平均值\",\n    out_nh3_avg: \"出水氨氮平均值\",\n    out_tp_avg: \"出水总磷平均值\",\n    out_tn_avg: \"出水总氮平均值\",\n    carbon_source: \"碳源投加量 (L/d)\",\n    phosphorus_removal: \"除磷剂投加量 (L/d)\",\n    disinfectant: \"消毒剂投加量 (L/d)\",\n    sludge_quantity: \"污泥产量 (吨/d)\"\n};\n\nlet output = [];\n\n// ✅ 将 raw 中的数据格式化为：以时间为主键，字段为中文名\nraw.forEach(row => {\n    let formatted = { time: row.time };\n    for (let key in labelMap) {\n        if (!isNaN(row[key])) {\n            formatted[labelMap[key]] = row[key];\n        }\n    }\n    output.push(formatted);\n});\n\nmsg.payload = output;\nreturn msg;\n\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 710,
+        "y": 1220,
+        "wires": [
+            [
+                "6b05c2b56416a058"
             ]
         ]
     },
