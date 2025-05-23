@@ -2866,7 +2866,7 @@
         "finalize": "",
         "libs": [],
         "x": 360,
-        "y": 1320,
+        "y": 1360,
         "wires": [
             [
                 "debug_output"
@@ -2887,7 +2887,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 580,
-        "y": 1320,
+        "y": 1360,
         "wires": []
     },
     {
@@ -3016,7 +3016,7 @@
         "finalize": "",
         "libs": [],
         "x": 210,
-        "y": 1260,
+        "y": 1300,
         "wires": [
             [
                 "20d0c65fcbaf98de"
@@ -3030,7 +3030,7 @@
         "mydb": "e3d5e9572467c502",
         "name": "日报数据",
         "x": 460,
-        "y": 1260,
+        "y": 1300,
         "wires": [
             [
                 "59b32c83a53461fc"
@@ -3050,7 +3050,7 @@
         "finalize": "",
         "libs": [],
         "x": 600,
-        "y": 1260,
+        "y": 1300,
         "wires": [
             [
                 "0bf84c24144405a0"
@@ -3090,7 +3090,7 @@
         "finalize": "",
         "libs": [],
         "x": 140,
-        "y": 1320,
+        "y": 1360,
         "wires": [
             [
                 "calc_fm_srt"
@@ -3170,7 +3170,7 @@
         "finalize": "",
         "libs": [],
         "x": 750,
-        "y": 1260,
+        "y": 1300,
         "wires": [
             [
                 "053fcdef290f072f"
@@ -3228,6 +3228,76 @@
         "wires": [
             []
         ]
+    },
+    {
+        "id": "2efe2ef07d80cd42",
+        "type": "function",
+        "z": "7c14288f4889ff67",
+        "name": "查询进水总氮",
+        "func": "\nmsg.topic = `\nSELECT sample_name, tn, time\nFROM huayan_data\nWHERE sample_name = '高铁厂进水'\n  AND DATE(time) = CURDATE() - INTERVAL 1 DAY;\n`;\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 140,
+        "y": 1220,
+        "wires": [
+            [
+                "7b1e0fbc520b1ba2"
+            ]
+        ]
+    },
+    {
+        "id": "7b1e0fbc520b1ba2",
+        "type": "mysql",
+        "z": "7c14288f4889ff67",
+        "mydb": "e3d5e9572467c502",
+        "name": "查询污泥化验表",
+        "x": 340,
+        "y": 1220,
+        "wires": [
+            [
+                "aafcb320dc90730f"
+            ]
+        ]
+    },
+    {
+        "id": "f4867ced35178955",
+        "type": "inject",
+        "z": "7c14288f4889ff67",
+        "name": "",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 20,
+        "y": 1240,
+        "wires": [
+            [
+                "2efe2ef07d80cd42"
+            ]
+        ]
+    },
+    {
+        "id": "aafcb320dc90730f",
+        "type": "debug",
+        "z": "7c14288f4889ff67",
+        "name": "debug 7",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 550,
+        "y": 1220,
+        "wires": []
     },
     {
         "id": "6823b1ca63511eb3",
