@@ -21345,7 +21345,7 @@
         "headers": {
             "content-type": "application/json"
         },
-        "x": 820,
+        "x": 900,
         "y": 520,
         "wires": []
     },
@@ -21747,74 +21747,7 @@
         "y": 560,
         "wires": [
             [
-                "8a359dcc5ec77a5e"
-            ]
-        ]
-    },
-    {
-        "id": "d5a2708c209628dd",
-        "type": "mysql",
-        "z": "db-api-flow",
-        "mydb": "e3d5e9572467c502",
-        "name": "查询数据",
-        "x": 460,
-        "y": 560,
-        "wires": [
-            [
-                "753f075b8b25fdab"
-            ]
-        ]
-    },
-    {
-        "id": "753f075b8b25fdab",
-        "type": "function",
-        "z": "db-api-flow",
-        "name": "格式化数据",
-        "func": "// 原始数据库查询结果\nconst data = msg.payload;\n\n// 定义字段与中文名称的映射表\nconst fieldMap = {\n    avg_gt_in_lj: \"进水流量（累计）\",\n    avg_gt_in_ll: \"进水流量（瞬时）\",\n    avg_gt_in_nh3: \"进水氨氮\",\n    avg_gt_in_cod: \"进水COD\",\n    avg_gt_out_lj: \"出水流量（累计）\",\n    avg_gt_out_ll: \"出水流量（瞬时）\",\n    avg_gt_out_nh3: \"出水氨氮\",\n    avg_gt_out_cod: \"出水COD\",\n    avg_gt_out_tn: \"出水总氮\",\n    avg_gt_out_tp: \"出水总磷\"\n};\n\n// 初始化分类后的结果\nlet result = {};\n\n// 遍历每个字段\nfor (const field in fieldMap) {\n    result[field] = {\n        name: fieldMap[field],\n        field: field,\n        data: []  // 用于存储时间序列\n    };\n}\n\n// 遍历每一条记录（每小时）\nfor (const row of data) {\n    const time = row.hour;\n    for (const field in fieldMap) {\n        if (row.hasOwnProperty(field)) {\n            result[field].data.push({\n                time: time,\n                value: parseFloat(row[field].toFixed(2))\n            });\n        }\n    }\n}\n\n// 最终将分类后的数据转换成数组（便于后续 UI 或图表处理）\nmsg.payload = Object.values(result);\nreturn msg;\n\n",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 630,
-        "y": 560,
-        "wires": [
-            [
-                "0f0aaea9a2066ce7"
-            ]
-        ]
-    },
-    {
-        "id": "0f0aaea9a2066ce7",
-        "type": "http response",
-        "z": "db-api-flow",
-        "name": "返回趋势图数据",
-        "statusCode": "200",
-        "headers": {
-            "content-type": "application/json"
-        },
-        "x": 820,
-        "y": 560,
-        "wires": []
-    },
-    {
-        "id": "8a359dcc5ec77a5e",
-        "type": "function",
-        "z": "db-api-flow",
-        "name": "function 83",
-        "func": "msg.topic = `\n  SELECT\n    DATE_FORMAT(time, '%Y-%m-%d %H:00:00') AS hour,\n    AVG(gt_in_lj)   AS avg_gt_in_lj,\n    AVG(gt_in_ll)   AS avg_gt_in_ll,\n    AVG(gt_in_nh3)  AS avg_gt_in_nh3,\n    AVG(gt_in_cod)  AS avg_gt_in_cod,\n    AVG(gt_out_lj)  AS avg_gt_out_lj,\n    AVG(gt_out_ll)  AS avg_gt_out_ll,\n    AVG(gt_out_nh3) AS avg_gt_out_nh3,\n    AVG(gt_out_cod) AS avg_gt_out_cod,\n    AVG(gt_out_tn)  AS avg_gt_out_tn,\n    AVG(gt_out_tp)  AS avg_gt_out_tp\n  FROM\n    gt_data\n  WHERE\n    time >= NOW() - INTERVAL 24 HOUR\n  GROUP BY\n    DATE_FORMAT(time, '%Y-%m-%d %H:00:00')\n  ORDER BY\n    hour;\n`;\nreturn msg;\n\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 320,
-        "y": 560,
-        "wires": [
-            [
-                "d5a2708c209628dd"
+                "fce3854ab45bd22c"
             ]
         ]
     },
@@ -21836,26 +21769,6 @@
         "wires": []
     },
     {
-        "id": "b9b65205d3bea87d",
-        "type": "function",
-        "z": "db-api-flow",
-        "name": "function 40",
-        "func": "let rows = msg.payload;\nlet raw = [];\n\nrows.forEach(row => {\n    let in_quality = row.in_quality || '';\n    let out_quality = row.out_quality || '';\n\n    let data = {\n        date: row.date,\n        operator: row.operator,\n\n        // ✅ 进出水水量\n        inflow: parseFloat(row.inflow),\n        outflow: parseFloat(row.outflow),\n\n        // ✅ 进水水质\n        in_cod_avg: parseFloat((in_quality.match(/进水COD平均值(\\d+(\\.\\d+)?)/) || [])[1]),\n        in_cod_max: parseFloat((in_quality.match(/最高COD(\\d+(\\.\\d+)?)/) || [])[1]),\n        in_nh3_avg: parseFloat((in_quality.match(/氨氮平均值(\\d+(\\.\\d+)?)/) || [])[1]),\n\n        // ✅ 出水水质\n        out_cod_avg: parseFloat((out_quality.match(/COD平均值(\\d+(\\.\\d+)?)/) || [])[1]),\n        out_nh3_avg: parseFloat((out_quality.match(/氨氮平均值(\\d+(\\.\\d+)?)/) || [])[1]),\n        out_tp_avg: parseFloat((out_quality.match(/总磷平均值(\\d+(\\.\\d+)?)/) || [])[1]),\n        out_tn_avg: parseFloat((out_quality.match(/总氮平均值(\\d+(\\.\\d+)?)/) || [])[1]),\n\n        // ✅ 药剂投加\n        carbon_source: parseFloat(row.carbon_source),\n        phosphorus_removal: parseFloat(row.phosphorus_removal),\n        disinfectant: parseFloat(row.disinfectant),\n\n        // ✅ 污泥产量\n        sludge_quantity: parseFloat(row.sludge_quantity)\n    };\n\n    raw.push(data);\n});\n\n// ✅ 字段映射表\nconst labelMap = {\n    inflow: \"进水流量 (m³/d)\",\n    outflow: \"出水流量 (m³/d)\",\n    in_cod_avg: \"进水COD平均值\",\n    in_cod_max: \"进水COD最大值\",\n    in_nh3_avg: \"进水氨氮平均值\",\n    out_cod_avg: \"出水COD平均值\",\n    out_nh3_avg: \"出水氨氮平均值\",\n    out_tp_avg: \"出水总磷平均值\",\n    out_tn_avg: \"出水总氮平均值\",\n    carbon_source: \"碳源投加量 (L/d)\",\n    phosphorus_removal: \"除磷剂投加量 (L/d)\",\n    disinfectant: \"消毒剂投加量 (L/d)\",\n    sludge_quantity: \"污泥产量 (吨/d)\"\n};\n\nconst keys = Object.keys(labelMap);\n\n// 构造系列数组（使用中文名）\nlet series = keys.map(key => ({\n    name: labelMap[key],\n    data: []\n}));\n\n// 填充每个系列的数据\nraw.forEach(row => {\n    keys.forEach(key => {\n        const value = row[key];\n        if (!isNaN(value)) {\n            const label = labelMap[key];\n            const seriesItem = series.find(s => s.name === label);\n            seriesItem.data.push({ time: row.date, value });\n        }\n    });\n});\n\nmsg.payload = series;\nreturn msg;\n\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 730,
-        "y": 1180,
-        "wires": [
-            [
-                "6b05c2b56416a058"
-            ]
-        ]
-    },
-    {
         "id": "fce3854ab45bd22c",
         "type": "function",
         "z": "db-api-flow",
@@ -21867,8 +21780,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 210,
-        "y": 1080,
+        "x": 310,
+        "y": 560,
         "wires": [
             [
                 "8a99d933237306ce"
@@ -21881,46 +21794,11 @@
         "z": "db-api-flow",
         "mydb": "e3d5e9572467c502",
         "name": "日报数据",
-        "x": 360,
-        "y": 1120,
+        "x": 460,
+        "y": 560,
         "wires": [
             [
                 "98d702470616371b"
-            ]
-        ]
-    },
-    {
-        "id": "6b05c2b56416a058",
-        "type": "debug",
-        "z": "db-api-flow",
-        "name": "debug 26",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 920,
-        "y": 1160,
-        "wires": []
-    },
-    {
-        "id": "668e8d25c7ed1cac",
-        "type": "inject",
-        "z": "db-api-flow",
-        "name": "",
-        "props": [],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 70,
-        "y": 1080,
-        "wires": [
-            [
-                "fce3854ab45bd22c"
             ]
         ]
     },
@@ -21936,11 +21814,10 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 560,
-        "y": 1120,
+        "x": 600,
+        "y": 560,
         "wires": [
             [
-                "b9b65205d3bea87d",
                 "8e6980b25babb8bd"
             ]
         ]
@@ -21957,11 +21834,11 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 710,
-        "y": 1220,
+        "x": 750,
+        "y": 560,
         "wires": [
             [
-                "6b05c2b56416a058"
+                "bd518f9ac926055e"
             ]
         ]
     },
