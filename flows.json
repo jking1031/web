@@ -21718,7 +21718,8 @@
         "y": 760,
         "wires": [
             [
-                "ca28ac10d3a51528"
+                "ca28ac10d3a51528",
+                "ed5a665e70f56d4e"
             ]
         ]
     },
@@ -21859,6 +21860,22 @@
         "statusType": "auto",
         "x": 910,
         "y": 600,
+        "wires": []
+    },
+    {
+        "id": "ed5a665e70f56d4e",
+        "type": "debug",
+        "z": "db-api-flow",
+        "name": "debug 26",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 350,
+        "y": 660,
         "wires": []
     },
     {
