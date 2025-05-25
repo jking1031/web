@@ -21952,6 +21952,39 @@
         "wires": []
     },
     {
+        "id": "82885cc919d7c016",
+        "type": "http in",
+        "z": "db-api-flow",
+        "name": "站点趋势图数据请求",
+        "url": "/api/get-site1-trenddata",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 150,
+        "y": 1320,
+        "wires": [
+            [
+                "aa2ae01fa9254bc2"
+            ]
+        ]
+    },
+    {
+        "id": "aa2ae01fa9254bc2",
+        "type": "debug",
+        "z": "db-api-flow",
+        "name": "debug 36",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 470,
+        "y": 1260,
+        "wires": []
+    },
+    {
         "id": "api-configs-save",
         "type": "http in",
         "z": "api-configs-individual-flow",
