@@ -7,8 +7,7 @@ import {
 import { 
   LineChartOutlined, ReloadOutlined, SettingOutlined, 
   DownloadOutlined, ZoomInOutlined, ZoomOutOutlined, FullscreenOutlined,
-  FullscreenExitOutlined, InfoCircleOutlined, RedoOutlined, ExclamationCircleOutlined, CloseOutlined, SearchOutlined,
-  BarChartOutlined
+  FullscreenExitOutlined, InfoCircleOutlined, RedoOutlined, ExclamationCircleOutlined, CloseOutlined, SearchOutlined
 } from '@ant-design/icons';
 import moment from 'moment';
 import ReactECharts from 'echarts-for-react';
@@ -31,7 +30,7 @@ const TrendChart = memo(({
 }) => {
   // 图表高度计算
   const getChartHeight = () => {
-    return fullscreen ? 'calc(100vh - 160px)' : '100%';
+    return fullscreen ? 'calc(100vh - 160px)' : 400;
   };
 
   // 图表配置 - 改为静态配置，不依赖外部状态
@@ -240,12 +239,9 @@ const TrendChart = memo(({
 
   return (
     <div style={{ 
-      height: '100%', 
+      height: getChartHeight(), 
       position: 'relative',
-      width: '100%',
-      flex: 1,
-      display: 'flex',
-      overflow: 'hidden'
+      transition: 'height 0.3s ease-in-out'
     }}>
       {loading ? (
         <div style={{
@@ -278,17 +274,11 @@ const TrendChart = memo(({
         <Empty 
           description="暂无趋势数据"
           image={Empty.PRESENTED_IMAGE_SIMPLE}
-          style={{ margin: 'auto' }}
         />
       ) : (
         <ReactECharts
           option={getChartOption()}
-          style={{ 
-            height: '100%', 
-            width: '100%', 
-            flex: 1,
-            minHeight: '400px'
-          }}
+          style={{ height: '100%', width: '100%' }}
           notMerge={true}
           lazyUpdate={true}
           onChartReady={onChartReady}
@@ -989,16 +979,6 @@ const TrendDataSection = ({ siteId, fetchTrendData }) => {
     };
   }, []);
 
-  // 添加图表大小调整监听
-  useEffect(() => {
-    // 当全屏状态变化时，延迟一下再调整图表大小
-    if (chartInstance.current) {
-      setTimeout(() => {
-        chartInstance.current.resize && chartInstance.current.resize();
-      }, 300);
-    }
-  }, [fullscreen]);
-
   // 切换全屏 - 使用浏览器的Fullscreen API
   const toggleFullscreen = () => {
     if (!chartContainerRef.current) return;
@@ -1064,360 +1044,352 @@ const TrendDataSection = ({ siteId, fetchTrendData }) => {
     chartInstance.current = chart;
   };
 
-  // 修改导出数据函数，支持从任意视图导出
+  // 导出数据
   const handleExportData = () => {
     if (!chartData || !chartData.times || !chartData.values) {
-      message.error('暂无数据可导出');
+      message.warning('暂无数据可导出');
       return;
     }
-
+    
     try {
-      // 获取数据点名称和单位
-      const pointName = getSelectedDataPointInfo()?.name || '趋势数据';
-      const unit = getSelectedDataPointInfo()?.unit || '';
+      const dataPoint = getSelectedDataPointInfo();
+    const unit = dataPoint?.unit || '';
 
-      // 格式化时间
-    const formattedTimes = chartData.times.map(time => {
-      const date = new Date(time);
-        return moment(date).format('YYYY-MM-DD HH:mm:ss');
+      let csvContent = '时间,值' + (unit ? `(${unit})` : '') + '\n';
+      
+      chartData.times.forEach((time, index) => {
+        const formattedTime = typeof time === 'string' ? time : new Date(time).toISOString();
+        const value = chartData.values[index];
+        csvContent += `${formattedTime},${value}\n`;
       });
-
-      // 创建CSV数据
-      let csvContent = `时间,${pointName}(${unit})\n`;
-      formattedTimes.forEach((time, index) => {
-        csvContent += `${time},${chartData.values[index]}\n`;
-      });
-
-      // 创建下载链接
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `${pointName}-${moment().format('YYYYMMDDHHmmss')}.csv`);
+      link.download = `趋势数据_${selectedDataPoint}_${moment().format('YYYYMMDD_HHmmss')}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-
+      URL.revokeObjectURL(url);
+      
       message.success('数据导出成功');
     } catch (error) {
       console.error('导出数据失败:', error);
-      message.error('导出数据失败');
+      message.error('导出数据失败: ' + (error.message || '未知错误'));
     }
   };
 
+  // 添加fullscreen状态变化监听
+  useEffect(() => {
+    // 当全屏状态变化时，延迟一下再调整图表大小
+    if (chartInstance.current) {
+      setTimeout(() => {
+        chartInstance.current.resize && chartInstance.current.resize();
+      }, 300);
+    }
+  }, [fullscreen]);
+
   return (
-    <div className="trend-data-section">
     <Card
       title={
         <div style={{ display: 'flex', alignItems: 'center' }}>
-            <LineChartOutlined style={{ marginRight: 8, fontSize: 18 }} />
-            <span>历史趋势数据</span>
+          <LineChartOutlined style={{ marginRight: 8, color: '#2E7D32' }} />
+          <span style={{ color: '#2E7D32' }}>历史趋势数据</span>
         </div>
       }
       extra={
-          <Space>
-            <Tooltip title="刷新数据">
+        <Space>
         <Button
           icon={<ReloadOutlined />}
           onClick={handleRefresh}
-                loading={loading}
-                size="small"
-              />
-            </Tooltip>
-
-            <Tooltip title="导出数据">
-              <Button
-                icon={<DownloadOutlined />}
-                onClick={handleExportData}
-                size="small"
-                disabled={!chartData || !chartData.times || chartData.times.length === 0}
-              />
-            </Tooltip>
-
-            <Tooltip title={fullscreen ? '退出全屏' : '全屏显示'}>
-              <Button
-                icon={fullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
-                onClick={toggleFullscreen}
-                size="small"
-              />
-            </Tooltip>
-          </Space>
-        }
-        bordered={false}
-        className={fullscreen ? 'trend-chart-fullscreen' : ''}
-        style={{ 
-          width: '100%',
-          margin: 0,
-          position: 'relative',
-          height: fullscreen ? '100vh' : '600px',
+          disabled={loading}
+          />
+          <Button
+            icon={<SettingOutlined />}
+            onClick={() => setSettingsVisible(true)}
+          />
+          <Tooltip title={fullscreen ? '退出全屏' : '全屏显示'}>
+            <Button
+              icon={fullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
+              onClick={toggleFullscreen}
+            />
+          </Tooltip>
+        </Space>
+      }
+      bodyStyle={{ 
+        padding: '12px 24px',
+        transition: 'all 0.3s ease'
+      }}
+      ref={chartContainerRef}
+      className={fullscreen ? 'trend-chart-fullscreen' : ''}
+      style={{ 
+        width: '100%',
+        margin: 0,
+        position: 'relative',
+        ...(fullscreen ? {
+          height: '100vh',
           display: 'flex',
           flexDirection: 'column',
-          ...(fullscreen ? {
-            padding: '20px',
-            boxSizing: 'border-box',
-            background: '#fff'
-          } : {})
-        }}
-        bodyStyle={{ 
-          flex: 1, 
-          display: 'flex', 
-          flexDirection: 'column', 
-          padding: '16px',
-          height: 'calc(100% - 56px)', 
-          overflow: 'hidden'
-        }}
-        ref={chartContainerRef}
-      >
-        {!fullscreen && (
-          <div style={{ marginBottom: 16 }}>
-            <Row gutter={16} align="middle">
-              <Col xs={24} md={8} lg={5}>
+          padding: '20px',
+          boxSizing: 'border-box',
+          background: '#fff'
+        } : {})
+      }}
+    >
+      {!fullscreen && (
+        <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+          <Col xs={24} sm={12} md={8} lg={6}>
+            <div style={{ marginBottom: 8 }}>选择数据点</div>
             <Select
-                  placeholder="请选择数据点"
-              style={{ width: '100%' }}
-              loading={loading}
-                  value={selectedDataPoint}
-                  onChange={setSelectedDataPoint}
-                  disabled={loading}
-            >
-              {dataPoints.map(point => (
-                <Option key={point.id} value={point.id}>
-                      {point.name}
-                </Option>
-              ))}
-            </Select>
-        </Col>
-              <Col xs={24} md={8} lg={6}>
-                <Radio.Group
-                  options={timePresets.map(preset => ({ label: preset.label, value: preset.value }))}
-                  onChange={(e) => handleTimePresetChange(e.target.value)}
-                  value={currentTimePreset}
-                  optionType="button"
-                  buttonStyle="solid"
-                  size="small"
-                  style={{ marginRight: 8 }}
-                  disabled={loading}
-                />
-              </Col>
-              <Col xs={24} md={8} lg={8}>
-            <RangePicker
-                  showTime={{ format: 'HH:mm' }}
-              format="YYYY-MM-DD HH:mm"
-                  value={dateRangeRef.current}
-                  onChange={handleCustomDateSelect}
-                  disabled={currentTimePreset !== 'custom' || loading}
-              style={{ width: '100%' }}
-                />
-              </Col>
-              <Col xs={24} md={24} lg={5} style={{ textAlign: 'right' }}>
-                <Space>
-                  <Button 
-                    type="primary" 
-                    onClick={fetchTrendChartData} 
-                    loading={loading}
-                    icon={<SearchOutlined />}
-                  >
-                    查询
-                  </Button>
-                  <Tooltip title="更多设置">
-                    <Button
-                      icon={<SettingOutlined />}
-                      onClick={() => setSettingsVisible(true)}
-                    />
-                  </Tooltip>
-          </Space>
-        </Col>
-      </Row>
-          </div>
-        )}
-
-          <div style={{
-          flex: 1, 
-          height: '100%',
-          padding: fullscreen ? '16px' : 0,
-          backgroundColor: fullscreen ? '#fff' : 'transparent',
-          borderRadius: '4px',
-          transition: 'all 0.3s ease-in-out',
-          position: 'relative',
-            display: 'flex',
-          overflow: 'hidden'
-        }}>
-          {error ? (
-            <Alert
-              message="加载失败"
-              description={error}
-              type="error"
-              showIcon
-              style={{ marginBottom: 16 }}
-          />
-        ) : (
-            <>
-              {/* 图表视图 */}
-              <TrendChart
-                chartData={chartData}
-                dataPoint={getSelectedDataPointInfo()}
-                chartSettings={chartSettingsRef.current}
-                themeColors={themeColors}
-                loading={loading}
-                fullscreen={fullscreen}
-                onChartReady={handleChartReady}
-                error={error}
-              />
-            </>
-        )}
-      </div>
-
-        {!fullscreen && <DataStatistics chartData={chartData} dataPoint={getSelectedDataPointInfo()} />}
-    </Card>
-
-      {/* 全屏模式下的控制面板 */}
-      {fullscreen && (
-        <div style={{
-          position: 'absolute',
-          top: 70,
-          left: 20,
-          zIndex: 1000,
-          backgroundColor: 'rgba(255, 255, 255, 0.9)',
-          padding: '16px',
-          borderRadius: '4px',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-          width: '300px'
-        }}>
-          <div style={{ marginBottom: 16 }}>
-            <Select
-              placeholder="请选择数据点"
-              style={{ width: '100%', marginBottom: 12 }}
-              loading={loading}
               value={selectedDataPoint}
               onChange={setSelectedDataPoint}
+              style={{ width: '100%' }}
+              loading={dataPoints.length === 0 && loading}
+              placeholder="选择数据点"
               disabled={loading}
             >
-              {dataPoints.map(point => (
-                <Option key={point.id} value={point.id}>
-                  {point.name}
+              {dataPoints.map(dp => (
+                <Option key={dp.id} value={dp.id}>
+                  {dp.name} {dp.unit ? `(${dp.unit})` : ''}
                 </Option>
               ))}
             </Select>
-            
-            <Radio.Group
-              options={timePresets.map(preset => ({ label: preset.label, value: preset.value }))}
-              onChange={(e) => handleTimePresetChange(e.target.value)}
-              value={currentTimePreset}
-              optionType="button"
-              buttonStyle="solid"
-              size="small"
-              style={{ marginBottom: 12, width: '100%', display: 'flex', flexWrap: 'wrap' }}
+        </Col>
+          
+          <Col xs={24} sm={12} md={8} lg={10}>
+            <div style={{ marginBottom: 8 }}>时间范围</div>
+            <div style={{ width: '100%' }}>
+              <Segmented
+                options={timePresets.map(preset => ({ label: preset.label, value: preset.value }))}
+                value={currentTimePreset}
+                onChange={handleTimePresetChange}
+                block
+                size="middle"
               disabled={loading}
-            />
-            
-            {currentTimePreset === 'custom' && (
-              <RangePicker
-                showTime={{ format: 'HH:mm' }}
-                format="YYYY-MM-DD HH:mm"
-                value={dateRangeRef.current}
-                onChange={handleCustomDateSelect}
-                style={{ width: '100%', marginBottom: 12 }}
+                style={{ width: '100%' }}
               />
-            )}
-            
-            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              <div style={{ marginTop: 8, fontSize: 12, color: 'rgba(0, 0, 0, 0.45)' }}>
+                {currentTimePreset && dateRangeRef.current && dateRangeRef.current.length === 2 && (
+                  <>当前选择: {dateRangeRef.current[0].format('YYYY-MM-DD')} 至 {dateRangeRef.current[1].format('YYYY-MM-DD')}</>
+                )}
+              </div>
+            </div>
+          </Col>
+          
+          <Col xs={24} sm={24} md={8} lg={8}>
+            <div style={{ marginBottom: 8 }}>数据操作</div>
+            <Space wrap>
               <Button 
-                type="primary" 
-                onClick={fetchTrendChartData} 
+                type="primary"
+                icon={<SearchOutlined />} 
+                onClick={fetchTrendChartData}
                 loading={loading}
-                icon={<SearchOutlined />}
-                style={{ flex: 1 }}
               >
                 查询
               </Button>
-              <Button
+              <Button 
+                icon={<DownloadOutlined />} 
                 onClick={handleExportData}
-                icon={<DownloadOutlined />}
-                disabled={!chartData || !chartData.times || chartData.times.length === 0}
-              />
+                disabled={!chartData || loading}
+              >
+                导出数据
+              </Button>
               <Button
-                icon={<FullscreenExitOutlined />}
-                onClick={toggleFullscreen}
-              />
-            </div>
-          </div>
-
-          <Divider style={{ margin: '12px 0' }} />
-          
-          <div style={{ marginBottom: 16 }}>
-            <DataStatistics chartData={chartData} dataPoint={getSelectedDataPointInfo()} />
-          </div>
-        </div>
+                icon={<ReloadOutlined />}
+                onClick={() => {
+                  // 重新设置当前时间预设，更新日期范围
+                  handleTimePresetChange(currentTimePreset);
+                  message.success('已更新时间范围为当前时间');
+                }}
+                disabled={loading}
+              >
+                更新时间范围
+              </Button>
+              {chartData && chartData.originalLength && (
+                <Tooltip title="查看数据采样信息">
+                  <Button
+                    icon={<InfoCircleOutlined />}
+                    onClick={() => setDataSamplingModalVisible(true)}
+                    disabled={loading}
+                  >
+                    数据采样
+                  </Button>
+                </Tooltip>
+              )}
+          </Space>
+        </Col>
+      </Row>
       )}
 
-      {/* 设置抽屉 */}
-      <Drawer
-        title="图表设置"
-        placement="right"
-        onClose={() => setSettingsVisible(false)}
-        visible={settingsVisible}
-        width={320}
+      {!fullscreen && <DataStatistics chartData={chartData} dataPoint={getSelectedDataPointInfo()} />}
+
+      {/* 图表部分 - 使用隔离的子组件 */}
+      <div 
+        style={{
+          position: 'relative',
+          padding: fullscreen ? '16px' : 0,
+          backgroundColor: fullscreen ? '#fff' : 'transparent',
+          borderRadius: '4px',
+          transition: 'all 0.3s ease'
+        }}
       >
-        <Form
-          layout="vertical"
-          initialValues={chartSettingsRef.current}
-          onFinish={handleApplySettings}
-        >
-          <Form.Item label="线条平滑" name="smooth" valuePropName="checked">
-            <Switch />
-          </Form.Item>
+        {fullscreen && (
+          <div style={{
+            position: 'absolute',
+            top: 10, 
+            left: 10,
+            right: 'auto',
+            zIndex: 10,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            background: 'rgba(255, 255, 255, 0.8)',
+            padding: '8px',
+            borderRadius: '4px',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
+          }}>
+            <div style={{ marginBottom: 8, fontWeight: 'bold' }}>数据点</div>
+            <Select
+              value={selectedDataPoint}
+              onChange={setSelectedDataPoint}
+              style={{ width: '180px', marginBottom: '8px' }}
+              placeholder="选择数据点"
+              disabled={loading}
+              size="small"
+            >
+              {dataPoints.map(dp => (
+                <Option key={dp.id} value={dp.id}>
+                  {dp.name} {dp.unit ? `(${dp.unit})` : ''}
+                </Option>
+              ))}
+            </Select>
+            
+            <div style={{ marginBottom: 8, fontWeight: 'bold' }}>时间范围</div>
+            <Segmented
+              options={timePresets.map(preset => ({ label: preset.label, value: preset.value }))}
+              value={currentTimePreset}
+              onChange={handleTimePresetChange}
+              block
+              size="small"
+              disabled={loading}
+              style={{ width: '180px', marginBottom: '8px' }}
+            />
+            
+            <div style={{ display: 'flex', gap: '4px', marginTop: '8px' }}>
+              <Button 
+                icon={<SearchOutlined />} 
+                onClick={fetchTrendChartData}
+                loading={loading}
+                size="small"
+                type="primary"
+              >
+                查询
+              </Button>
+              <Button 
+                icon={<DownloadOutlined />} 
+                onClick={handleExportData}
+                disabled={!chartData || loading}
+                size="small"
+              >
+                导出
+              </Button>
+              <Tooltip title="退出全屏">
+                <Button 
+                  icon={<FullscreenExitOutlined />} 
+                  onClick={toggleFullscreen} 
+                  size="small"
+                />
+              </Tooltip>
+          </div>
+          </div>
+        )}
+        
+        <TrendChart
+          chartData={chartData}
+          dataPoint={getSelectedDataPointInfo()}
+          chartSettings={chartSettingsRef.current}
+          themeColors={themeColors}
+          loading={loading}
+          fullscreen={fullscreen}
+          onChartReady={handleChartReady}
+          error={error}
+        />
+      </div>
+      
+      {/* 设置抽屉 */}
+      <SettingsDrawer
+        visible={settingsVisible}
+        onClose={() => setSettingsVisible(false)}
+        initialValues={chartSettingsRef.current}
+        onFinish={handleApplySettings}
+      />
+      
+      {/* 数据采样设置弹窗 */}
+      <Modal
+        title="数据采样设置"
+        open={dataSamplingModalVisible}
+        footer={null}
+        onCancel={() => setDataSamplingModalVisible(false)}
+      >
+        <div style={{ marginBottom: 16 }}>
+          {originalData && (
+            <Alert
+              message="数据量较大"
+              description={`原始数据包含 ${originalData.times.length} 个数据点，可能会影响性能。请选择适当的采样间隔以优化显示效果。`}
+              type="info"
+              showIcon
+              style={{ marginBottom: 16 }}
+            />
+          )}
           
-          <Form.Item label="显示面积" name="showArea" valuePropName="checked">
-            <Switch />
-          </Form.Item>
+          <div style={{ marginBottom: 16 }}>
+            <Text strong>当前采样设置:</Text>
+            <div>
+              {dataSamplingInterval === 'auto' ? 
+                '自动采样' : 
+                `每 ${dataSamplingInterval} 采样一个数据点`
+              }
+              {chartData && chartData.samplingRate && (
+                <span style={{ marginLeft: 8, color: 'rgba(0, 0, 0, 0.45)' }}>
+                  (显示 {chartData.times.length} / {chartData.originalLength} 个数据点)
+                </span>
+        )}
+      </div>
+          </div>
           
-          <Form.Item label="数据点显示" name="showSymbols">
-            <Radio.Group>
-              <Radio.Button value="auto">自动</Radio.Button>
-              <Radio.Button value="always">总是</Radio.Button>
-              <Radio.Button value="never">隐藏</Radio.Button>
+          <div style={{ marginBottom: 24 }}>
+            <Text strong>选择采样间隔:</Text>
+            <Radio.Group 
+              value={dataSamplingInterval}
+              onChange={e => handleSamplingIntervalChange(e.target.value)}
+              style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}
+            >
+              {samplingIntervalOptions.map(option => (
+                <Radio key={option.value} value={option.value}>
+                  <Space direction="vertical" size={0}>
+                    <Text>{option.label}</Text>
+                    <Text type="secondary" style={{ fontSize: 12 }}>{option.description}</Text>
+                  </Space>
+                </Radio>
+              ))}
             </Radio.Group>
-          </Form.Item>
+          </div>
           
-          <Form.Item label="显示缩放控件" name="showDataZoom" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-          
-          <Form.Item label="动画效果" name="animation" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-          
-          <Form.Item label="标记最值点" name="showMarkPoints" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-          
-          <Form.Item label="字体大小" name="fontSize">
-            <Slider min={10} max={18} marks={{10: '10', 14: '14', 18: '18'}} />
-          </Form.Item>
-          
-          <Form.Item label="颜色方案" name="colorScheme">
-            <Radio.Group>
-              <Radio.Button value="blue">蓝色</Radio.Button>
-              <Radio.Button value="green">绿色</Radio.Button>
-              <Radio.Button value="multi">多彩</Radio.Button>
-            </Radio.Group>
-          </Form.Item>
-          
-          <Form.Item label="Y轴缩放" name="yAxisScale">
-            <Radio.Group>
-              <Radio.Button value="auto">自动</Radio.Button>
-              <Radio.Button value="fixed">固定</Radio.Button>
-            </Radio.Group>
-          </Form.Item>
-          
-          <Form.Item>
-            <Button type="primary" htmlType="submit" block>
-              应用设置
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+            <Button onClick={() => setDataSamplingModalVisible(false)}>
+              取消
             </Button>
-          </Form.Item>
-        </Form>
-      </Drawer>
-    </div>
+            <Button 
+              type="primary" 
+              onClick={() => handleSamplingIntervalChange(dataSamplingInterval)}
+            >
+              应用
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </Card>
   );
 };
 
@@ -1426,14 +1398,6 @@ const style = document.createElement('style');
 style.textContent = `
   .trend-chart-fullscreen {
     z-index: 9999;
-  }
-  
-  .trend-data-section {
-    height: 600px;
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    overflow: hidden;
   }
   
   :fullscreen {
