@@ -14,13 +14,16 @@ import {
   Paper,
   Divider,
   ToggleButtonGroup,
-  ToggleButton
+  ToggleButton,
+  Button
 } from '@mui/material';
 import {
   ReloadOutlined,
   SettingOutlined,
   LineChartOutlined,
-  RadarChartOutlined
+  RadarChartOutlined,
+  FullscreenOutlined,
+  FullscreenExitOutlined
 } from '@ant-design/icons';
 import * as echarts from 'echarts/core';
 import {
@@ -73,8 +76,10 @@ const EnhancedTrendChart = ({ refreshMode = 'realtime', refreshInterval = 10 }) 
   const [zoomEnabled, setZoomEnabled] = useState(false);
   const [chartType, setChartType] = useState('line'); // 默认为折线图
   const [selectedIndicator, setSelectedIndicator] = useState(null); // 当前选中的指标
+  const [fullscreen, setFullscreen] = useState(false); // 全屏状态
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
+  const containerRef = useRef(null); // 用于全屏
 
   // 获取趋势数据
   const fetchTrendData = async () => {
@@ -551,106 +556,245 @@ const EnhancedTrendChart = ({ refreshMode = 'realtime', refreshInterval = 10 }) 
     setZoomEnabled(event.target.checked);
   };
 
-  return (
-    <Box className={styles.enhancedTrendChart}>
-      <Paper elevation={0} sx={{ borderRadius: '8px', overflow: 'hidden', mb: 1, border: '1px solid #e0e0e0' }}>
-        <Box className={styles.header} sx={{ p: 1.5, backgroundColor: '#f9f9f9' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            {chartType === 'line' && <LineChartOutlined style={{ fontSize: 20, marginRight: 8, color: THEME_COLOR }} />}
-            {chartType === 'radar' && <RadarChartOutlined style={{ fontSize: 20, marginRight: 8, color: THEME_COLOR }} />}
-            <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
-              水质数据趋势
-            </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <ToggleButtonGroup
-              value={chartType}
-              exclusive
-              onChange={handleChartTypeChange}
-              size="small"
-              aria-label="图表类型"
-              sx={{ mr: 2 }}
-            >
-              <ToggleButton value="line" aria-label="折线图">
-                <Tooltip title="折线图">
-                  <LineChartOutlined />
-                </Tooltip>
-              </ToggleButton>
-              <ToggleButton value="radar" aria-label="雷达图">
-                <Tooltip title="雷达图">
-                  <RadarChartOutlined />
-                </Tooltip>
-              </ToggleButton>
-            </ToggleButtonGroup>
-            
-            {chartType === 'line' && (
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={zoomEnabled}
-                    onChange={handleZoomToggle}
-                    size="small"
-                  />
-                }
-                label="启用缩放"
-              />
-            )}
-            <Tooltip title="刷新">
-              <IconButton
-                size="small"
-                onClick={handleRefresh}
-                disabled={loading}
-                sx={{ 
-                  color: '#666',
-                  '&:hover': { color: THEME_COLOR },
-                  '&.Mui-disabled': { color: '#ccc' }
-                }}
-              >
-                <ReloadOutlined />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        </Box>
+  // 切换全屏显示
+  const toggleFullscreen = () => {
+    if (!containerRef.current) return;
+    
+    if (!document.fullscreenElement) {
+      // 进入全屏
+      containerRef.current.requestFullscreen().catch(err => {
+        console.error('无法进入全屏模式:', err);
+        setNotification({
+          open: true,
+          message: `无法进入全屏模式: ${err.message}`,
+          severity: 'error'
+        });
+      });
+    } else {
+      // 退出全屏
+      document.exitFullscreen().catch(err => {
+        console.error('无法退出全屏模式:', err);
+        setNotification({
+          open: true,
+          message: `无法退出全屏模式: ${err.message}`,
+          severity: 'error'
+        });
+      });
+    }
+  };
 
-        {loading ? (
-          <Box className={styles.loading} sx={{ height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <CircularProgress sx={{ color: THEME_COLOR }} />
-          </Box>
-        ) : error ? (
-          <Box sx={{ p: 2 }}>
-            <Alert severity="error" className={styles.error}>
-              {error}
-            </Alert>
-          </Box>
-        ) : (
-          <Box sx={{ p: 2 }}>
-            <div
-              ref={chartRef}
-              style={{
-                width: '100%',
-                height: '400px',
-                minHeight: '400px'
-              }}
+  // 监听全屏状态变化
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setFullscreen(!!document.fullscreenElement);
+      
+      // 全屏状态变化后，需要调整图表大小
+      setTimeout(() => {
+        if (chartInstance.current) {
+          chartInstance.current.resize && chartInstance.current.resize();
+        }
+      }, 300);
+    };
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  // 监听全屏状态变化重新调整图表
+  useEffect(() => {
+    if (chartInstance.current) {
+      setTimeout(() => {
+        chartInstance.current.resize && chartInstance.current.resize();
+      }, 300);
+    }
+  }, [fullscreen]);
+
+  return (
+    <Paper 
+      elevation={3}
+      sx={{ 
+        height: '100%', 
+        display: 'flex', 
+        flexDirection: 'column',
+        position: 'relative',
+        ...(fullscreen ? {
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 9999,
+          padding: '20px',
+          backgroundColor: '#fff'
+        } : {})
+      }}
+      ref={containerRef}
+    >
+      <Box sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between', 
+        p: 1, 
+        borderBottom: '1px solid #eee'
+      }}>
+        <Typography variant="h6" component="div" sx={{ display: 'flex', alignItems: 'center' }}>
+          <LineChartOutlined style={{ marginRight: 8, color: THEME_COLOR }} />
+          生产趋势分析
+          {loading && <CircularProgress size={20} sx={{ ml: 1 }} />}
+        </Typography>
+        <Box>
+          <Tooltip title="刷新数据">
+            <IconButton size="small" onClick={handleRefresh} disabled={loading}>
+              <ReloadOutlined />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={zoomEnabled ? "禁用缩放" : "启用缩放"}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={zoomEnabled}
+                  onChange={handleZoomToggle}
+                  size="small"
+                  color="primary"
+                />
+              }
+              label="缩放"
+              sx={{ mx: 1, '& .MuiFormControlLabel-label': { fontSize: '0.8rem' } }}
             />
-          </Box>
+          </Tooltip>
+          <ToggleButtonGroup
+            value={chartType}
+            exclusive
+            onChange={handleChartTypeChange}
+            size="small"
+            sx={{ mx: 1 }}
+          >
+            <ToggleButton value="line">
+              <Tooltip title="折线图">
+                <LineChartOutlined />
+              </Tooltip>
+            </ToggleButton>
+            <ToggleButton value="radar">
+              <Tooltip title="雷达图">
+                <RadarChartOutlined />
+              </Tooltip>
+            </ToggleButton>
+          </ToggleButtonGroup>
+          <Tooltip title={fullscreen ? "退出全屏" : "全屏显示"}>
+            <IconButton size="small" onClick={toggleFullscreen}>
+              {fullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </Box>
+
+      {/* 全屏时的侧边控制面板 */}
+      {fullscreen && (
+        <Box sx={{
+          position: 'absolute',
+          top: 70,
+          left: 20,
+          zIndex: 1000,
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          padding: '10px',
+          borderRadius: '4px',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+          maxWidth: '200px'
+        }}>
+          <Typography variant="subtitle2" gutterBottom>图表控制</Typography>
+          <Divider sx={{ my: 1 }} />
+          
+          <Typography variant="body2" gutterBottom>图表类型</Typography>
+          <ToggleButtonGroup
+            value={chartType}
+            exclusive
+            onChange={handleChartTypeChange}
+            size="small"
+            sx={{ mb: 2, display: 'flex' }}
+          >
+            <ToggleButton value="line" sx={{ flex: 1 }}>
+              <LineChartOutlined /> 折线图
+            </ToggleButton>
+            <ToggleButton value="radar" sx={{ flex: 1 }}>
+              <RadarChartOutlined /> 雷达图
+            </ToggleButton>
+          </ToggleButtonGroup>
+          
+          <FormControlLabel
+            control={
+              <Switch
+                checked={zoomEnabled}
+                onChange={handleZoomToggle}
+                size="small"
+                color="primary"
+              />
+            }
+            label="启用缩放"
+            sx={{ mb: 2, display: 'block' }}
+          />
+          
+          <Button 
+            variant="outlined" 
+            size="small" 
+            startIcon={<ReloadOutlined />} 
+            onClick={handleRefresh}
+            disabled={loading}
+            sx={{ mr: 1, mb: 1 }}
+          >
+            刷新
+          </Button>
+          
+          <Button 
+            variant="outlined" 
+            size="small" 
+            startIcon={<FullscreenExitOutlined />} 
+            onClick={toggleFullscreen}
+            sx={{ mb: 1 }}
+          >
+            退出全屏
+          </Button>
+        </Box>
+      )}
+
+      <Box 
+        sx={{ 
+          flexGrow: 1, 
+          p: 1, 
+          position: 'relative',
+          height: fullscreen ? 'calc(100vh - 80px)' : '400px' 
+        }}
+      >
+        {error && (
+          <Alert severity="error" sx={{ mb: 1 }}>
+            {error}
+          </Alert>
         )}
-      </Paper>
+        <div 
+          ref={chartRef} 
+          style={{ 
+            width: '100%', 
+            height: '100%' 
+          }} 
+        />
+      </Box>
 
       <Snackbar
         open={notification.open}
         autoHideDuration={6000}
-        onClose={() => setNotification({ ...notification, open: false })}
+        onClose={() => setNotification(prev => ({ ...prev, open: false }))}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert
-          onClose={() => setNotification({ ...notification, open: false })}
+        <Alert 
+          onClose={() => setNotification(prev => ({ ...prev, open: false }))} 
           severity={notification.severity}
-          sx={{ width: '100%' }}
         >
           {notification.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </Paper>
   );
 };
 

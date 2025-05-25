@@ -34,14 +34,21 @@
 
 - `/sites/:id` - 站点详情（新版本）SiteDetailNew.jsx
   - 使用组件：
-    - 站点详情组件
-    - 数据展示组件
-    - 图表组件
-
-- `/sites/:id/old` - 站点详情（旧版本）
-  - 使用组件：
-    - 旧版站点详情组件
-    - 基础数据展示组件
+    - Ant Design: `Row`, `Col`, `Card`, `Tabs`, `Badge`, `Button`, `Spin`, `Empty`, `Statistic`, `Descriptions`, `Alert`, `message`, `Tag`, `Divider`, `List`, `Input`, `Typography`, `Progress`, `Modal`, `Space`, `Form`
+    - Ant Design Icons: `DashboardOutlined`, `ThunderboltOutlined`, `ClockCircleOutlined`, `SettingOutlined`, `ExperimentOutlined`, `HeartOutlined`, `FundOutlined`, `AppstoreOutlined`, `AlertOutlined`, `LineChartOutlined`, `EnvironmentOutlined`, `ApartmentOutlined`, `TeamOutlined`, `ReloadOutlined`, `LeftOutlined`, `ExclamationCircleOutlined`, `EyeInvisibleOutlined`, `EyeOutlined`
+    - 自定义组件: `TrendDataSection` (趋势数据展示), `ApiEditorButton` (API编辑器按钮), `SiteDetailRenderer` (主渲染器)
+    - 上下文: `useWebSocket` (WebSocket连接), `useAuth` (认证)
+    - 服务: `apiManager` (API管理)
+    - 自定义样式: `SiteDetail.module.scss`
+    - 功能划分:
+      - 站点信息区: 展示站点基本信息和统计卡片
+      - 设备信息区: 设备、频率设备和阀门状态控制
+      - 实时数据区: 动态渲染不同类型数据的UI组件
+      - 告警信息和历史趋势: 展示告警记录和历史数据趋势图表
+    - 数据处理:
+      - WebSocket实时数据更新
+      - API数据获取和处理
+      - 多种数据格式统一处理
 
 ### 1.3 数据中心 (Data Center)
 - `/data-query` - 数据查询 (DataQuery)

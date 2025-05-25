@@ -426,8 +426,8 @@ const SiteDetailNew = () => {
       });
     }
 
-    // 检查getTrendData API是否存在
-    const trendDataApi = apiManager.registry.get('getTrendData');
+    // 检查getSite1RendData API是否存在
+    const trendDataApi = apiManager.registry.get('getSite1RendData');
 
     if (!trendDataApi) {
       // 只在开发环境中输出日志
@@ -435,10 +435,10 @@ const SiteDetailNew = () => {
       console.log('注册趋势数据API');
       }
       // 注册趋势数据API
-      apiManager.registry.register('getTrendData', {
+      apiManager.registry.register('getSite1RendData', {
         name: '获取趋势数据',
-        url: 'https://nodered.jzz77.cn:9003/api/trend-data',
-        method: 'POST',
+        url: 'https://nodered.jzz77.cn:9003/api/get-sitet1-trenddata',
+        method: 'GET',
         category: 'data',
         status: 'enabled',
         description: '获取历史趋势数据',
@@ -528,7 +528,7 @@ const SiteDetailNew = () => {
 
     // 将API注册到当前页面
     try {
-      apiManager.registry.setPageApis('siteDetail', ['getSiteById', 'getSiteList', 'getAlarms', 'getTrendData', 'getUserRoles', 'getSiteDepartments', 'sendCommand', 'logOperation']);
+      apiManager.registry.setPageApis('siteDetail', ['getSiteById', 'getSiteList', 'getAlarms', 'getSite1RendData', 'getUserRoles', 'getSiteDepartments', 'sendCommand', 'logOperation']);
     } catch (error) {
       console.error('设置页面API失败:', error);
     }
@@ -807,21 +807,196 @@ const SiteDetailNew = () => {
     };
   }, [siteId, user, disconnect, wsConnected, logApiCall, apiErrorCounts]);
 
+  // 趋势数据处理函数 - 确保数据格式统一
+  const processTrendData = useCallback((data) => {
+    if (!data) return null;
+    
+    console.log('原始趋势数据:', data);
+    
+    // 1. 首先，处理不同的响应格式
+    let processedData = null;
+    
+    // 情况1: 数据已经是标准的times/values对象格式
+    if (data.times && data.values && Array.isArray(data.times) && Array.isArray(data.values)) {
+      processedData = {
+        times: data.times,
+        values: data.values
+      };
+    }
+    // 情况2: 数据是数组格式，每个元素包含time和value字段
+    else if (Array.isArray(data)) {
+      const times = [];
+      const values = [];
+      
+      data.forEach(item => {
+        // 处理不同命名格式的时间和值
+        const time = item.time || item.timestamp || item.date || item.datetime;
+        let value = null;
+        
+        // 尝试找到值字段
+        if (item.value !== undefined) {
+          value = item.value;
+        } else if (item.val !== undefined) {
+          value = item.val;
+        } else {
+          // 查找第一个非时间字段作为值
+          const valueKey = Object.keys(item).find(key => 
+            key !== 'time' && key !== 'timestamp' && key !== 'date' && key !== 'datetime'
+          );
+          
+          if (valueKey) {
+            value = item[valueKey];
+          }
+        }
+        
+        if (time && value !== null && value !== undefined) {
+          times.push(time);
+          values.push(Number(value));
+        }
+      });
+      
+      if (times.length > 0 && values.length > 0) {
+        processedData = { times, values };
+      }
+    }
+    // 情况3: 对象格式，但不是标准的times/values结构
+    else if (typeof data === 'object') {
+      // 尝试找到时间和值数组
+      let timeArray = null;
+      let valueArray = null;
+      
+      // 查找可能的时间数组字段
+      const timeKeys = ['times', 'timestamps', 'dates', 'datetimes', 'time', 'timestamp'];
+      for (const key of timeKeys) {
+        if (Array.isArray(data[key])) {
+          timeArray = data[key];
+          break;
+        }
+      }
+      
+      // 查找可能的值数组字段
+      const valueKeys = ['values', 'vals', 'data', 'readings', 'measurements'];
+      for (const key of valueKeys) {
+        if (Array.isArray(data[key])) {
+          valueArray = data[key];
+          break;
+        }
+      }
+      
+      // 如果找到了时间和值数组
+      if (timeArray && valueArray && timeArray.length === valueArray.length) {
+        processedData = {
+          times: timeArray,
+          values: valueArray.map(v => Number(v))
+        };
+      }
+      // 如果只找到了时间数组，尝试找出值数组
+      else if (timeArray) {
+        // 查找第一个与时间数组长度相同的数组作为值数组
+        for (const key in data) {
+          if (Array.isArray(data[key]) && 
+              data[key] !== timeArray && 
+              data[key].length === timeArray.length) {
+            valueArray = data[key];
+            break;
+          }
+        }
+        
+        if (valueArray) {
+          processedData = {
+            times: timeArray,
+            values: valueArray.map(v => Number(v))
+          };
+        }
+      }
+    }
+    
+    // 如果处理后仍然没有数据，返回null
+    if (!processedData || !processedData.times || !processedData.values || 
+        processedData.times.length === 0 || processedData.values.length === 0) {
+      console.warn('无法解析趋势数据格式');
+      return null;
+    }
+    
+    // 2. 确保时间格式一致性
+    processedData.times = processedData.times.map(time => {
+      // 如果时间不是字符串，尝试转换
+      if (typeof time !== 'string') {
+        return new Date(time).toISOString();
+      }
+      // 如果时间是时间戳数字字符串，转换为ISO格式
+      if (/^\d+$/.test(time)) {
+        return new Date(parseInt(time)).toISOString();
+      }
+      return time;
+    });
+    
+    // 3. 确保值是数字类型
+    processedData.values = processedData.values.map(value => {
+      if (typeof value === 'string') {
+        return Number(value);
+      }
+      return value;
+    });
+    
+    console.log('处理后的趋势数据:', processedData);
+    return processedData;
+  }, []);
+
   // 获取历史趋势数据
   const fetchTrendData = useCallback(async (params, silent = false) => {
     try {
+      // 详细记录传入的查询参数
+      console.log(`📅 趋势数据查询参数详情:`, {
+        siteId: siteId,
+        action: params.action,
+        dataPointId: params.dataPointId,
+        startTime: params.startTime,
+        endTime: params.endTime,
+        其他参数: params
+      });
+      
       // 记录API调用开始
-      const apiLog = logApiCall('getTrendData', { siteId, ...params }, true);
+      const apiLog = logApiCall('getSite1RendData', { siteId, ...params }, true);
       const startTime = Date.now();
       
-      console.log(`📈 请求趋势数据参数:`, params);
+      // 使用API管理系统调用getSite1RendData API - 确保参数以GET方式正确传递
+      // 获取API注册信息
+      const apiInfo = apiManager.registry.get('getSite1RendData');
+      const apiUrl = apiInfo?.url || 'https://nodered.jzz77.cn:9003/api/get-sitet1-trenddata';
       
-      // 使用API管理系统调用getTrendData API
-      const response = await apiManager.call('getTrendData', {
+      // 构建URL查询字符串
+      const queryParams = new URLSearchParams();
+      queryParams.append('siteId', siteId);
+      
+      // 添加其他参数
+      Object.keys(params).forEach(key => {
+        if (params[key] !== undefined && params[key] !== null) {
+          queryParams.append(key, params[key]);
+        }
+      });
+      
+      // 添加请求标识符
+      const requestId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      queryParams.append('requestId', requestId);
+      
+      // 完整URL
+      const fullUrl = `${apiUrl}?${queryParams.toString()}`;
+      console.log(`📡 完整API请求URL: ${fullUrl}`);
+      
+      // 合并所有参数
+      const allParams = {
         siteId: siteId,
-        ...params
-      }, {
-        showError: !silent // 只在非静默模式下显示错误
+        ...params,
+        requestId: requestId
+      };
+      
+      // 调用API - 直接将参数作为第一个参数传递，而不是放在options.params中
+      const response = await apiManager.call('getSite1RendData', allParams, {
+        showError: !silent,
+        retry: true,
+        retryDelay: 1000,
+        retryTimes: 2
       });
       
       // 记录API调用结束和响应时间
@@ -830,13 +1005,13 @@ const SiteDetailNew = () => {
       
       if (apiLog) {
         const apiStats = window._API_STATS = window._API_STATS || {};
-        if (apiStats['getTrendData']) {
-          const oldAvg = apiStats['getTrendData'].avgResponseTime;
-          const oldCount = apiStats['getTrendData'].callCount;
-          apiStats['getTrendData'].avgResponseTime = (oldAvg * (oldCount - 1) + responseTime) / oldCount;
+        if (apiStats['getSite1RendData']) {
+          const oldAvg = apiStats['getSite1RendData'].avgResponseTime;
+          const oldCount = apiStats['getSite1RendData'].callCount;
+          apiStats['getSite1RendData'].avgResponseTime = (oldAvg * (oldCount - 1) + responseTime) / oldCount;
           
           // 输出重要的API响应信息
-          console.log(`✅ API响应: getTrendData | 响应时间: ${responseTime}ms | 平均响应时间: ${apiStats['getTrendData'].avgResponseTime.toFixed(2)}ms | 数据大小: ${JSON.stringify(response).length} 字节`);
+          console.log(`✅ API响应: getSite1RendData | 响应时间: ${responseTime}ms | 平均响应时间: ${apiStats['getSite1RendData'].avgResponseTime.toFixed(2)}ms | 数据大小: ${JSON.stringify(response).length} 字节`);
         }
       }
 
@@ -844,28 +1019,41 @@ const SiteDetailNew = () => {
       if (!response || !response.success) {
         // 记录API错误
         const apiStats = window._API_STATS = window._API_STATS || {};
-        if (apiStats['getTrendData']) {
-          apiStats['getTrendData'].errors++;
-          console.error(`❌ API错误: getTrendData | 总错误数: ${apiStats['getTrendData'].errors} | 错误信息:`, response?.error || '获取趋势数据失败');
+        if (apiStats['getSite1RendData']) {
+          apiStats['getSite1RendData'].errors++;
+          console.error(`❌ API错误: getSite1RendData | 总错误数: ${apiStats['getSite1RendData'].errors} | 错误信息:`, response?.error || '获取趋势数据失败');
         }
         throw new Error(response?.error || '获取趋势数据失败');
       }
 
-      // 获取趋势数据
-      const trendData = response.data;
+      // 获取返回数据
+      const responseData = response.data;
       
-      // 输出趋势数据完整信息
-      console.log(`📈 API响应: getTrendData | 数据:`, trendData);
+      // 判断请求类型，针对不同的action使用不同的处理逻辑
+      if (params.action === 'getDataPoints') {
+        // 数据点列表请求，直接返回数组
+        console.log('获取数据点列表成功:', responseData);
+        return responseData;
+      } else {
+        // 趋势数据请求，进行格式处理
+        const processedData = processTrendData(responseData);
+        console.log(`📈 API响应: getSite1RendData | 数据:`, processedData);
+        return processedData;
+      }
       
-      return trendData;
     } catch (err) {
       if (!silent) {
-        message.error('获取趋势数据失败');
+        message.error(`获取趋势数据失败: ${err.message || '未知错误'}`);
       }
       console.error('获取趋势数据失败:', err);
       return null;
     }
-  }, [siteId, logApiCall]);
+  }, [siteId, logApiCall, processTrendData]);
+  
+  // 趋势数据处理函数 - 确保数据格式统一
+  //const processTrendData = useCallback((data) => {
+  //  // ... existing code for processTrendData ...
+  //}, []);
 
   // 获取站点详情 - 作为组件公共方法
   const fetchSiteDetail = useCallback(async (silent = false) => {
@@ -3133,6 +3321,66 @@ const SiteDetailNew = () => {
     return { deviceGroups, processGroups, alarmGroups };
   };
 
+  const [wsCheckTimer, setWsCheckTimer] = useState(null);
+  const [isPageLoaded, setIsPageLoaded] = useState(false);
+  const pageLoadTimer = useRef(null);
+
+  // 页面加载后10秒启动WebSocket检查
+  useEffect(() => {
+    setIsPageLoaded(false);
+    pageLoadTimer.current = setTimeout(() => {
+      setIsPageLoaded(true);
+    }, 10000); // 10秒后设置页面已加载
+
+    return () => {
+      if (pageLoadTimer.current) {
+        clearTimeout(pageLoadTimer.current);
+      }
+    };
+  }, []);
+
+  // WebSocket连接状态检查
+  useEffect(() => {
+    if (!isPageLoaded) return; // 如果页面未加载完成，不启动检查
+
+    const checkWsConnection = () => {
+      if (!wsConnected) {
+        Modal.warning({
+          title: '设备控制连接断开',
+          content: '设备控制连接已断开，请检查网络连接或刷新页面重试。',
+          okText: '我知道了',
+          onOk: () => {
+            // 用户确认后，尝试重新连接
+            connect(siteId);
+          }
+        });
+      }
+    };
+
+    // 设置定时器，每30秒检查一次连接状态
+    const timer = setInterval(checkWsConnection, 30000);
+    setWsCheckTimer(timer);
+
+    // 清理函数
+    return () => {
+      if (timer) {
+        clearInterval(timer);
+      }
+    };
+  }, [wsConnected, isPageLoaded, connect, siteId]);
+
+  // 组件卸载时清理所有定时器
+  useEffect(() => {
+    return () => {
+      if (wsCheckTimer) {
+        clearInterval(wsCheckTimer);
+      }
+      if (pageLoadTimer.current) {
+        clearTimeout(pageLoadTimer.current);
+      }
+    };
+  }, [wsCheckTimer]);
+
   return (
     <SiteDetailRenderer
       refreshing={refreshing}
@@ -3416,10 +3664,17 @@ const SiteDetailRenderer = ({
       </div>
 
       {/* 合并站点信息区和统计信息到同一行 */}
-      <Row gutter={[16, 16]}>
+      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
         {/* 站点信息区 - 占左侧较大部分 */}
         <Col xs={24} md={16}>
-          <Card className={styles.siteInfoCard}>
+          <Card 
+            className={styles.siteInfoCard}
+            style={{
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
             <div className={styles.siteInfoHeader}>
               <div className={styles.siteTitle}>
                 <DashboardOutlined className={styles.siteTitleIcon} />
@@ -3436,27 +3691,12 @@ const SiteDetailRenderer = ({
                   {dataGroups.site?.alarm || dataGroups.alarm || '未知状态'}
                 </Tag>
               </div>
-              <div className={styles.connectionStatus}>
-                <Badge
-                  status={wsConnected ? 'success' : 'error'}
-                  text={wsConnected ? '设备控制已连接' : '设备控制未连接'}
-                />
-                {!wsConnected && (
-                  <Button
-                    type="primary"
-                    size="middle"
-                    onClick={() => connect(siteId)}
-                    style={{ marginLeft: 10, height: 32, fontSize: 14 }}
-                  >
-                    连接
-                  </Button>
-                )}
-              </div>
+              {/* 移除设备控制连接状态显示 */}
             </div>
             
-            <Divider style={{ margin: '14px 0 18px' }} />
+            <Divider style={{ margin: '12px 0 16px' }} />
             
-            <Row gutter={[24, 16]}>
+            <Row gutter={[24, 16]} style={{ flex: 1 }}>
               <Col xs={24} sm={8}>
                 <div className={styles.infoItem}>
                   <DashboardOutlined className={styles.infoIcon} />
@@ -3512,62 +3752,246 @@ const SiteDetailRenderer = ({
 
         {/* 站点统计信息 - 占右侧较小部分 */}
         <Col xs={24} md={8}>
-          <Row gutter={[16, 16]} style={{ height: '100%' }}>
-            <Col xs={24} sm={8} md={24} lg={8} style={{ height: 'calc(100% / 3)' }}>
-              <Card hoverable className={`${styles.statCard}`} style={{ height: '100%', margin: 0 }}>
-            <div className={styles.statContent}>
-              <div className={styles.statIconWrapper}>
-                <ApartmentOutlined className={styles.statIcon} />
+          <Card 
+            className={styles.statCardContainer}
+            style={{
+              height: '100%',
+              padding: '16px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+              borderRadius: '12px',
+              background: '#fff'
+            }}
+            bodyStyle={{ 
+              padding: '0',
+              height: '100%'
+            }}
+          >
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(3, 1fr)', 
+              gridTemplateRows: 'repeat(2, 1fr)',
+              gap: '12px',
+              height: '100%'
+            }}>
+              {/* 设备统计卡片 */}
+              <div className={styles.statCard} style={{ 
+                  borderTop: '4px solid #2E7D32',
+                  borderRadius: '10px',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  padding: '12px',
+                  height: '100%',
+                  background: '#fff'
+                }}
+              >
+                <div className={styles.statContent} style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                  <div className={styles.statIconWrapper} style={{ 
+                    backgroundColor: 'rgba(46, 125, 50, 0.15)',
+                    width: 36,
+                    height: 36,
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 8
+                  }}>
+                    <ApartmentOutlined style={{ fontSize: 18, color: '#2E7D32' }} />
               </div>
-              <div>
-                <div className={styles.statLabel}>设备总数</div>
-                <div className={styles.statValue}>{stats.deviceTotal}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)', marginBottom: 2 }}>设备总数</div>
+                    <div style={{ fontSize: 18, fontWeight: 600, color: '#2E7D32' }}>{stats.deviceTotal}</div>
+              </div>
+            </div>
+              </div>
+              
+              <div className={styles.statCard} style={{ 
+                  borderTop: '4px solid #52c41a',
+                  borderRadius: '10px',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  padding: '12px',
+                  height: '100%',
+                  background: '#fff'
+                }}
+              >
+                <div className={styles.statContent} style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                  <div className={styles.statIconWrapper} style={{ 
+                    backgroundColor: 'rgba(82, 196, 26, 0.15)',
+                    width: 36,
+                    height: 36,
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 8
+                  }}>
+                    <ThunderboltOutlined style={{ fontSize: 18, color: '#52c41a' }} />
+              </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)', marginBottom: 2 }}>运行中</div>
+                    <div style={{ fontSize: 18, fontWeight: 600, color: '#52c41a' }}>{stats.deviceRunning}</div>
+            </div>
+              </div>
+              </div>
+              
+              <div className={styles.statCard} style={{ 
+                  borderTop: '4px solid #ff4d4f',
+                  borderRadius: '10px',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  padding: '12px',
+                  height: '100%',
+                  background: '#fff'
+                }}
+              >
+                <div className={styles.statContent} style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                  <div className={styles.statIconWrapper} style={{ 
+                    backgroundColor: stats.alarmTotal > 0 ? 'rgba(255, 77, 79, 0.15)' : 'rgba(0, 0, 0, 0.06)',
+                    width: 36,
+                    height: 36,
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 8
+                  }}>
+                    <AlertOutlined style={{ fontSize: 18, color: stats.alarmTotal > 0 ? '#ff4d4f' : 'rgba(0, 0, 0, 0.45)' }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)', marginBottom: 2 }}>告警数</div>
+                    <div style={{ 
+                      fontSize: 18, 
+                      fontWeight: 600, 
+                      color: stats.alarmTotal > 0 ? '#ff4d4f' : 'rgba(0, 0, 0, 0.45)' 
+                    }}>{stats.alarmTotal}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 产量统计卡片 */}
+              <div className={styles.statCard} style={{ 
+                  borderTop: '4px solid #1890ff',
+                  borderRadius: '10px',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  padding: '12px',
+                  height: '100%',
+                  background: '#fff'
+                }}
+              >
+                <div className={styles.statContent} style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                  <div className={styles.statIconWrapper} style={{ 
+                    backgroundColor: 'rgba(24, 144, 255, 0.15)',
+                    width: 36,
+                    height: 36,
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 8
+                  }}>
+                    <LineChartOutlined style={{ fontSize: 18, color: '#1890ff' }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)', marginBottom: 2 }}>昨日产量</div>
+                    <div style={{ fontSize: 18, fontWeight: 600, color: '#1890ff' }}>
+                      {stats.yesterdayProduction ? `${stats.yesterdayProduction.toFixed(2)} 吨` : '0.00 吨'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.statCard} style={{ 
+                  borderTop: '4px solid #722ed1',
+                  borderRadius: '10px',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  padding: '12px',
+                  height: '100%',
+                  background: '#fff'
+                }}
+              >
+                <div className={styles.statContent} style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                  <div className={styles.statIconWrapper} style={{ 
+                    backgroundColor: 'rgba(114, 46, 209, 0.15)',
+                    width: 36,
+                    height: 36,
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 8
+                  }}>
+                    <DashboardOutlined style={{ fontSize: 18, color: '#722ed1' }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)', marginBottom: 2 }}>今日产量</div>
+                    <div style={{ fontSize: 18, fontWeight: 600, color: '#722ed1' }}>
+                      {stats.todayProduction ? `${stats.todayProduction.toFixed(2)} 吨` : '0.00 吨'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.statCard} style={{ 
+                  borderTop: '4px solid #fa8c16',
+                  borderRadius: '10px',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  padding: '12px',
+                  height: '100%',
+                  background: '#fff'
+                }}
+              >
+                <div className={styles.statContent} style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                  <div className={styles.statIconWrapper} style={{ 
+                    backgroundColor: 'rgba(250, 140, 22, 0.15)',
+                    width: 36,
+                    height: 36,
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 8
+                  }}>
+                    <FundOutlined style={{ fontSize: 18, color: '#fa8c16' }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)', marginBottom: 2 }}>差额产量</div>
+                    <div style={{ 
+                      fontSize: 18, 
+                      fontWeight: 600, 
+                      color: stats.productionDiff > 0 ? '#52c41a' : 
+                             stats.productionDiff < 0 ? '#ff4d4f' : '#fa8c16'
+                    }}>
+                      {stats.productionDiff ? `${stats.productionDiff.toFixed(2)} 吨` : '0.00 吨'}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </Card>
-        </Col>
-            <Col xs={24} sm={8} md={24} lg={8} style={{ height: 'calc(100% / 3)' }}>
-              <Card hoverable className={`${styles.statCard}`} style={{ height: '100%', margin: 0 }}>
-            <div className={styles.statContent}>
-              <div className={styles.statIconWrapper} style={{ backgroundColor: 'rgba(82, 196, 26, 0.15)' }}>
-                <ThunderboltOutlined className={styles.statIcon} style={{ color: '#52c41a' }} />
-              </div>
-              <div>
-                    <div className={styles.statLabel}>运行中</div>
-                <div className={styles.statValue} style={{ color: '#52c41a' }}>{stats.deviceRunning}</div>
-              </div>
-            </div>
-          </Card>
-        </Col>
-            <Col xs={24} sm={8} md={24} lg={8} style={{ height: 'calc(100% / 3)' }}>
-              <Card hoverable className={`${styles.statCard}`} style={{ height: '100%', margin: 0 }}>
-            <div className={styles.statContent}>
-              <div className={styles.statIconWrapper} style={{ backgroundColor: stats.alarmTotal > 0 ? 'rgba(255, 77, 79, 0.15)' : 'rgba(0, 0, 0, 0.06)' }}>
-                <AlertOutlined className={styles.statIcon} style={{ color: stats.alarmTotal > 0 ? '#ff4d4f' : 'rgba(0, 0, 0, 0.45)' }} />
-              </div>
-              <div>
-                    <div className={styles.statLabel}>告警数</div>
-                <div className={styles.statValue} style={{ color: stats.alarmTotal > 0 ? '#ff4d4f' : 'rgba(0, 0, 0, 0.45)' }}>{stats.alarmTotal}</div>
-              </div>
-            </div>
-          </Card>
-            </Col>
-          </Row>
         </Col>
       </Row>
 
-      {/* 第二部分：设备信息区（由后端API推送，可通过WebSocket控制） */}
+      {/* 第三部分：工艺数据区（由后端API获取） */}
       <Card
         title={
           <div className={styles.sectionCardTitle}>
-            <ApartmentOutlined className={styles.sectionCardIcon} />
-            <span>设备信息</span>
-            <Tag color="blue" className={styles.sectionCardTag}>API获取 + WebSocket控制</Tag>
+            <DashboardOutlined className={styles.sectionCardIcon} />
+            <span>工艺数据</span>
+            <Tag color="blue" className={styles.sectionCardTag}>API获取</Tag>
           </div>
         }
         className={styles.sectionCard}
       >
-        {/* 分类设备数据并渲染 */}
+        {/* 工艺数据内容 */}
         {(() => {
           // 使用自动分类函数分类数据
           let allDataGroups = [];
@@ -3585,279 +4009,15 @@ const SiteDetailRenderer = ({
             allDataGroups = dataGroups.dataArray;
           }
           // 处理传统数据格式
-          else {
-            // 构建传统数据组
-            const legacyGroups = [
-              ...(devices?.length > 0 ? [{
-                id: 'devices',
-                name: '设备控制',
-                type: 'device',
-                data: devices
-              }] : []),
-              
-              ...(deviceFrequency?.length > 0 ? [{
-                id: 'deviceFrequency',
-                name: '设备频率',
-                type: 'frequency',
-                data: deviceFrequency
-              }] : []),
-              
-              ...(isValve?.length > 0 ? [{
-                id: 'isValve',
-                name: '阀门控制',
-                type: 'valve',
-                data: isValve
-              }] : []),
-              
-              ...(dataGroups?.devices?.length > 0 ? [{
-                id: 'devices',
-                name: '设备控制',
-                type: 'device',
-                data: dataGroups.devices
-              }] : []),
-              
-              ...(dataGroups?.deviceFrequency?.length > 0 ? [{
-                id: 'deviceFrequency',
-                name: '设备频率',
-                type: 'frequency',
-                data: dataGroups.deviceFrequency
-              }] : []),
-              
-              ...(dataGroups?.isValve?.length > 0 ? [{
-                id: 'isValve',
-                name: '阀门控制',
-                type: 'valve',
-                data: dataGroups.isValve
-              }] : []),
-              
-              ...(dataGroups?.runtime?.length > 0 ? [{
-                id: 'equipments',
-                name: '设备运行时间',
-                type: 'runtime',
-                data: dataGroups.runtime
-              }] : []),
-              
-              ...(dataGroups?.health?.length > 0 ? [{
-                id: 'equipment_health',
-                name: '设备健康状态',
-                type: 'health',
-                data: dataGroups.health
-              }] : [])
-            ];
-            
-            allDataGroups = legacyGroups;
+          else if (dataGroups?.data && Array.isArray(dataGroups.data)) {
+            allDataGroups = dataGroups.data;
+          }
+          // 处理legacyGroups
+          else if (dataGroups?.legacyGroups && Array.isArray(dataGroups.legacyGroups)) {
+            allDataGroups = dataGroups.legacyGroups;
           }
           
           // 分类数据
-          const { deviceGroups } = localCategorizeDataGroups(allDataGroups);
-          
-          if (deviceGroups.length === 0) {
-            return <Empty description="暂无设备数据" />;
-          }
-          
-          // 进一步对设备数据进行细分
-          const controlDevices = deviceGroups.filter(group => 
-            group.type === 'device' || group.id === 'devices' || group.id === 'control_devices');
-          
-          const valveDevices = deviceGroups.filter(group => 
-            group.type === 'valve' || group.id === 'isValve' || group.id === 'control_valves');
-          
-          const frequencyDevices = deviceGroups.filter(group => 
-            group.type === 'frequency' || group.id === 'deviceFrequency' || group.id === 'freq_control');
-          
-          const runtimeInfo = deviceGroups.filter(group => 
-            group.type === 'runtime' || group.id === 'equipments');
-          
-          const healthInfo = deviceGroups.filter(group => 
-            group.type === 'health' || group.id === 'equipment_health');
-          
-          return (
-            <Tabs 
-              activeKey={activeDeviceTab} 
-              onChange={setActiveDeviceTab}
-              type="card"
-              className={`${styles.deviceTabs} ${styles.modernTabs}`}
-              tabBarExtraContent={
-                <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)', marginRight: 8 }}>
-                  提示: 双击选项卡可设为默认
-                      </div>
-              }
-            >
-              <TabPane
-                tab={
-                  <span onDoubleClick={() => handleSetDefaultDeviceTab("devices")}>
-                    <ApartmentOutlined />
-                    控制设备
-                  </span>
-                }
-                key="devices"
-              >
-                {controlDevices.length > 0 ? (
-                  localRenderGroups(controlDevices)
-                ) : (
-                  <Empty description="暂无控制设备数据" />
-                )}
-              </TabPane>
-              
-              <TabPane
-                tab={
-                  <span onDoubleClick={() => handleSetDefaultDeviceTab("valves")}>
-                    <SettingOutlined />
-                    阀门控制
-                  </span>
-                }
-                key="valves"
-              >
-                {valveDevices.length > 0 ? (
-                  localRenderGroups(valveDevices)
-                ) : (
-                  <Empty description="暂无阀门控制数据" />
-                )}
-              </TabPane>
-              
-              <TabPane
-                tab={
-                  <span onDoubleClick={() => handleSetDefaultDeviceTab("frequency")}>
-                    <ThunderboltOutlined />
-                    频率控制
-                  </span>
-                }
-                key="frequency"
-              >
-                {frequencyDevices.length > 0 ? (
-                  localRenderGroups(frequencyDevices)
-                ) : (
-                  <Empty description="暂无频率控制数据" />
-                )}
-              </TabPane>
-              
-              <TabPane
-                tab={
-                  <span onDoubleClick={() => handleSetDefaultDeviceTab("runtime")}>
-                    <ClockCircleOutlined />
-                    运行时间
-                  </span>
-                }
-                key="runtime"
-              >
-                {runtimeInfo.length > 0 ? (
-                  localRenderGroups(runtimeInfo)
-                ) : (
-                  <Empty description="暂无运行时间数据" />
-                )}
-              </TabPane>
-              
-              <TabPane
-                tab={
-                  <span onDoubleClick={() => handleSetDefaultDeviceTab("health")}>
-                    <HeartOutlined />
-                    设备健康
-                  </span>
-                }
-                key="health"
-              >
-                {healthInfo.length > 0 ? (
-                  localRenderGroups(healthInfo)
-                ) : (
-                  <Empty description="暂无设备健康数据" />
-                )}
-              </TabPane>
-            </Tabs>
-          );
-        })()}
-      </Card>
-
-      {/* 第三部分：工艺数据区（由后端API获取） */}
-      <Card
-        title={
-          <div className={styles.sectionCardTitle}>
-            <DashboardOutlined className={styles.sectionCardIcon} />
-            <span>工艺数据</span>
-            <Tag color="blue" className={styles.sectionCardTag}>API获取</Tag>
-          </div>
-        }
-        className={styles.sectionCard}
-      >
-        {/* 工艺数据处理 */}
-        {(() => {
-          let allDataGroups = [];
-          
-          // 处理API返回的dataGroups数组
-          if (Array.isArray(dataGroups.dataGroups) && dataGroups.dataGroups.length > 0) {
-            allDataGroups = dataGroups.dataGroups;
-          } 
-          // 处理groups属性
-          else if (dataGroups?.groups && dataGroups.groups.length > 0) {
-            allDataGroups = dataGroups.groups;
-          }
-          // 处理dataArray属性
-          else if (dataGroups?.isArray && dataGroups.dataArray && dataGroups.dataArray.length > 0) {
-            allDataGroups = dataGroups.dataArray;
-          }
-          // 处理传统数据格式
-          else {
-            // 构建综合数据组列表
-            const legacyGroups = [
-              // 传感器数据
-              ...(dataGroups?.indata?.length > 0 ? [{
-                id: 'indata',
-                name: '进水数据',
-                type: 'sensor',
-                data: dataGroups.indata
-              }] : (inData?.length > 0 ? [{
-                id: 'indata',
-                name: '进水数据',
-                type: 'sensor',
-                data: inData
-              }] : [])),
-              
-              ...(dataGroups?.outdata?.length > 0 ? [{
-                id: 'outdata',
-                name: '出水数据',
-                type: 'sensor',
-                data: dataGroups.outdata
-              }] : (outData?.length > 0 ? [{
-                id: 'outdata',
-                name: '出水数据',
-                type: 'sensor',
-                data: outData
-              }] : [])),
-              
-              // 能耗和工艺数据
-              ...(dataGroups?.energy?.length > 0 ? [{
-                id: 'energy_stats',
-                name: '能耗监控',
-                type: 'energy',
-                data: dataGroups.energy
-              }] : []),
-              
-              ...(dataGroups?.process?.length > 0 ? [{
-                id: 'process_parameters',
-                name: '工艺参数',
-                type: 'process',
-                data: dataGroups.process
-              }] : []),
-              
-              // 实验室和生产数据
-              ...(dataGroups?.laboratory?.length > 0 ? [{
-                id: 'lab_results',
-                name: '水质化验结果',
-                type: 'laboratory',
-                data: dataGroups.laboratory
-              }] : []),
-              
-              ...(dataGroups?.production?.length > 0 ? [{
-                id: 'production_metrics',
-                name: '处理生产指标',
-                type: 'production',
-                data: dataGroups.production
-              }] : [])
-            ];
-            
-            allDataGroups = legacyGroups;
-          }
-          
-          // 分类数据 - 只获取工艺数据组
           const { processGroups } = localCategorizeDataGroups(allDataGroups);
           
           if (processGroups.length === 0) {
@@ -3879,8 +4039,8 @@ const SiteDetailRenderer = ({
           
           const productionGroups = processGroups.filter(group => 
             group.type === 'production' || group.id === 'production_metrics');
-
-            return (
+          
+          return (
             <Tabs 
               activeKey={activeProcessTab} 
               onChange={setActiveProcessTab}
@@ -3889,7 +4049,7 @@ const SiteDetailRenderer = ({
               tabBarExtraContent={
                 <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)', marginRight: 8 }}>
                   提示: 双击选项卡可设为默认
-                </div>
+                      </div>
               }
             >
               <TabPane
@@ -3976,7 +4136,158 @@ const SiteDetailRenderer = ({
         })()}
       </Card>
 
-      {/* 第四部分：告警信息和历史趋势区（使用API调用） */}
+      {/* 第四部分：设备信息区（由后端API推送，可通过WebSocket控制） */}
+      <Card
+        title={
+          <div className={styles.sectionCardTitle}>
+            <ApartmentOutlined className={styles.sectionCardIcon} />
+            <span>设备信息</span>
+            <Tag color="blue" className={styles.sectionCardTag}>API获取 + WebSocket控制</Tag>
+          </div>
+        }
+        className={styles.sectionCard}
+      >
+        {/* 分类设备数据并渲染 */}
+        {(() => {
+          // 使用自动分类函数分类数据
+          let allDataGroups = [];
+          
+          // 处理API返回的dataGroups数组
+          if (Array.isArray(dataGroups.dataGroups) && dataGroups.dataGroups.length > 0) {
+            allDataGroups = dataGroups.dataGroups;
+          } 
+          // 处理groups属性
+          else if (dataGroups?.groups && dataGroups.groups.length > 0) {
+            allDataGroups = dataGroups.groups;
+          }
+          // 处理dataArray属性
+          else if (dataGroups?.isArray && dataGroups.dataArray && dataGroups.dataArray.length > 0) {
+            allDataGroups = dataGroups.dataArray;
+          }
+          // 处理传统数据格式
+          else if (dataGroups?.data && Array.isArray(dataGroups.data)) {
+            allDataGroups = dataGroups.data;
+          }
+          // 处理legacyGroups
+          else if (dataGroups?.legacyGroups && Array.isArray(dataGroups.legacyGroups)) {
+            allDataGroups = dataGroups.legacyGroups;
+          }
+          
+          // 分类数据
+          const { deviceGroups } = localCategorizeDataGroups(allDataGroups);
+          
+          if (deviceGroups.length === 0) {
+            return <Empty description="暂无设备数据" />;
+          }
+          
+          // 进一步对设备数据进行细分
+          const controlDevices = deviceGroups.filter(group => 
+            group.type === 'device' || group.id === 'devices' || group.id === 'control_devices');
+          
+          const valveDevices = deviceGroups.filter(group => 
+            group.type === 'valve' || group.id === 'isValve' || group.id === 'control_valves');
+          
+          const frequencyDevices = deviceGroups.filter(group => 
+            group.type === 'frequency' || group.id === 'deviceFrequency' || group.id === 'freq_control');
+          
+          const runtimeInfo = deviceGroups.filter(group => 
+            group.type === 'runtime' || group.id === 'equipments');
+          
+          const healthInfo = deviceGroups.filter(group => 
+            group.type === 'health' || group.id === 'equipment_health');
+
+            return (
+            <Tabs 
+              activeKey={activeDeviceTab}
+              onChange={setActiveDeviceTab}
+              type="card"
+              size="large"
+            >
+              <TabPane
+                tab={
+                  <span onDoubleClick={() => handleSetDefaultDeviceTab("control")}>
+                    <ApartmentOutlined />
+                    设备控制
+                  </span>
+                }
+                key="control"
+              >
+                {controlDevices.length > 0 ? (
+                  localRenderGroups(controlDevices)
+                ) : (
+                  <Empty description="暂无设备控制数据" />
+                )}
+              </TabPane>
+              
+              <TabPane
+                tab={
+                  <span onDoubleClick={() => handleSetDefaultDeviceTab("valve")}>
+                    <SettingOutlined />
+                    阀门控制
+                  </span>
+                }
+                key="valve"
+              >
+                {valveDevices.length > 0 ? (
+                  localRenderGroups(valveDevices)
+                ) : (
+                  <Empty description="暂无阀门控制数据" />
+                )}
+              </TabPane>
+              
+              <TabPane
+                tab={
+                  <span onDoubleClick={() => handleSetDefaultDeviceTab("frequency")}>
+                    <ThunderboltOutlined />
+                    频率控制
+                  </span>
+                }
+                key="frequency"
+              >
+                {frequencyDevices.length > 0 ? (
+                  localRenderGroups(frequencyDevices)
+                ) : (
+                  <Empty description="暂无频率控制数据" />
+                )}
+              </TabPane>
+              
+              <TabPane
+                tab={
+                  <span onDoubleClick={() => handleSetDefaultDeviceTab("runtime")}>
+                    <ClockCircleOutlined />
+                    运行时间
+                  </span>
+                }
+                key="runtime"
+              >
+                {runtimeInfo.length > 0 ? (
+                  localRenderGroups(runtimeInfo)
+                ) : (
+                  <Empty description="暂无运行时间数据" />
+                )}
+              </TabPane>
+              
+              <TabPane
+                tab={
+                  <span onDoubleClick={() => handleSetDefaultDeviceTab("health")}>
+                    <HeartOutlined />
+                    设备健康
+                  </span>
+                }
+                key="health"
+              >
+                {healthInfo.length > 0 ? (
+                  localRenderGroups(healthInfo)
+                ) : (
+                  <Empty description="暂无设备健康数据" />
+                )}
+              </TabPane>
+            </Tabs>
+          );
+        })()}
+      </Card>
+
+      {/* 第二部分：告警信息和历史趋势区（使用API调用） */}
       <Card
         title={
           <div className={styles.sectionCardTitle}>
