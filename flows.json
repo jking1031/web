@@ -21964,27 +21964,9 @@
         "y": 1240,
         "wires": [
             [
-                "5551bcca5944d9cc",
-                "6aad660772b78d9d"
+                "5551bcca5944d9cc"
             ]
         ]
-    },
-    {
-        "id": "aa2ae01fa9254bc2",
-        "type": "debug",
-        "z": "db-api-flow",
-        "name": "debug 36",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 460,
-        "y": 1140,
-        "wires": []
     },
     {
         "id": "5551bcca5944d9cc",
@@ -22007,7 +21989,6 @@
         "y": 1240,
         "wires": [
             [
-                "aa2ae01fa9254bc2",
                 "135bf4c8b53cb3a2"
             ]
         ]
@@ -22039,7 +22020,7 @@
         "mydb": "e3d5e9572467c502",
         "name": "实时数据",
         "x": 660,
-        "y": 1300,
+        "y": 1260,
         "wires": [
             [
                 "24342c70d7b9217e"
@@ -22056,23 +22037,6 @@
         "x": 950,
         "y": 1180,
         "wires": []
-    },
-    {
-        "id": "validate_request",
-        "type": "function",
-        "z": "db-api-flow",
-        "name": "验证请求",
-        "func": "// 验证必要参数\n// 在GET请求中，参数位于msg.req.query中\nconst query = msg.req.query;\n\n// 保存查询参数到payload以便后续处理\nmsg.payload = query;\n\n// 检查是否有站点ID\nif (!query.siteId) {\n    msg.statusCode = 400;\n    msg.payload = {\n        success: false,\n        error: \"缺少站点ID参数\"\n    };\n    return [null, msg];\n}\n\n// 检查操作类型\nif (query.action === 'getDataPoints') {\n    msg.action = 'getDataPoints';\n    return [msg, null];\n} else if (query.action === 'getTrendData') {\n    // 如果是获取趋势数据，检查时间范围\n    if (!query.startTime || !query.endTime) {\n        msg.statusCode = 400;\n        msg.payload = {\n            success: false,\n            error: \"获取趋势数据需要指定时间范围\"\n        };\n        return [null, msg];\n    }\n    \n    if (!query.dataPointId) {\n        msg.statusCode = 400;\n        msg.payload = {\n            success: false,\n            error: \"获取趋势数据需要指定数据点ID\"\n        };\n        return [null, msg];\n    }\n    \n    msg.action = 'getTrendData';\n    return [msg, null];\n} else {\n    msg.statusCode = 400;\n    msg.payload = {\n        success: false,\n        error: \"未知操作类型\"\n    };\n    return [null, msg];\n}\n",
-        "outputs": 2,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "x": 680,
-        "y": 1360,
-        "wires": [
-            [],
-            []
-        ]
     },
     {
         "id": "get_data_points",
@@ -22093,23 +22057,6 @@
                 "a0b050f7beb68456"
             ]
         ]
-    },
-    {
-        "id": "6aad660772b78d9d",
-        "type": "debug",
-        "z": "db-api-flow",
-        "name": "debug 38",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 290,
-        "y": 1160,
-        "wires": []
     },
     {
         "id": "135bf4c8b53cb3a2",
@@ -22145,22 +22092,6 @@
         ]
     },
     {
-        "id": "78e50bd79d12c549",
-        "type": "debug",
-        "z": "db-api-flow",
-        "name": "debug 39",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1100,
-        "y": 1280,
-        "wires": []
-    },
-    {
         "id": "24342c70d7b9217e",
         "type": "function",
         "z": "db-api-flow",
@@ -22172,11 +22103,10 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 830,
-        "y": 1300,
+        "x": 810,
+        "y": 1260,
         "wires": [
             [
-                "78e50bd79d12c549",
                 "a0b050f7beb68456"
             ]
         ]
