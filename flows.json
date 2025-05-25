@@ -21294,8 +21294,8 @@
         "method": "get",
         "upload": false,
         "swaggerDoc": "",
-        "x": 140,
-        "y": 520,
+        "x": 156,
+        "y": 500.00000858306885,
         "wires": [
             [
                 "858ae97e55833de9"
@@ -21308,8 +21308,8 @@
         "z": "db-api-flow",
         "mydb": "e3d5e9572467c502",
         "name": "查询数据",
-        "x": 460,
-        "y": 520,
+        "x": 476,
+        "y": 500.00000858306885,
         "wires": [
             [
                 "6999f86e7ce83bd8"
@@ -21328,8 +21328,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 630,
-        "y": 520,
+        "x": 646,
+        "y": 500.00000858306885,
         "wires": [
             [
                 "bd518f9ac926055e"
@@ -21345,8 +21345,8 @@
         "headers": {
             "content-type": "application/json"
         },
-        "x": 900,
-        "y": 520,
+        "x": 916,
+        "y": 500.00000858306885,
         "wires": []
     },
     {
@@ -21361,8 +21361,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 320,
-        "y": 520,
+        "x": 336,
+        "y": 500.00000858306885,
         "wires": [
             [
                 "b8f2390ddb507b78"
@@ -21385,7 +21385,8 @@
         "y": 1020,
         "wires": [
             [
-                "7a90504a96a8fc53"
+                "7a90504a96a8fc53",
+                "c5ec9276d2bad5c8"
             ]
         ]
     },
@@ -21743,8 +21744,8 @@
         "method": "get",
         "upload": false,
         "swaggerDoc": "",
-        "x": 140,
-        "y": 560,
+        "x": 156,
+        "y": 540.0000085830688,
         "wires": [
             [
                 "fce3854ab45bd22c"
@@ -21763,8 +21764,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 310,
-        "y": 560,
+        "x": 326,
+        "y": 540.0000085830688,
         "wires": [
             [
                 "8a99d933237306ce"
@@ -21777,8 +21778,8 @@
         "z": "db-api-flow",
         "mydb": "e3d5e9572467c502",
         "name": "日报数据",
-        "x": 460,
-        "y": 560,
+        "x": 476,
+        "y": 540.0000085830688,
         "wires": [
             [
                 "98d702470616371b"
@@ -21797,8 +21798,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 600,
-        "y": 560,
+        "x": 616,
+        "y": 540.0000085830688,
         "wires": [
             [
                 "8e6980b25babb8bd",
@@ -21818,8 +21819,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 750,
-        "y": 560,
+        "x": 766,
+        "y": 540.0000085830688,
         "wires": [
             [
                 "bd518f9ac926055e"
@@ -21838,8 +21839,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 750,
-        "y": 620,
+        "x": 766,
+        "y": 600.0000085830688,
         "wires": [
             [
                 "f03332f8149be09e"
@@ -21858,8 +21859,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 910,
-        "y": 600,
+        "x": 926,
+        "y": 580.0000085830688,
         "wires": []
     },
     {
@@ -21876,6 +21877,23 @@
         "statusType": "auto",
         "x": 350,
         "y": 660,
+        "wires": []
+    },
+    {
+        "id": "c5ec9276d2bad5c8",
+        "type": "debug",
+        "z": "db-api-flow",
+        "name": "debug 28",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 650,
+        "y": 1100,
         "wires": []
     },
     {
