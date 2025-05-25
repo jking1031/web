@@ -22038,11 +22038,11 @@
         "z": "db-api-flow",
         "mydb": "e3d5e9572467c502",
         "name": "实时数据",
-        "x": 820,
-        "y": 1280,
+        "x": 660,
+        "y": 1300,
         "wires": [
             [
-                "78e50bd79d12c549"
+                "24342c70d7b9217e"
             ]
         ]
     },
@@ -22156,9 +22156,29 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1010,
-        "y": 1260,
+        "x": 1100,
+        "y": 1280,
         "wires": []
+    },
+    {
+        "id": "24342c70d7b9217e",
+        "type": "function",
+        "z": "db-api-flow",
+        "name": "function 90",
+        "func": "const rows = msg.payload;\n\n// 动态识别除 \"time\" 以外的字段名（例如 gt_in_lj）\nconst dataPointId = rows.length > 0\n  ? Object.keys(rows[0]).find(key => key !== 'time')\n  : null;\n\n// 如果数据为空或字段未识别，返回错误\nif (!dataPointId) {\n  msg.payload = {\n    success: false,\n    error: '查询结果为空或未识别到有效字段'\n  };\n  return msg;\n}\n\n// 拆分时间和值数组\nconst times = rows.map(row => row.time);\nconst values = rows.map(row => row[dataPointId]);\n\n// 构造前端需要的格式\nmsg.payload = {\n  success: true,\n  data: {\n    times,\n    values\n  }\n};\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 910,
+        "y": 1300,
+        "wires": [
+            [
+                "78e50bd79d12c549"
+            ]
+        ]
     },
     {
         "id": "api-configs-save",
