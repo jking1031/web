@@ -21982,8 +21982,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 620,
-        "y": 1240,
+        "x": 460,
+        "y": 1140,
         "wires": []
     },
     {
@@ -22008,7 +22008,6 @@
         "wires": [
             [
                 "aa2ae01fa9254bc2",
-                "603485649d17acf5",
                 "135bf4c8b53cb3a2"
             ]
         ]
@@ -22018,15 +22017,15 @@
         "type": "function",
         "z": "db-api-flow",
         "name": "查询实时数据",
-        "func": "// 昨天 08:00 到今天 08:00\nconst sql = `\n  SELECT \n    time,\n    gt_in_ll, gt_in_nh3, gt_in_cod,\n     gt_out_ll, gt_out_nh3, gt_out_cod, gt_out_tn, gt_out_tp\n  FROM gt_data\n  WHERE time >= DATE_SUB(CURDATE(), INTERVAL 1 DAY) + INTERVAL 8 HOUR\n    AND time < CURDATE() + INTERVAL 8 HOUR\n  ORDER BY time ASC\n`;\n\nmsg.topic = sql;\nreturn msg;\n",
+        "func": "const params = msg.payload;\n\n// 基础校验\nif (!params.dataPointId || !params.startTime || !params.endTime) {\n  msg.payload = {\n    success: false,\n    error: '缺少必要参数 dataPointId, startTime 或 endTime'\n  };\n  return msg;\n}\n\n// 假设你的表名如下，可按需修改\nconst tableName = \"gt_data\";\n\n// 构造 SQL 查询语句\nmsg.topic = `\n  SELECT time, ${params.dataPointId}\n  FROM ${tableName}\n  WHERE site_id = '${params.siteId}'\n    AND time BETWEEN '${params.startTime}' AND '${params.endTime}'\n  ORDER BY time ASC\n`;\n\nreturn msg;\n\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 460,
-        "y": 1300,
+        "x": 680,
+        "y": 1220,
         "wires": [
             [
                 "996da2692e129d8e"
@@ -22039,10 +22038,12 @@
         "z": "db-api-flow",
         "mydb": "e3d5e9572467c502",
         "name": "实时数据",
-        "x": 640,
-        "y": 1300,
+        "x": 820,
+        "y": 1280,
         "wires": [
-            []
+            [
+                "78e50bd79d12c549"
+            ]
         ]
     },
     {
@@ -22122,18 +22123,42 @@
                 "t": "eq",
                 "v": "getDataPoints",
                 "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "getTrendData",
+                "vt": "str"
             }
         ],
         "checkall": "true",
         "repair": false,
-        "outputs": 1,
-        "x": 490,
-        "y": 1180,
+        "outputs": 2,
+        "x": 450,
+        "y": 1240,
         "wires": [
             [
                 "get_data_points"
+            ],
+            [
+                "603485649d17acf5"
             ]
         ]
+    },
+    {
+        "id": "78e50bd79d12c549",
+        "type": "debug",
+        "z": "db-api-flow",
+        "name": "debug 39",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1010,
+        "y": 1260,
+        "wires": []
     },
     {
         "id": "api-configs-save",
