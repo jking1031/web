@@ -21977,7 +21977,8 @@
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "false",
+        "complete": "true",
+        "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
         "x": 740,
@@ -22001,12 +22002,13 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 330,
+        "x": 290,
         "y": 1240,
         "wires": [
             [
                 "aa2ae01fa9254bc2",
-                "603485649d17acf5"
+                "603485649d17acf5",
+                "get_data_points"
             ]
         ]
     },
@@ -22054,6 +22056,55 @@
         "x": 830,
         "y": 1300,
         "wires": []
+    },
+    {
+        "id": "validate_request",
+        "type": "function",
+        "z": "db-api-flow",
+        "name": "验证请求",
+        "func": "// 验证必要参数\n// 在GET请求中，参数位于msg.req.query中\nconst query = msg.req.query;\n\n// 保存查询参数到payload以便后续处理\nmsg.payload = query;\n\n// 检查是否有站点ID\nif (!query.siteId) {\n    msg.statusCode = 400;\n    msg.payload = {\n        success: false,\n        error: \"缺少站点ID参数\"\n    };\n    return [null, msg];\n}\n\n// 检查操作类型\nif (query.action === 'getDataPoints') {\n    msg.action = 'getDataPoints';\n    return [msg, null];\n} else if (query.action === 'getTrendData') {\n    // 如果是获取趋势数据，检查时间范围\n    if (!query.startTime || !query.endTime) {\n        msg.statusCode = 400;\n        msg.payload = {\n            success: false,\n            error: \"获取趋势数据需要指定时间范围\"\n        };\n        return [null, msg];\n    }\n    \n    if (!query.dataPointId) {\n        msg.statusCode = 400;\n        msg.payload = {\n            success: false,\n            error: \"获取趋势数据需要指定数据点ID\"\n        };\n        return [null, msg];\n    }\n    \n    msg.action = 'getTrendData';\n    return [msg, null];\n} else {\n    msg.statusCode = 400;\n    msg.payload = {\n        success: false,\n        error: \"未知操作类型\"\n    };\n    return [null, msg];\n}\n",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "x": 680,
+        "y": 1360,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "get_data_points",
+        "type": "function",
+        "z": "db-api-flow",
+        "name": "获取数据点",
+        "func": "// 构建响应数据 - 这里返回固定的数据点列表\n// 实际应用中可以从数据库查询或通过API获取\nconst dataPoints = [\n    { id: 'flow_in', name: '进水流量', unit: 'm³/h' },\n    { id: 'flow_out', name: '出水流量', unit: 'm³/h' },\n    { id: 'pressure', name: '系统压力', unit: 'MPa' },\n    { id: 'temperature', name: '水温', unit: '°C' },\n    { id: 'ph', name: 'PH值', unit: 'pH' },\n    { id: 'turbidity', name: '浊度', unit: 'NTU' },\n    { id: 'cl', name: '余氯', unit: 'mg/L' },\n    { id: 'tds', name: '溶解固体总量', unit: 'mg/L' }\n];\n\nmsg.payload = {\n    success: true,\n    data: dataPoints\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "x": 470,
+        "y": 1200,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "get_trend_data",
+        "type": "function",
+        "z": "db-api-flow",
+        "name": "获取趋势数据",
+        "func": "// 从请求中获取参数\nconst query = msg.payload;\nconst siteId = query.siteId;\nconst dataPointId = query.dataPointId;\nconst startTime = new Date(query.startTime);\nconst endTime = new Date(query.endTime);\n\n// 生成查询条件 - 实际应用中会使用这些参数查询数据库\nconst dbQuery = {\n    siteId: siteId,\n    dataPointId: dataPointId,\n    timestamp: {\n        $gte: startTime,\n        $lte: endTime\n    }\n};\n\n// 在这个例子中，我们生成模拟数据\n// 在实际应用中，这里会进行数据库查询\nconst times = [];\nconst values = [];\n\n// 计算时间间隔 (小时)\nconst hoursDiff = Math.floor((endTime - startTime) / (1000 * 60 * 60));\n\n// 根据时间范围生成模拟数据\nlet currentTime = new Date(startTime);\nlet lastValue = Math.random() * 100; // 初始值\n\nfor (let i = 0; i <= hoursDiff; i++) {\n    // 添加时间点\n    times.push(currentTime.toISOString());\n    \n    // 生成一个随机波动的值，保持一定的连续性\n    const randomChange = (Math.random() - 0.5) * 10; // -5 到 5 的随机变化\n    lastValue = Math.max(0, lastValue + randomChange); // 确保值不小于0\n    values.push(parseFloat(lastValue.toFixed(2)));\n    \n    // 增加1小时\n    currentTime = new Date(currentTime.getTime() + 60 * 60 * 1000);\n}\n\n// 构建响应数据 - 按照前端期望的格式\nmsg.payload = {\n    success: true,\n    data: {\n        times: times,\n        values: values\n    }\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "x": 480,
+        "y": 1400,
+        "wires": [
+            []
+        ]
     },
     {
         "id": "api-configs-save",
