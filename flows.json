@@ -21956,7 +21956,7 @@
         "type": "http in",
         "z": "db-api-flow",
         "name": "站点趋势图数据请求",
-        "url": "/api/get-site1-trenddata",
+        "url": "/api/get-site1-trenddata/1",
         "method": "post",
         "upload": false,
         "swaggerDoc": "",
