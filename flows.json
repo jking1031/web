@@ -22079,7 +22079,7 @@
         "type": "function",
         "z": "db-api-flow",
         "name": "获取数据点",
-        "func": "msg.payload = {\n  success: true,\n  data: [\n    { id: 'gt_in_lj', name: '进水流量', unit: 'm³/h' },\n    { id: 'gt_in_ll', name: '进水流速', unit: 'm/s' },\n    { id: 'gt_in_nh3', name: '进水氨氮', unit: 'mg/L' },\n    { id: 'gt_in_cod', name: '进水COD', unit: 'mg/L' },\n    { id: 'gt_out_lj', name: '出水流量', unit: 'm³/h' },\n    { id: 'gt_out_ll', name: '出水流速', unit: 'm/s' },\n    { id: 'gt_out_nh3', name: '出水氨氮', unit: 'mg/L' },\n    { id: 'gt_out_cod', name: '出水COD', unit: 'mg/L' },\n    { id: 'gt_out_tn', name: '出水总氮', unit: 'mg/L' },\n    { id: 'gt_out_tp', name: '出水总磷', unit: 'mg/L' }\n  ]\n};\n\nreturn msg;\n",
+        "func": "msg.payload = {\n  success: true,\n  data: [\n    { id: 'gt_in_lj', name: '进水累计', unit: 'm³' },\n    { id: 'gt_in_ll', name: '进水流量', unit: 'm³/h' },\n    { id: 'gt_in_nh3', name: '进水氨氮', unit: 'mg/L' },\n    { id: 'gt_in_cod', name: '进水COD', unit: 'mg/L' },\n    { id: 'gt_out_lj', name: '出水累计', unit: 'm³' },\n    { id: 'gt_out_ll', name: '出水流量', unit: 'm³/h' },\n    { id: 'gt_out_nh3', name: '出水氨氮', unit: 'mg/L' },\n    { id: 'gt_out_cod', name: '出水COD', unit: 'mg/L' },\n    { id: 'gt_out_tn', name: '出水总氮', unit: 'mg/L' },\n    { id: 'gt_out_tp', name: '出水总磷', unit: 'mg/L' }\n  ]\n};\n\nreturn msg;\n",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
