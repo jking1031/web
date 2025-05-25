@@ -22017,7 +22017,7 @@
         "type": "function",
         "z": "db-api-flow",
         "name": "查询实时数据",
-        "func": "const params = msg.payload;\n\n// 基础校验\nif (!params.dataPointId || !params.startTime || !params.endTime) {\n  msg.payload = {\n    success: false,\n    error: '缺少必要参数 dataPointId, startTime 或 endTime'\n  };\n  return msg;\n}\n\n// 假设你的表名如下，可按需修改\nconst tableName = \"gt_data\";\n\n// 构造 SQL 查询语句\nmsg.topic = `\n  SELECT time, ${params.dataPointId}\n  FROM ${tableName}\n  WHERE site_id = '${params.siteId}'\n    AND time BETWEEN '${params.startTime}' AND '${params.endTime}'\n  ORDER BY time ASC\n`;\n\nreturn msg;\n\n",
+        "func": "const { dataPointId, startTime, endTime, requestId } = msg.payload;\n\n// 校验必填参数\nif (!dataPointId || !startTime || !endTime) {\n  msg.payload = {\n    success: false,\n    error: '缺少 dataPointId、startTime 或 endTime 参数'\n  };\n  return msg;\n}\n\n// 数据表名（请替换为你自己的表名）\nconst tableName = \"gt_data\";\n\n// 构建 SQL 查询语句\nmsg.topic = `\n  SELECT time, ${dataPointId}\n  FROM ${tableName}\n  WHERE time BETWEEN '${startTime}' AND '${endTime}'\n  ORDER BY time ASC\n`;\n\n// 把 requestId 也带下去供后续节点使用（可选）\nmsg.requestId = requestId;\n\nreturn msg;\n\n\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
