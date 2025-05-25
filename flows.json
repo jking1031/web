@@ -21960,11 +21960,11 @@
         "method": "get",
         "upload": false,
         "swaggerDoc": "",
-        "x": 150,
-        "y": 1320,
+        "x": 130,
+        "y": 1240,
         "wires": [
             [
-                "aa2ae01fa9254bc2"
+                "5551bcca5944d9cc"
             ]
         ]
     },
@@ -21980,8 +21980,79 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 470,
-        "y": 1260,
+        "x": 740,
+        "y": 1240,
+        "wires": []
+    },
+    {
+        "id": "5551bcca5944d9cc",
+        "type": "switch",
+        "z": "db-api-flow",
+        "name": "",
+        "property": "payload.siteId",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "1",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 330,
+        "y": 1240,
+        "wires": [
+            [
+                "aa2ae01fa9254bc2",
+                "603485649d17acf5"
+            ]
+        ]
+    },
+    {
+        "id": "603485649d17acf5",
+        "type": "function",
+        "z": "db-api-flow",
+        "name": "查询实时数据",
+        "func": "// 昨天 08:00 到今天 08:00\nconst sql = `\n  SELECT \n    time,\n    gt_in_ll, gt_in_nh3, gt_in_cod,\n     gt_out_ll, gt_out_nh3, gt_out_cod, gt_out_tn, gt_out_tp\n  FROM gt_data\n  WHERE time >= DATE_SUB(CURDATE(), INTERVAL 1 DAY) + INTERVAL 8 HOUR\n    AND time < CURDATE() + INTERVAL 8 HOUR\n  ORDER BY time ASC\n`;\n\nmsg.topic = sql;\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 460,
+        "y": 1300,
+        "wires": [
+            [
+                "996da2692e129d8e"
+            ]
+        ]
+    },
+    {
+        "id": "996da2692e129d8e",
+        "type": "mysql",
+        "z": "db-api-flow",
+        "mydb": "e3d5e9572467c502",
+        "name": "实时数据",
+        "x": 640,
+        "y": 1300,
+        "wires": [
+            [
+                "a0b050f7beb68456"
+            ]
+        ]
+    },
+    {
+        "id": "a0b050f7beb68456",
+        "type": "http response",
+        "z": "db-api-flow",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 830,
+        "y": 1300,
         "wires": []
     },
     {
