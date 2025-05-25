@@ -21957,7 +21957,7 @@
         "z": "db-api-flow",
         "name": "站点趋势图数据请求",
         "url": "/api/get-sitet1-trenddata",
-        "method": "post",
+        "method": "get",
         "upload": false,
         "swaggerDoc": "",
         "x": 150,
