@@ -21957,7 +21957,7 @@
         "z": "db-api-flow",
         "name": "站点趋势图数据请求",
         "url": "/api/get-sitet1-trenddata",
-        "method": "get",
+        "method": "post",
         "upload": false,
         "swaggerDoc": "",
         "x": 130,
@@ -22003,7 +22003,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 290,
+        "x": 310,
         "y": 1240,
         "wires": [
             [
@@ -22087,22 +22087,6 @@
         "finalize": "",
         "x": 470,
         "y": 1200,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "get_trend_data",
-        "type": "function",
-        "z": "db-api-flow",
-        "name": "获取趋势数据",
-        "func": "// 从请求中获取参数\nconst query = msg.payload;\nconst siteId = query.siteId;\nconst dataPointId = query.dataPointId;\nconst startTime = new Date(query.startTime);\nconst endTime = new Date(query.endTime);\n\n// 生成查询条件 - 实际应用中会使用这些参数查询数据库\nconst dbQuery = {\n    siteId: siteId,\n    dataPointId: dataPointId,\n    timestamp: {\n        $gte: startTime,\n        $lte: endTime\n    }\n};\n\n// 在这个例子中，我们生成模拟数据\n// 在实际应用中，这里会进行数据库查询\nconst times = [];\nconst values = [];\n\n// 计算时间间隔 (小时)\nconst hoursDiff = Math.floor((endTime - startTime) / (1000 * 60 * 60));\n\n// 根据时间范围生成模拟数据\nlet currentTime = new Date(startTime);\nlet lastValue = Math.random() * 100; // 初始值\n\nfor (let i = 0; i <= hoursDiff; i++) {\n    // 添加时间点\n    times.push(currentTime.toISOString());\n    \n    // 生成一个随机波动的值，保持一定的连续性\n    const randomChange = (Math.random() - 0.5) * 10; // -5 到 5 的随机变化\n    lastValue = Math.max(0, lastValue + randomChange); // 确保值不小于0\n    values.push(parseFloat(lastValue.toFixed(2)));\n    \n    // 增加1小时\n    currentTime = new Date(currentTime.getTime() + 60 * 60 * 1000);\n}\n\n// 构建响应数据 - 按照前端期望的格式\nmsg.payload = {\n    success: true,\n    data: {\n        times: times,\n        values: values\n    }\n};\n\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "x": 480,
-        "y": 1400,
         "wires": [
             []
         ]
