@@ -21057,7 +21057,7 @@
         "type": "http in",
         "z": "db-api-flow",
         "name": "执行SQL查询",
-        "url": "/api/database/query",
+        "url": "/api/database/query1",
         "method": "post",
         "upload": false,
         "swaggerDoc": "",
@@ -21140,12 +21140,12 @@
         "type": "http in",
         "z": "db-api-flow",
         "name": "执行多个SQL查询",
-        "url": "/api/database/multi-query",
+        "url": "/api/database/multi-query1",
         "method": "post",
         "upload": false,
         "swaggerDoc": "",
         "x": 150,
-        "y": 320,
+        "y": 260,
         "wires": [
             [
                 "prepare-multi-query"
@@ -21163,8 +21163,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 340,
-        "y": 320,
+        "x": 360,
+        "y": 260,
         "wires": [
             [
                 "execute-multi-query-mysql"
@@ -21180,8 +21180,8 @@
         "server": "3ae3711f927f22fc",
         "bind": false,
         "topic": "",
-        "x": 530,
-        "y": 320,
+        "x": 550,
+        "y": 260,
         "wires": [
             [
                 "process-multi-query-result"
@@ -21200,7 +21200,7 @@
         "finalize": "",
         "libs": [],
         "x": 740,
-        "y": 320,
+        "y": 260,
         "wires": [
             [
                 "multi-query-response"
@@ -21214,8 +21214,8 @@
         "name": "返回结果",
         "statusCode": "200",
         "headers": {},
-        "x": 1000,
-        "y": 320,
+        "x": 960,
+        "y": 260,
         "wires": []
     },
     {
