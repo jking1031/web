@@ -22304,7 +22304,8 @@
         "y": 1680,
         "wires": [
             [
-                "71703d82891a9f8f"
+                "71703d82891a9f8f",
+                "138644acdd780b97"
             ]
         ]
     },
@@ -22323,7 +22324,8 @@
         "y": 1680,
         "wires": [
             [
-                "1cea966597d21c29"
+                "1cea966597d21c29",
+                "858ac56987f078df"
             ],
             [
                 "762abb2cdb4bb681"
@@ -22340,7 +22342,8 @@
         "y": 1680,
         "wires": [
             [
-                "40cd72b52d1980eb"
+                "40cd72b52d1980eb",
+                "7543445cdb8ccd07"
             ]
         ]
     },
@@ -22359,7 +22362,8 @@
         "y": 1680,
         "wires": [
             [
-                "e25d5618ecaae694"
+                "e25d5618ecaae694",
+                "9f8e2c6c44c83aa4"
             ]
         ]
     },
@@ -22374,6 +22378,70 @@
         },
         "x": 980,
         "y": 1680,
+        "wires": []
+    },
+    {
+        "id": "138644acdd780b97",
+        "type": "debug",
+        "z": "db-api-flow",
+        "name": "debug 36",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 350,
+        "y": 1780,
+        "wires": []
+    },
+    {
+        "id": "858ac56987f078df",
+        "type": "debug",
+        "z": "db-api-flow",
+        "name": "debug 38",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 570,
+        "y": 1800,
+        "wires": []
+    },
+    {
+        "id": "7543445cdb8ccd07",
+        "type": "debug",
+        "z": "db-api-flow",
+        "name": "debug 39",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 850,
+        "y": 1800,
+        "wires": []
+    },
+    {
+        "id": "9f8e2c6c44c83aa4",
+        "type": "debug",
+        "z": "db-api-flow",
+        "name": "debug 40",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1070,
+        "y": 1800,
         "wires": []
     },
     {
