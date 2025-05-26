@@ -3396,17 +3396,21 @@ const SiteDetailNew = () => {
         message.error(`无法进入全屏模式: ${err.message}`);
       });
     } else {
-      // 退出全屏
-      document.exitFullscreen().catch(err => {
-        message.error(`无法退出全屏模式: ${err.message}`);
-      });
+      // 只有当前页面容器处于全屏状态时才退出全屏
+      // 这样可以避免与TrendDataSection的全屏冲突
+      if (document.fullscreenElement === pageContainerRef.current) {
+        document.exitFullscreen().catch(err => {
+          message.error(`无法退出全屏模式: ${err.message}`);
+        });
+      }
     }
   };
 
   // 监听全屏状态变化
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      // 只有当全屏元素是当前页面容器时才更新状态
+      setIsFullscreen(document.fullscreenElement === pageContainerRef.current);
     };
     
     document.addEventListener('fullscreenchange', handleFullscreenChange);

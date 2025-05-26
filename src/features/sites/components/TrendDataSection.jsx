@@ -950,8 +950,8 @@ const TrendDataSection = ({ siteId, fetchTrendData }) => {
         chartInstance.current.dispose && chartInstance.current.dispose();
       }
       
-      // 退出全屏模式
-      if (document.fullscreenElement) {
+      // 只有当前组件处于全屏状态时才退出全屏
+      if (document.fullscreenElement === chartContainerRef.current) {
         document.exitFullscreen().catch(err => {
           console.error('退出全屏时出错:', err);
         });
@@ -962,7 +962,8 @@ const TrendDataSection = ({ siteId, fetchTrendData }) => {
   // 添加全屏状态变更监听
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setFullscreen(!!document.fullscreenElement);
+      // 只有当全屏元素是当前图表容器时才更新状态
+      setFullscreen(document.fullscreenElement === chartContainerRef.current);
       
       // 全屏状态变化后，需要调整图表大小
       setTimeout(() => {
@@ -989,10 +990,12 @@ const TrendDataSection = ({ siteId, fetchTrendData }) => {
         message.error(`无法进入全屏模式: ${err.message}`);
       });
     } else {
-      // 退出全屏
-      document.exitFullscreen().catch(err => {
-        message.error(`无法退出全屏模式: ${err.message}`);
-      });
+      // 只有当全屏元素是当前图表容器时才退出全屏
+      if (document.fullscreenElement === chartContainerRef.current) {
+        document.exitFullscreen().catch(err => {
+          message.error(`无法退出全屏模式: ${err.message}`);
+        });
+      }
     }
   };
 
