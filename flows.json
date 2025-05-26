@@ -22296,7 +22296,7 @@
         "type": "http in",
         "z": "db-api-flow",
         "name": "执行查询",
-        "url": "/api/database/query",
+        "url": " /api/database/query",
         "method": "post",
         "upload": false,
         "swaggerDoc": "",
