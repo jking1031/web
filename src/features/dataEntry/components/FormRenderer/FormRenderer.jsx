@@ -30,7 +30,7 @@ import {
   Space as FormilySpace,
   Submit,
   Reset,
-} from '@formily/antd';
+} from '@formily/antd-v5';
 import { useAuth } from '../../../../context/AuthContext';
 import formSubmissionService from '../../services/formSubmissionService';
 import './FormRenderer.scss';
@@ -42,6 +42,7 @@ const SchemaField = createSchemaField({
   components: {
     FormItem,
     Input,
+    'Input.TextArea': Input.TextArea,
     Select,
     Radio,
     Checkbox,

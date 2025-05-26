@@ -637,7 +637,63 @@ class FormTemplateService {
         createdBy: 'admin',
         createdAt: '2024-01-01T00:00:00Z',
         updatedAt: '2024-01-01T00:00:00Z',
-        permissions: ['user', 'admin']
+        permissions: ['user', 'admin'],
+        schema: {
+          type: 'object',
+          properties: {
+            basic_info: {
+              type: 'object',
+              title: '基本信息',
+              'x-component': 'FormGrid',
+              'x-component-props': { maxColumns: 2 },
+              properties: {
+                date: {
+                  type: 'string',
+                  title: '化验日期',
+                  'x-component': 'DatePicker',
+                  'x-decorator': 'FormItem',
+                  'x-validator': [{ required: true, message: '请选择化验日期' }],
+                },
+                operator: {
+                  type: 'string',
+                  title: '化验员',
+                  'x-component': 'Input',
+                  'x-decorator': 'FormItem',
+                  'x-validator': [{ required: true, message: '请输入化验员姓名' }],
+                },
+              },
+            },
+            water_quality: {
+              type: 'object',
+              title: '水质指标',
+              'x-component': 'FormGrid',
+              'x-component-props': { maxColumns: 3 },
+              properties: {
+                cod: {
+                  type: 'number',
+                  title: 'COD(mg/L)',
+                  'x-component': 'NumberPicker',
+                  'x-decorator': 'FormItem',
+                  'x-component-props': { min: 0, precision: 1 },
+                },
+                nh3n: {
+                  type: 'number',
+                  title: '氨氮(mg/L)',
+                  'x-component': 'NumberPicker',
+                  'x-decorator': 'FormItem',
+                  'x-component-props': { min: 0, precision: 2 },
+                },
+                tp: {
+                  type: 'number',
+                  title: '总磷(mg/L)',
+                  'x-component': 'NumberPicker',
+                  'x-decorator': 'FormItem',
+                  'x-component-props': { min: 0, precision: 2 },
+                },
+              },
+            },
+          },
+        }
       },
       {
         id: 'template_002',
@@ -649,7 +705,66 @@ class FormTemplateService {
         createdBy: 'admin',
         createdAt: '2024-01-01T00:00:00Z',
         updatedAt: '2024-01-01T00:00:00Z',
-        permissions: ['user', 'admin']
+        permissions: ['user', 'admin'],
+        schema: {
+          type: 'object',
+          properties: {
+            operation_info: {
+              type: 'object',
+              title: '运行信息',
+              'x-component': 'FormGrid',
+              'x-component-props': { maxColumns: 2 },
+              properties: {
+                date: {
+                  type: 'string',
+                  title: '运行日期',
+                  'x-component': 'DatePicker',
+                  'x-decorator': 'FormItem',
+                  'x-validator': [{ required: true, message: '请选择运行日期' }],
+                },
+                shift: {
+                  type: 'string',
+                  title: '班次',
+                  'x-component': 'Select',
+                  'x-decorator': 'FormItem',
+                  enum: [
+                    { label: '白班', value: 'day' },
+                    { label: '夜班', value: 'night' },
+                  ],
+                },
+              },
+            },
+            parameters: {
+              type: 'object',
+              title: '运行参数',
+              'x-component': 'FormGrid',
+              'x-component-props': { maxColumns: 3 },
+              properties: {
+                flow_rate: {
+                  type: 'number',
+                  title: '流量(m³/h)',
+                  'x-component': 'NumberPicker',
+                  'x-decorator': 'FormItem',
+                  'x-component-props': { min: 0, precision: 1 },
+                },
+                do_level: {
+                  type: 'number',
+                  title: '溶解氧(mg/L)',
+                  'x-component': 'NumberPicker',
+                  'x-decorator': 'FormItem',
+                  'x-component-props': { min: 0, precision: 2 },
+                },
+                mlss: {
+                  type: 'number',
+                  title: 'MLSS(mg/L)',
+                  'x-component': 'NumberPicker',
+                  'x-decorator': 'FormItem',
+                  'x-component-props': { min: 0, precision: 0 },
+                },
+              },
+            },
+          },
+        }
       }
     ];
 
@@ -669,8 +784,8 @@ class FormTemplateService {
       success: true,
       data: {
         id: id,
-        name: '测试模板',
-        description: '这是一个测试模板',
+        name: '测试表单模板',
+        description: '这是一个用于测试 @formily/antd-v5 的表单模板',
         category: 'lab_data',
         version: '1.0.0',
         status: 'published',
@@ -681,12 +796,103 @@ class FormTemplateService {
         schema: {
           type: 'object',
           properties: {
-            name: {
-              type: 'string',
-              title: '姓名',
-              'x-component': 'Input'
-            }
-          }
+            basic_info: {
+              type: 'object',
+              title: '基本信息',
+              'x-component': 'FormGrid',
+              'x-component-props': {
+                maxColumns: 2,
+                minColumns: 1,
+              },
+              properties: {
+                name: {
+                  type: 'string',
+                  title: '姓名',
+                  'x-component': 'Input',
+                  'x-decorator': 'FormItem',
+                  'x-validator': [{ required: true, message: '请输入姓名' }],
+                  'x-component-props': {
+                    placeholder: '请输入您的姓名',
+                  },
+                },
+                email: {
+                  type: 'string',
+                  title: '邮箱',
+                  'x-component': 'Input',
+                  'x-decorator': 'FormItem',
+                  'x-validator': [
+                    { required: true, message: '请输入邮箱' },
+                    { format: 'email', message: '请输入正确的邮箱格式' }
+                  ],
+                  'x-component-props': {
+                    placeholder: '请输入邮箱地址',
+                  },
+                },
+                phone: {
+                  type: 'string',
+                  title: '手机号',
+                  'x-component': 'Input',
+                  'x-decorator': 'FormItem',
+                  'x-component-props': {
+                    placeholder: '请输入手机号',
+                  },
+                },
+                date: {
+                  type: 'string',
+                  title: '日期',
+                  'x-component': 'DatePicker',
+                  'x-decorator': 'FormItem',
+                  'x-component-props': {
+                    placeholder: '请选择日期',
+                  },
+                },
+              },
+            },
+            details: {
+              type: 'object',
+              title: '详细信息',
+              'x-component': 'FormGrid',
+              'x-component-props': {
+                maxColumns: 1,
+              },
+              properties: {
+                category: {
+                  type: 'string',
+                  title: '分类',
+                  'x-component': 'Select',
+                  'x-decorator': 'FormItem',
+                  'x-validator': [{ required: true, message: '请选择分类' }],
+                  enum: [
+                    { label: '类型A', value: 'type_a' },
+                    { label: '类型B', value: 'type_b' },
+                    { label: '类型C', value: 'type_c' },
+                  ],
+                },
+                description: {
+                  type: 'string',
+                  title: '描述',
+                  'x-component': 'Input.TextArea',
+                  'x-decorator': 'FormItem',
+                  'x-component-props': {
+                    placeholder: '请输入描述信息',
+                    rows: 4,
+                  },
+                },
+                score: {
+                  type: 'number',
+                  title: '评分',
+                  'x-component': 'NumberPicker',
+                  'x-decorator': 'FormItem',
+                  'x-component-props': {
+                    placeholder: '请输入评分',
+                    min: 0,
+                    max: 100,
+                    precision: 1,
+                  },
+                },
+              },
+            },
+          },
         }
       }
     };

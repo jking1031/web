@@ -21,7 +21,7 @@ import {
 import { useAuth } from '../../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 // import FormTemplateManager from '../components/FormTemplateManager/FormTemplateManager';
-// import FormRenderer from '../components/FormRenderer/FormRenderer';
+import FormRenderer from '../components/FormRenderer/FormRenderer';
 import formTemplateService from '../services/formTemplateService';
 import formSubmissionService from '../services/formSubmissionService';
 import apiTester from '../utils/apiTester';
@@ -131,14 +131,8 @@ const DataEntryCenter = () => {
 
   // 开始填写表单
   const handleStartForm = (template) => {
-    // setSelectedTemplate(template);
-    // setCurrentView('form');
-    // 临时禁用表单填写功能
-    Modal.warning({
-      title: '功能暂时不可用',
-      content: '由于依赖兼容性问题，表单填写功能暂时禁用。我们正在解决这个问题，请稍后再试。',
-      okText: '知道了'
-    });
+    setSelectedTemplate(template);
+    setCurrentView('form');
   };
 
   // 处理模板管理按钮点击
@@ -379,19 +373,11 @@ const DataEntryCenter = () => {
 
   // 渲染表单填写界面
   const renderFormContent = () => (
-    <Card title="表单填写">
-      <Alert
-        message="表单填写功能暂时不可用"
-        description="由于依赖兼容性问题，表单渲染器功能暂时禁用。请稍后再试。"
-        type="warning"
-        showIcon
-        action={
-          <Button size="small" onClick={() => setCurrentView('home')}>
-            返回首页
-          </Button>
-        }
-      />
-    </Card>
+    <FormRenderer
+      template={selectedTemplate}
+      onSubmit={handleFormSubmit}
+      onCancel={() => setCurrentView('home')}
+    />
   );
 
   // 渲染模板管理界面
