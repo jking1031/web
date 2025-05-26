@@ -1,0 +1,298 @@
+[
+    {
+        "id": "history-data-query-flows",
+        "type": "tab",
+        "label": "历史数据查询API",
+        "disabled": false,
+        "info": "提供数据库表结构和查询功能的API"
+    },
+    {
+        "id": "get-db-tables",
+        "type": "http in",
+        "z": "history-data-query-flows",
+        "name": "获取数据库表列表",
+        "url": "/api/database/tables",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 150,
+        "y": 120,
+        "wires": [
+            [
+                "get-tables-function"
+            ]
+        ]
+    },
+    {
+        "id": "get-tables-function",
+        "type": "function",
+        "z": "history-data-query-flows",
+        "name": "查询所有表",
+        "func": "// 连接MariaDB/MySQL并获取所有表\nconst query = \"SHOW TABLES\";\n\n// 调用MariaDB节点\nmsg.topic = query;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 120,
+        "wires": [
+            [
+                "mariadb-get-tables"
+            ]
+        ]
+    },
+    {
+        "id": "mariadb-get-tables",
+        "type": "mysql",
+        "z": "history-data-query-flows",
+        "name": "MariaDB查询",
+        "host": "localhost",
+        "port": "3306",
+        "db": "zziot",
+        "qs": {
+            "useConnectionPooling": true
+        },
+        "sql": "",
+        "sqlType": "msg.topic",
+        "outputs": 1,
+        "x": 550,
+        "y": 120,
+        "wires": [
+            [
+                "format-tables-response"
+            ]
+        ]
+    },
+    {
+        "id": "format-tables-response",
+        "type": "function",
+        "z": "history-data-query-flows",
+        "name": "格式化表格数据",
+        "func": "// 处理数据库返回的表格数据\nconst tables = msg.payload;\n\n// 格式化表数据为前端需要的格式\nconst formattedTables = [];\n\n// 遍历所有表\nfor (const table of tables) {\n    const tableName = Object.values(table)[0]; // 获取表名\n    \n    // 创建表格对象\n    formattedTables.push({\n        name: tableName,\n        label: formatTableName(tableName), // 格式化表名为显示名称\n        description: getTableDescription(tableName)\n    });\n}\n\n// 格式化表名为显示名称的函数\nfunction formatTableName(tableName) {\n    // 替换下划线为空格，首字母大写\n    return tableName\n        .split('_')\n        .map(word => word.charAt(0).toUpperCase() + word.slice(1))\n        .join(' ');\n}\n\n// 获取表描述的函数(可以根据业务逻辑扩展)\nfunction getTableDescription(tableName) {\n    const descriptions = {\n        'water_quality': '水质数据表',\n        'flow_data': '流量数据表',\n        'energy_consumption': '能耗数据表',\n        'equipment_status': '设备状态表',\n        'maintenance_records': '维护记录表',\n        'alarm_logs': '报警记录表'\n    };\n    \n    return descriptions[tableName] || `${formatTableName(tableName)}数据表`;\n}\n\n// 返回API响应\nmsg.payload = {\n    success: true,\n    message: '获取表格列表成功',\n    data: formattedTables\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 780,
+        "y": 120,
+        "wires": [
+            [
+                "tables-response"
+            ]
+        ]
+    },
+    {
+        "id": "tables-response",
+        "type": "http response",
+        "z": "history-data-query-flows",
+        "name": "返回表格列表",
+        "statusCode": "200",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 990,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "get-table-fields",
+        "type": "http in",
+        "z": "history-data-query-flows",
+        "name": "获取表字段",
+        "url": "/api/database/fields",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 140,
+        "y": 200,
+        "wires": [
+            [
+                "validate-table-input"
+            ]
+        ]
+    },
+    {
+        "id": "validate-table-input",
+        "type": "function",
+        "z": "history-data-query-flows",
+        "name": "验证输入参数",
+        "func": "// 验证是否提供了表名\nif (!msg.req.query.tableName) {\n    msg.statusCode = 400;\n    msg.payload = {\n        success: false,\n        message: '缺少必需的tableName参数'\n    };\n    return [null, msg];\n}\n\n// 安全检查和SQL注入防御\nconst tableName = msg.req.query.tableName;\nconst safeTablePattern = /^[a-zA-Z0-9_]+$/;\n\nif (!safeTablePattern.test(tableName)) {\n    msg.statusCode = 400;\n    msg.payload = {\n        success: false,\n        message: '无效的表名格式'\n    };\n    return [null, msg];\n}\n\n// 构建查询表结构的SQL\nmsg.tableName = tableName;\nmsg.topic = `DESCRIBE ${tableName}`;\n\nreturn [msg, null];",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 340,
+        "y": 200,
+        "wires": [
+            [
+                "mariadb-get-fields"
+            ],
+            [
+                "error-response"
+            ]
+        ]
+    },
+    {
+        "id": "mariadb-get-fields",
+        "type": "mysql",
+        "z": "history-data-query-flows",
+        "name": "查询表字段",
+        "host": "localhost",
+        "port": "3306",
+        "db": "zziot",
+        "qs": {
+            "useConnectionPooling": true
+        },
+        "sql": "",
+        "sqlType": "msg.topic",
+        "outputs": 1,
+        "x": 540,
+        "y": 200,
+        "wires": [
+            [
+                "format-fields-response"
+            ]
+        ]
+    },
+    {
+        "id": "format-fields-response",
+        "type": "function",
+        "z": "history-data-query-flows",
+        "name": "格式化字段数据",
+        "func": "// 处理数据库返回的字段数据\nconst fields = msg.payload;\nconst tableName = msg.tableName;\n\n// 格式化字段数据为前端需要的格式\nconst formattedFields = [];\n\n// 遍历所有字段\nfor (const field of fields) {\n    // 创建字段对象\n    formattedFields.push({\n        name: field.Field,\n        label: formatFieldName(field.Field), // 格式化字段名为显示名称\n        type: field.Type,\n        required: field.Null === 'NO',\n        isPrimaryKey: field.Key === 'PRI',\n        defaultValue: field.Default,\n        description: getFieldDescription(tableName, field.Field)\n    });\n}\n\n// 格式化字段名为显示名称的函数\nfunction formatFieldName(fieldName) {\n    // 替换下划线为空格，首字母大写\n    return fieldName\n        .split('_')\n        .map(word => word.charAt(0).toUpperCase() + word.slice(1))\n        .join(' ');\n}\n\n// 获取字段描述的函数(可以根据业务逻辑扩展)\nfunction getFieldDescription(tableName, fieldName) {\n    const descriptions = {\n        'water_quality': {\n            'ph': 'pH值',\n            'cod': '化学需氧量',\n            'bod': '生化需氧量',\n            'nh3n': '氨氮',\n            'ss': '悬浮物',\n            'tn': '总氮',\n            'tp': '总磷'\n        },\n        'flow_data': {\n            'flow_rate': '流量',\n            'daily_flow': '日累计流量',\n            'monthly_flow': '月累计流量'\n        }\n    };\n    \n    return descriptions[tableName]?.[fieldName] || formatFieldName(fieldName);\n}\n\n// 返回API响应\nmsg.payload = {\n    success: true,\n    message: '获取字段列表成功',\n    data: formattedFields\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 760,
+        "y": 200,
+        "wires": [
+            [
+                "fields-response"
+            ]
+        ]
+    },
+    {
+        "id": "fields-response",
+        "type": "http response",
+        "z": "history-data-query-flows",
+        "name": "返回字段列表",
+        "statusCode": "200",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 980,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "error-response",
+        "type": "http response",
+        "z": "history-data-query-flows",
+        "name": "返回错误信息",
+        "statusCode": "",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 550,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "execute-query",
+        "type": "http in",
+        "z": "history-data-query-flows",
+        "name": "执行查询",
+        "url": "/api/database/query",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 140,
+        "y": 360,
+        "wires": [
+            [
+                "validate-query-input"
+            ]
+        ]
+    },
+    {
+        "id": "validate-query-input",
+        "type": "function",
+        "z": "history-data-query-flows",
+        "name": "验证查询参数",
+        "func": "// 验证是否提供了表名和查询条件\nif (!msg.payload.table) {\n    msg.statusCode = 400;\n    msg.payload = {\n        success: false,\n        message: '缺少必需的table参数'\n    };\n    return [null, msg];\n}\n\n// 安全检查和SQL注入防御\nconst tableName = msg.payload.table;\nconst safeTablePattern = /^[a-zA-Z0-9_]+$/;\n\nif (!safeTablePattern.test(tableName)) {\n    msg.statusCode = 400;\n    msg.payload = {\n        success: false,\n        message: '无效的表名格式'\n    };\n    return [null, msg];\n}\n\n// 获取查询条件\nconst query = msg.payload.query;\nconst sql = msg.payload.sql;\n\n// 构建查询SQL - 在实际环境中，应使用参数化查询\n// 注意：这里使用了传入的SQL，实际环境中应该进行更严格的验证和转换\n// 此示例仅供演示，生产环境应当使用参数化查询来防止SQL注入\nconst limit = 1000; // 限制返回记录数\n\n// 使用传入的SQL，假设已经包含了WHERE子句\nmsg.topic = `SELECT * FROM ${tableName} LIMIT ${limit}`;\n\nif (sql && sql.trim() !== '') {\n    // 假设SQL只包含WHERE子句\n    msg.topic = `SELECT * FROM ${tableName} WHERE ${sql} LIMIT ${limit}`;\n}\n\nreturn [msg, null];",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 340,
+        "y": 360,
+        "wires": [
+            [
+                "mariadb-execute-query"
+            ],
+            [
+                "error-response"
+            ]
+        ]
+    },
+    {
+        "id": "mariadb-execute-query",
+        "type": "mysql",
+        "z": "history-data-query-flows",
+        "name": "执行SQL查询",
+        "host": "localhost",
+        "port": "3306",
+        "db": "zziot",
+        "qs": {
+            "useConnectionPooling": true
+        },
+        "sql": "",
+        "sqlType": "msg.topic",
+        "outputs": 1,
+        "x": 550,
+        "y": 360,
+        "wires": [
+            [
+                "format-query-response"
+            ]
+        ]
+    },
+    {
+        "id": "format-query-response",
+        "type": "function",
+        "z": "history-data-query-flows",
+        "name": "格式化查询结果",
+        "func": "// 处理查询结果\nconst results = msg.payload;\n\n// 格式化时间/日期字段\nconst formattedResults = results.map(row => {\n    const formattedRow = {};\n    \n    // 遍历行中的每个字段\n    for (const key in row) {\n        // 检查是否为日期对象\n        if (row[key] instanceof Date) {\n            // 格式化日期\n            formattedRow[key] = row[key].toISOString();\n        } else {\n            formattedRow[key] = row[key];\n        }\n    }\n    \n    return formattedRow;\n});\n\n// 返回API响应\nmsg.payload = {\n    success: true,\n    message: '查询执行成功',\n    data: formattedResults,\n    count: formattedResults.length\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 770,
+        "y": 360,
+        "wires": [
+            [
+                "query-response"
+            ]
+        ]
+    },
+    {
+        "id": "query-response",
+        "type": "http response",
+        "z": "history-data-query-flows",
+        "name": "返回查询结果",
+        "statusCode": "200",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 980,
+        "y": 360,
+        "wires": []
+    }
+] 
