@@ -3702,13 +3702,13 @@ const SiteDetailRenderer = ({
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           {!isFullscreen && (
-            <Button
-              icon={<LeftOutlined />}
-              onClick={() => navigate('/sites')}
-              className={styles.backButton}
-            >
-              返回
-            </Button>
+          <Button
+            icon={<LeftOutlined />}
+            onClick={() => navigate('/sites')}
+            className={styles.backButton}
+          >
+            返回
+          </Button>
           )}
           <h1 className={styles.pageTitle}>{dataGroups.name}</h1>
         </div>

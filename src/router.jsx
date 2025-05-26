@@ -21,19 +21,24 @@ const ForgotPassword = lazy(() => import('./pages/Auth/ForgotPassword'));
 const SiteList = lazy(() => import('./features/sites/pages/SiteList'));
 const SiteDetail = lazy(() => import('./features/sites/pages/SiteDetail'));
 const SiteDetailNew = lazy(() => import('./features/sites/pages/SiteDetailNew'));
-const DataQuery = lazy(() => import('./pages/DataCenter/DataQuery'));
 const HistoryDataQuery = lazy(() => import('./pages/DataCenter/HistoryDataQuery'));
+const HistoryDataPage = lazy(() => import('./features/dataCenter/pages/HistoryDataPage'));
 const CarbonCalc = lazy(() => import('./pages/DataCenter/CarbonCalc'));
 const Reports = lazy(() => import('./pages/Reports/Reports'));
 const ReportForm5000 = lazy(() => import('./pages/Reports/ReportForm5000'));
 const ReportFormSludge = lazy(() => import('./pages/Reports/ReportFormSludge'));
 const ReportFormPumpStation = lazy(() => import('./pages/Reports/ReportFormPumpStation'));
 const ReportQuery = lazy(() => import('./pages/Reports/ReportQuery'));
-const DynamicReports = lazy(() => import('./pages/Reports/DynamicReports'));
+
+// 新的数据填报中心
+const DataEntryCenter = lazy(() => import('./features/dataEntry/pages/DataEntryCenter'));
+
+// 原有的数据填报页面（保留作为备用）
 const LabData = lazy(() => import('./pages/LabData/LabData'));
 const LabDataEntry = lazy(() => import('./pages/LabData/LabDataEntry'));
 const SludgeDataEntry = lazy(() => import('./pages/LabData/SludgeDataEntry'));
 const AODataEntry = lazy(() => import('./pages/LabData/AODataEntry'));
+
 const TicketList = lazy(() => import('./pages/Tickets/TicketList'));
 const TicketDetail = lazy(() => import('./pages/Tickets/TicketDetail'));
 const CreateTicket = lazy(() => import('./pages/Tickets/CreateTicket'));
@@ -62,8 +67,8 @@ const router = createHashRouter(
       { path: 'sites/:id', element: <Suspense fallback={<LoadingFallback />}><WebSocketProvider><SiteDetailNew /></WebSocketProvider></Suspense> },
       { path: 'sites/:id/old', element: <Suspense fallback={<LoadingFallback />}><SiteDetail /></Suspense> },
       // 数据中心
-      { path: 'data-query', element: <Suspense fallback={<LoadingFallback />}><DataQuery /></Suspense> },
-      { path: 'history-data', element: <Suspense fallback={<LoadingFallback />}><HistoryDataQuery /></Suspense> },
+      { path: 'history-data', element: <Suspense fallback={<LoadingFallback />}><HistoryDataPage /></Suspense> },
+      { path: 'history-data/old', element: <Suspense fallback={<LoadingFallback />}><HistoryDataQuery /></Suspense> },
       { path: 'carbon-calc', element: <Suspense fallback={<LoadingFallback />}><CarbonCalc /></Suspense> },
       // 报表系统
       { path: 'reports', element: <Suspense fallback={<LoadingFallback />}><Reports /></Suspense> },
@@ -71,12 +76,16 @@ const router = createHashRouter(
       { path: 'reports/sludge', element: <Suspense fallback={<LoadingFallback />}><ReportFormSludge /></Suspense> },
       { path: 'reports/pump-station', element: <Suspense fallback={<LoadingFallback />}><ReportFormPumpStation /></Suspense> },
       { path: 'report-query', element: <Suspense fallback={<LoadingFallback />}><ReportQuery /></Suspense> },
-      { path: 'dynamic-reports', element: <Suspense fallback={<LoadingFallback />}><DynamicReports /></Suspense> },
-      // 化验数据管理
+      
+      // 新的数据填报中心 - 统一入口
+      { path: 'data-entry', element: <Suspense fallback={<LoadingFallback />}><DataEntryCenter /></Suspense> },
+      
+      // 原有的数据填报页面路由（保留兼容性）
       { path: 'lab-data', element: <Suspense fallback={<LoadingFallback />}><LabData /></Suspense> },
-      { path: 'lab-data/entry', element: <Suspense fallback={<LoadingFallback />}><LabDataEntry /></Suspense> },
-      { path: 'lab-data/sludge', element: <Suspense fallback={<LoadingFallback />}><SludgeDataEntry /></Suspense> },
-      { path: 'lab-data/ao', element: <Suspense fallback={<LoadingFallback />}><AODataEntry /></Suspense> },
+      { path: 'lab-data-entry', element: <Suspense fallback={<LoadingFallback />}><LabDataEntry /></Suspense> },
+      { path: 'sludge-data-entry', element: <Suspense fallback={<LoadingFallback />}><SludgeDataEntry /></Suspense> },
+      { path: 'ao-data-entry', element: <Suspense fallback={<LoadingFallback />}><AODataEntry /></Suspense> },
+      
       // 工单系统
       { path: 'tickets', element: <Suspense fallback={<LoadingFallback />}><TicketList /></Suspense> },
       { path: 'tickets/:id', element: <Suspense fallback={<LoadingFallback />}><TicketDetail /></Suspense> },

@@ -9,6 +9,29 @@ export default defineConfig(({ command }) => {
     ],
     // 配置基础路径
     base: '/',
+    // 添加路径解析配置
+    resolve: {
+      alias: {
+        '~antd': 'antd',
+        '~antd/es/style/themes/index.less': '/node_modules/antd/es/style/themes/index.less',
+        '~antd/lib/style/themes/default.less': '/node_modules/antd/lib/style/themes/default.less',
+      }
+    },
+    // 添加CSS预处理器配置
+    css: {
+      preprocessorOptions: {
+        less: {
+          javascriptEnabled: true,
+          modifyVars: {
+            // 可以在这里添加主题变量覆盖
+          },
+          // 添加路径解析配置
+          paths: [
+            'node_modules'
+          ],
+        }
+      }
+    },
     server: {
       // 允许公网访问的域名
       allowedHosts: [

@@ -3,7 +3,7 @@ import { Form, Input, Button, Checkbox, Card, Typography, Alert, Spin } from 'an
 import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import apiManager from '../../services/apiManager';
+import apiManager from '../../services/api/core/apiManager';
 import styles from './Auth.module.scss';
 
 const { Title, Text } = Typography;
@@ -93,7 +93,7 @@ const Login = () => {
       console.log('第一步：调用登录API获取用户基本信息');
       console.log('登录请求参数:', { email: values.email, password: '******' });
 
-      const response = await apiManager.callApi('login', {
+      const response = await apiManager.call('login', {
         email: values.email,
         password: values.password
       });

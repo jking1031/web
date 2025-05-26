@@ -338,7 +338,7 @@ const SiteList = () => {
                       whiteSpace: 'nowrap',
                       maxWidth: '75%'
                     }}>
-                      {site.name}
+                    {site.name}
                     </div>
                     <Badge
                       className={styles.statusBadge}
@@ -355,11 +355,11 @@ const SiteList = () => {
                   <div style={{ marginBottom: '14px' }}>
                     <Tag color={getAlarmColor(site.alarm)} style={{ padding: '4px 8px', borderRadius: '4px' }}>
                       <WarningOutlined style={{ marginRight: 4 }} />
-                      {site.alarm || '未知状态'}
-                    </Tag>
-                  </div>
+                        {site.alarm || '未知状态'}
+                      </Tag>
+                    </div>
 
-                  {site.totalInflow !== null && (
+                    {site.totalInflow !== null && (
                     <div style={{ 
                       marginBottom: '14px', 
                       padding: '10px', 
@@ -375,8 +375,8 @@ const SiteList = () => {
                           {site.totalInflow.toFixed(2)} 吨
                         </div>
                       </div>
-                    </div>
-                  )}
+                      </div>
+                    )}
 
                   <div style={{ 
                     marginTop: 'auto', 

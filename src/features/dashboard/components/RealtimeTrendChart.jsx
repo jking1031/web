@@ -714,7 +714,7 @@ const RealtimeTrendChart = ({ refreshMode = 'realtime', refreshInterval = 10 }) 
           <LineChartOutlined style={{ marginRight: 8, color: THEME_COLOR }} />
           实时趋势数据
           {loading && <CircularProgress size={20} sx={{ ml: 1 }} />}
-        </Typography>
+            </Typography>
         <Box>
           <Tooltip title="刷新数据">
             <IconButton size="small" onClick={handleRefresh} disabled={loading}>
@@ -735,24 +735,24 @@ const RealtimeTrendChart = ({ refreshMode = 'realtime', refreshInterval = 10 }) 
               sx={{ mx: 1, '& .MuiFormControlLabel-label': { fontSize: '0.8rem' } }}
             />
           </Tooltip>
-          <ToggleButtonGroup
-            value={chartType}
-            exclusive
-            onChange={handleChartTypeChange}
-            size="small"
+            <ToggleButtonGroup
+              value={chartType}
+              exclusive
+              onChange={handleChartTypeChange}
+              size="small"
             sx={{ mx: 1 }}
-          >
+            >
             <ToggleButton value="line">
-              <Tooltip title="折线图">
-                <LineChartOutlined />
-              </Tooltip>
-            </ToggleButton>
+                <Tooltip title="折线图">
+                  <LineChartOutlined />
+                </Tooltip>
+              </ToggleButton>
             <ToggleButton value="radar">
-              <Tooltip title="雷达图">
-                <RadarChartOutlined />
-              </Tooltip>
-            </ToggleButton>
-          </ToggleButtonGroup>
+                <Tooltip title="雷达图">
+                  <RadarChartOutlined />
+                </Tooltip>
+              </ToggleButton>
+            </ToggleButtonGroup>
           <Tooltip title={fullscreen ? "退出全屏" : "全屏显示"}>
             <IconButton size="small" onClick={toggleFullscreen}>
               {fullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
@@ -793,27 +793,27 @@ const RealtimeTrendChart = ({ refreshMode = 'realtime', refreshInterval = 10 }) 
             </ToggleButton>
           </ToggleButtonGroup>
           
-          <FormControlLabel
-            control={
-              <Switch
-                checked={zoomEnabled}
-                onChange={handleZoomToggle}
-                size="small"
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={zoomEnabled}
+                    onChange={handleZoomToggle}
+                    size="small"
                 color="primary"
-              />
-            }
-            label="启用缩放"
+                  />
+                }
+                label="启用缩放"
             sx={{ mb: 2, display: 'block' }}
-          />
+              />
           
           <Button 
             variant="outlined" 
-            size="small" 
+                size="small"
             startIcon={<ReloadOutlined />} 
-            onClick={handleRefresh}
-            disabled={loading}
+                onClick={handleRefresh}
+                disabled={loading}
             sx={{ mr: 1, mb: 1 }}
-          >
+              >
             刷新
           </Button>
           
@@ -839,17 +839,17 @@ const RealtimeTrendChart = ({ refreshMode = 'realtime', refreshInterval = 10 }) 
       >
         {error && (
           <Alert severity="error" sx={{ mb: 1 }}>
-            {error}
-          </Alert>
+              {error}
+            </Alert>
         )}
-        <div 
-          ref={chartRef} 
-          style={{ 
-            width: '100%', 
+            <div
+              ref={chartRef}
+              style={{
+                width: '100%',
             height: '100%' 
-          }} 
-        />
-      </Box>
+              }}
+            />
+          </Box>
 
       <Snackbar
         open={notification.open}
@@ -857,7 +857,7 @@ const RealtimeTrendChart = ({ refreshMode = 'realtime', refreshInterval = 10 }) 
         onClose={() => setNotification(prev => ({ ...prev, open: false }))}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert 
+        <Alert
           onClose={() => setNotification(prev => ({ ...prev, open: false }))} 
           severity={notification.severity}
         >

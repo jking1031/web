@@ -1,0 +1,154 @@
+// 自定义 QueryBuilder 样式以匹配应用的整体设计
+.queryBuilder-container {
+  padding: 16px;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+  margin-bottom: 16px;
+  
+  .ruleGroup-container {
+    background-color: #fff;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    padding: 8px 12px;
+    transition: all 0.3s;
+    
+    &:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
+    }
+    
+    .ruleGroup-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      
+      .group-combinators {
+        margin-right: 10px;
+      }
+    }
+    
+    .rule-container {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      background-color: #fafafa;
+      border-radius: 4px;
+      padding: 8px;
+      
+      select, input {
+        min-width: 150px;
+        padding: 4px 8px;
+        border: 1px solid #d9d9d9;
+        border-radius: 2px;
+        margin: 0 8px;
+        
+        &:focus {
+          border-color: #1890ff;
+          box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+          outline: 0;
+        }
+      }
+    }
+    
+    .rule-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .group-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+  }
+  
+  // 按钮样式
+  .addRule-button, .addGroup-button {
+    margin-right: 8px;
+  }
+  
+  // 嵌套规则组样式
+  .ruleGroup-container .ruleGroup-container {
+    background-color: #f0f7ff;
+    border-left: 3px solid #1890ff;
+  }
+}
+
+/* 步骤内容容器样式 */
+.step-content {
+  background-color: #ffffff;
+  padding: 16px;
+  margin-bottom: 16px;
+  border-radius: 4px;
+  min-height: 200px;
+  
+  .ant-alert {
+    margin-bottom: 20px;
+  }
+}
+
+/* 步骤指示器样式覆盖 */
+.ant-steps-item-title {
+  font-weight: 500;
+}
+
+/* 已保存查询列表样式 */
+.saved-queries-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  
+  .ant-card {
+    height: 100%;
+    transition: all 0.3s;
+    
+    &:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+  }
+}
+
+/* 时间范围选择器样式 */
+.ant-picker-range {
+  width: 100%;
+}
+
+/* 时间筛选标签样式 */
+.time-filter-tag {
+  background-color: #e6f7ff;
+  border: 1px solid #91d5ff;
+  color: #1890ff;
+  margin-bottom: 16px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  
+  .time-values {
+    font-weight: bold;
+  }
+}
+
+/* 折叠面板样式优化 */
+.ant-collapse-header {
+  font-weight: 500;
+}
+
+/* 响应式适配 */
+@media (max-width: 768px) {
+  .ant-radio-group {
+    display: flex;
+    flex-direction: column;
+    
+    .ant-radio-button-wrapper {
+      margin-bottom: 8px;
+    }
+  }
+  
+  .ant-steps-horizontal {
+    flex-direction: column;
+    
+    .ant-steps-item {
+      margin-right: 0;
+      margin-bottom: 16px;
+    }
+  }
+} 

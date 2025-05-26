@@ -50,15 +50,21 @@ const Sidebar = ({ collapsed, onMenuClick }) => {
 
     // 数据中心
     if (path.startsWith('/data-center')) return ['data-center'];
-    if (path.startsWith('/data-query')) return ['data-center', 'data-query-center', 'data-query'];
-    if (path.startsWith('/history-data')) return ['data-center', 'data-query-center', 'history-data'];
+    if (path.startsWith('/history-data')) {
+      if (path.includes('/old')) {
+        return ['data-center', 'data-query-center', 'history-data-old'];
+      }
+      return ['data-center', 'data-query-center', 'history-data'];
+    }
     if (path.startsWith('/report-query')) return ['data-center', 'data-query-center', 'report-query'];
-    if (path.startsWith('/dynamic-reports')) return ['data-center', 'data-query-center', 'dynamic-reports'];
-    if (path.startsWith('/ao-data-query')) return ['data-center', 'data-query-center', 'ao-data-query'];
-    if (path.startsWith('/message-query')) return ['data-center', 'data-query-center', 'message-query'];
 
     // 数据填报中心
-    if (path.startsWith('/data-entry')) return ['data-center', 'data-entry-center'];
+    if (path.startsWith('/data-entry')) {
+      if (path === '/data-entry') {
+        return ['data-center', 'data-entry-center', 'data-entry'];
+      }
+      return ['data-center', 'data-entry-center'];
+    }
     if (path.startsWith('/ao-data-entry')) return ['data-center', 'data-entry-center', 'ao-data-entry'];
     if (path.startsWith('/lab-data-entry')) return ['data-center', 'data-entry-center', 'lab-data-entry'];
     if (path.startsWith('/sludge-data-entry')) return ['data-center', 'data-entry-center', 'sludge-data-entry'];
@@ -127,29 +133,14 @@ const Sidebar = ({ collapsed, onMenuClick }) => {
           label: '数据查询中心',
           children: [
             {
-              key: 'data-query',
+              key: 'history-data',
               label: '历史数据查询',
-              onClick: () => handleNavigate('/data-query'),
+              onClick: () => handleNavigate('/history-data'),
             },
             {
               key: 'report-query',
               label: '报告查询',
               onClick: () => handleNavigate('/report-query'),
-            },
-            {
-              key: 'dynamic-reports',
-              label: '动态报表查询',
-              onClick: () => handleNavigate('/dynamic-reports'),
-            },
-            {
-              key: 'ao-data-query',
-              label: 'AO池数据查询',
-              onClick: () => handleNavigate('/ao-data-query'),
-            },
-            {
-              key: 'message-query',
-              label: '消息查询',
-              onClick: () => handleNavigate('/message-query'),
             },
           ],
         },
@@ -157,6 +148,11 @@ const Sidebar = ({ collapsed, onMenuClick }) => {
           key: 'data-entry-center',
           label: '数据填报中心',
           children: [
+            {
+              key: 'data-entry',
+              label: '表单填报平台',
+              onClick: () => handleNavigate('/data-entry'),
+            },
             {
               key: 'ao-data-entry',
               label: 'AO池数据填报',
@@ -323,6 +319,14 @@ const Sidebar = ({ collapsed, onMenuClick }) => {
       icon: <DatabaseOutlined />,
       label: '查询管理',
       onClick: () => handleNavigate('/query-management'),
+    });
+    
+    // 旧版历史数据查询页面 (仅管理员可见)
+    menuItems.push({
+      key: 'history-data-old',
+      icon: <DatabaseOutlined />,
+      label: '旧版历史数据查询',
+      onClick: () => handleNavigate('/history-data/old'),
     });
   }
 
