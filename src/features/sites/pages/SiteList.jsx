@@ -200,9 +200,9 @@ const SiteList = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case '在线':
-        return 'success';
+        return 'green';
       case '离线':
-        return 'error';
+        return 'red';
       default:
         return 'default';
     }
@@ -214,7 +214,7 @@ const SiteList = () => {
       case '设施正常':
         return 'success';
       case '设施停用':
-        return 'warning';
+        return 'orange';
       case '设施故障':
         return 'error';
       default:
@@ -224,35 +224,78 @@ const SiteList = () => {
 
   return (
     <div className={styles.siteListContainer}>
-      <div className={styles.header}>
-        <div className={styles.titleContainer}>
-          <Title level={4} className={styles.pageTitle}>站点管理</Title>
-          <div className={styles.actions}>
+      <div className={styles.header} style={{ 
+        marginBottom: '24px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px'
+      }}>
+        <div className={styles.titleContainer} style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <Title level={4} className={styles.pageTitle} style={{ 
+            margin: 0, 
+            fontSize: '22px',
+            fontWeight: 600,
+            color: '#1a1a1a'
+          }}>站点管理</Title>
+          <div className={styles.actions} style={{
+            display: 'flex',
+            gap: '8px'
+          }}>
             <Button
               icon={<ReloadOutlined />}
               onClick={fetchSites}
               loading={loading}
               className={styles.actionButton}
+              style={{
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
             />
             <ApiEditorButton
               pageKey="siteList"
               tooltip="编辑站点API"
               className={styles.actionButton}
+              style={{
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
             />
           </div>
         </div>
         <Input
           className={styles.searchInput}
           placeholder="搜索站点名称或地址"
-          prefix={<SearchOutlined />}
+          prefix={<SearchOutlined style={{ color: '#8c8c8c' }} />}
           value={searchText}
           onChange={handleSearch}
           allowClear
+          style={{
+            borderRadius: '8px',
+            padding: '8px 12px',
+            height: 'auto',
+            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)'
+          }}
         />
       </div>
 
       {loading ? (
-        <div className={styles.loadingContainer}>
+        <div className={styles.loadingContainer} style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '60px 0',
+          background: '#f9fafc',
+          borderRadius: '12px',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
+        }}>
           <Spin size="large" />
         </div>
       ) : filteredSites.length > 0 ? (
@@ -263,40 +306,89 @@ const SiteList = () => {
                 className={styles.siteCard}
                 hoverable
                 onClick={() => handleSiteClick(site.id, site)}
+                style={{
+                  borderRadius: '12px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+                  overflow: 'hidden',
+                  height: '100%',
+                  transition: 'all 0.3s ease',
+                  border: 'none'
+                }}
+                bodyStyle={{
+                  padding: '20px',
+                  height: '100%'
+                }}
               >
-                <div className={styles.siteContent}>
-                  <div className={styles.siteName}>
-                    {site.name}
+                <div className={styles.siteContent} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                  <div style={{ 
+                    padding: '8px 12px', 
+                    marginBottom: '16px', 
+                    background: '#f5f7fa', 
+                    borderRadius: '8px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <div style={{ 
+                      fontSize: '16px', 
+                      fontWeight: 600,
+                      color: '#1a1a1a',
+                      textOverflow: 'ellipsis',
+                      overflow: 'hidden',
+                      whiteSpace: 'nowrap',
+                      maxWidth: '75%'
+                    }}>
+                      {site.name}
+                    </div>
                     <Badge
                       className={styles.statusBadge}
                       status={getStatusColor(site.status)}
-                      text={site.status}
+                      text={<span style={{ fontWeight: 500 }}>{site.status}</span>}
                     />
                   </div>
 
-                  <div className={styles.siteLocation}>
-                    <EnvironmentOutlined style={{ marginRight: 4 }} />
-                    {site.address || '暂无地址'}
+                  <div style={{ marginBottom: '14px', display: 'flex', alignItems: 'center' }}>
+                    <EnvironmentOutlined style={{ marginRight: 8, color: '#8c8c8c', fontSize: '16px' }} />
+                    <span style={{ color: '#595959', fontSize: '14px' }}>{site.address || '暂无地址'}</span>
                   </div>
 
-                  <div className={styles.siteStats}>
-                    <div>
-                      <Tag color={getAlarmColor(site.alarm)}>
-                        {site.alarm || '未知状态'}
-                      </Tag>
-                    </div>
+                  <div style={{ marginBottom: '14px' }}>
+                    <Tag color={getAlarmColor(site.alarm)} style={{ padding: '4px 8px', borderRadius: '4px' }}>
+                      <WarningOutlined style={{ marginRight: 4 }} />
+                      {site.alarm || '未知状态'}
+                    </Tag>
+                  </div>
 
-                    {site.totalInflow !== null && (
-                      <div className={styles.inflowData}>
-                        <DashboardOutlined style={{ marginRight: 4 }} />
-                        <span>{site.totalInflow.toFixed(2)} 吨</span>
+                  {site.totalInflow !== null && (
+                    <div style={{ 
+                      marginBottom: '14px', 
+                      padding: '10px', 
+                      background: '#f0f5ff', 
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}>
+                      <DashboardOutlined style={{ marginRight: 8, color: '#1890ff', fontSize: '18px' }} />
+                      <div>
+                        <div style={{ fontSize: '12px', color: '#8c8c8c' }}>总进水量</div>
+                        <div style={{ fontSize: '16px', fontWeight: 500, color: '#262626' }}>
+                          {site.totalInflow.toFixed(2)} 吨
+                        </div>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
 
-                  <div className={styles.siteDepartments}>
-                    <TeamOutlined style={{ marginRight: 4 }} />
-                    <span>管理部门: {site.departments ? site.departments.length : 0}</span>
+                  <div style={{ 
+                    marginTop: 'auto', 
+                    borderTop: '1px solid #f0f0f0', 
+                    paddingTop: '12px',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}>
+                    <TeamOutlined style={{ marginRight: 8, color: '#8c8c8c' }} />
+                    <span style={{ fontSize: '13px', color: '#595959' }}>
+                      管理部门: {site.departments ? site.departments.length : 0}
+                    </span>
                   </div>
                 </div>
               </Card>
@@ -304,7 +396,16 @@ const SiteList = () => {
           ))}
         </Row>
       ) : (
-        <Empty description="未找到站点" />
+        <Empty 
+          description="未找到站点" 
+          style={{
+            background: '#f9fafc',
+            padding: '60px 0',
+            borderRadius: '12px',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
+          }}
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+        />
       )}
     </div>
   );

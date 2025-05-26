@@ -2054,7 +2054,7 @@ const SiteDetailNew = () => {
                 precision={2}
                 valueStyle={{ 
                   color: item.threshold && item.value > item.threshold ? '#ff4d4f' : '#1890ff',
-                  fontSize: 16
+                  fontSize: 25
                 }}
               />
               {item.threshold && (
@@ -2194,7 +2194,7 @@ const SiteDetailNew = () => {
                     item.status === 'abnormal' 
                       ? '#ff4d4f' 
                       : '#1890ff',
-                  fontSize: 16
+                  fontSize: 30  // 增加字体大小，从16改为22
                 }}
               />
               
@@ -2339,7 +2339,7 @@ const SiteDetailNew = () => {
                     (item.status === 'abnormal') 
                       ? '#ff4d4f' 
                       : '#1890ff',
-                  fontSize: 16
+                  fontSize: 30  // 增加字体大小，从16改为22
                 }}
               />
               
@@ -2398,7 +2398,7 @@ const SiteDetailNew = () => {
                     item.healthScore >= 80 ? '#52c41a' :
                     item.healthScore >= 60 ? '#1890ff' :
                     item.healthScore >= 40 ? '#faad14' : '#ff4d4f',
-                  fontSize: 16
+                  fontSize: 22  // 增加字体大小，从16改为22
                 }}
               />
               
@@ -2468,7 +2468,7 @@ const SiteDetailNew = () => {
                      (item.value / item.target) >= 0.8 ? '#1890ff' : 
                      '#ff4d4f') :
                     '#1890ff',
-                  fontSize: 16
+                  fontSize: 30  // 增加字体大小，从16改为22
                 }}
               />
               {item.target && (
