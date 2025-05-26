@@ -8,7 +8,8 @@ import {
   DashboardOutlined, ThunderboltOutlined, ClockCircleOutlined, SettingOutlined,
   ExperimentOutlined, HeartOutlined, FundOutlined, AppstoreOutlined,
   AlertOutlined, LineChartOutlined, EnvironmentOutlined, ApartmentOutlined,
-  TeamOutlined, ReloadOutlined, LeftOutlined, ExclamationCircleOutlined, EyeInvisibleOutlined, EyeOutlined
+  TeamOutlined, ReloadOutlined, LeftOutlined, ExclamationCircleOutlined, EyeInvisibleOutlined, EyeOutlined,
+  FullscreenOutlined, FullscreenExitOutlined
 } from '@ant-design/icons';
 import { useWebSocket } from '../../../context/WebSocketContext';
 import { useAuth } from '../../../context/auth';
@@ -44,6 +45,10 @@ const SiteDetailNew = () => {
   // 获取从SiteList传递来的站点数据
   const location = useLocation();
   const { state } = location;
+  
+  // 全屏状态
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const pageContainerRef = useRef(null);
   
   // 输出路由状态信息 (用于调试)
   useEffect(() => {
@@ -3381,8 +3386,39 @@ const SiteDetailNew = () => {
     };
   }, [wsCheckTimer]);
 
+  // 切换全屏
+  const toggleFullscreen = () => {
+    if (!pageContainerRef.current) return;
+    
+    if (!document.fullscreenElement) {
+      // 进入全屏
+      pageContainerRef.current.requestFullscreen().catch(err => {
+        message.error(`无法进入全屏模式: ${err.message}`);
+      });
+    } else {
+      // 退出全屏
+      document.exitFullscreen().catch(err => {
+        message.error(`无法退出全屏模式: ${err.message}`);
+      });
+    }
+  };
+
+  // 监听全屏状态变化
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
   return (
     <SiteDetailRenderer
+      // 传递现有的props
       refreshing={refreshing}
       error={error}
       dataGroups={dataGroups}
@@ -3442,6 +3478,10 @@ const SiteDetailNew = () => {
       renderFrequencyGroup={renderFrequencyGroup}
       safeFunctionCall={safeFunctionCall}
       categorizeDataGroups={categorizeDataGroups}
+      // 添加全屏相关props
+      isFullscreen={isFullscreen}
+      toggleFullscreen={toggleFullscreen}
+      pageContainerRef={pageContainerRef}
     />
   );
 };
@@ -3508,7 +3548,11 @@ const SiteDetailRenderer = ({
   renderProductionGroup,
   renderFrequencyGroup,
   safeFunctionCall,
-  categorizeDataGroups
+  categorizeDataGroups,
+  // 添加全屏相关props
+  isFullscreen,
+  toggleFullscreen,
+  pageContainerRef
 }) => {
   // 使用useMemo计算统计数据，避免重复计算
   const stats = React.useMemo(() => {
@@ -3631,34 +3675,64 @@ const SiteDetailRenderer = ({
     );
   }
 
+  // 全屏模式的样式
+  const fullscreenStyle = isFullscreen ? {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100vw',
+    height: '100vh',
+    zIndex: 9999,
+    padding: '20px',
+    background: '#f0f2f5',
+    overflow: 'auto'
+  } : {};
+
   return (
-    <div className={styles.siteDetailContainer}>
+    <div 
+      className={`${styles.siteDetailContainer} ${isFullscreen ? styles.fullscreen : ''}`} 
+      style={fullscreenStyle}
+      ref={pageContainerRef}
+    >
       {/* 页面头部 */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <Button
-            icon={<LeftOutlined />}
-            onClick={() => navigate('/sites')}
-            className={styles.backButton}
-          >
-            返回
-          </Button>
+          {!isFullscreen && (
+            <Button
+              icon={<LeftOutlined />}
+              onClick={() => navigate('/sites')}
+              className={styles.backButton}
+            >
+              返回
+            </Button>
+          )}
           <h1 className={styles.pageTitle}>{dataGroups.name}</h1>
         </div>
         <div className={styles.headerActions}>
           <ApiEditorButton
-            pageKey="siteDetail"
-            tooltip="编辑站点详情页API"
-            className={styles.actionButton}
+            apiList={[
+              { name: 'getSiteById', params: { id: siteId } },
+              { name: 'getSiteAlarms', params: { siteId: siteId } },
+              { name: 'getSiteUsers', params: { siteId: siteId } }
+            ]}
+            dialogTitle="站点相关API"
           />
           <Button
             type="primary"
+            className={styles.actionButton}
             icon={<ReloadOutlined />}
             onClick={handleRefresh}
             loading={refreshing}
-            className={styles.actionButton}
           >
             刷新
+          </Button>
+          <Button
+            type="default"
+            className={styles.actionButton}
+            icon={isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
+            onClick={toggleFullscreen}
+          >
+            {isFullscreen ? '退出全屏' : '全屏'}
           </Button>
         </div>
       </div>
