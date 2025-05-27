@@ -23072,10 +23072,12 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 660,
+        "x": 790,
         "y": 940,
         "wires": [
-            []
+            [
+                "54a03280229a9d59"
+            ]
         ]
     },
     {
@@ -23163,7 +23165,8 @@
                 "forms-webhook-response"
             ],
             [
-                "forms-process-submission"
+                "forms-process-submission",
+                "21ea1314f6328579"
             ]
         ]
     },
@@ -23176,7 +23179,7 @@
         "headers": {
             "content-type": "application/json"
         },
-        "x": 660,
+        "x": 730,
         "y": 1060,
         "wires": []
     },
@@ -23238,8 +23241,8 @@
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
+        "complete": "true",
+        "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
         "x": 380,
@@ -23310,6 +23313,40 @@
         },
         "x": 670,
         "y": 1320,
+        "wires": []
+    },
+    {
+        "id": "21ea1314f6328579",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 28",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 910,
+        "y": 1100,
+        "wires": []
+    },
+    {
+        "id": "54a03280229a9d59",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 33",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 970,
+        "y": 960,
         "wires": []
     }
 ]
