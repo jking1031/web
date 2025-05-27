@@ -23305,8 +23305,7 @@
         "y": 1600,
         "wires": [
             [
-                "prepare-data",
-                "9346d256a5146350"
+                "prepare-data"
             ]
         ]
     },
@@ -23315,15 +23314,15 @@
         "type": "function",
         "z": "api-configs-individual-flow",
         "name": "获取查询数据",
-        "func": "// 解析 DMY 日期格式\nfunction parseDMYtoDate(str) {\n  let parts = str.split(\"/\");\n  if(parts.length !== 3) return null;\n  let day = parseInt(parts[0], 10);\n  let month = parseInt(parts[1], 10);\n  let year = parseInt(parts[2], 10);\n  if(isNaN(day) || isNaN(month) || isNaN(year)) return null;\n  return new Date(year, month - 1, day);\n}\n\n// 格式化为 YYYY-MM-DD\nfunction formatDateToYMD(date) {\n  let y = date.getFullYear();\n  let m = (date.getMonth() + 1).toString().padStart(2, \"0\");\n  let d = date.getDate().toString().padStart(2, \"0\");\n  return `${y}-${m}-${d}`;\n}\n\nvar formSubmissions = global.get(\"formSubmissions\");\nif(!formSubmissions || !formSubmissions[\"1748322080790\"] || !formSubmissions[\"1748322080790\"][0]){\n  return { payload: { success:false, message:\"无表单提交数据\", details:\"global.formSubmissions缺失或结构异常\"} };\n}\n\nvar submission = formSubmissions[\"1748322080790\"][0].data.submission;\nif(!submission[\"日期\"]){\n  return { payload: { success:false, message:\"数据写入失败\", details:\"错误原因: 日期缺失\"} };\n}\n\nlet dateObj = parseDMYtoDate(submission[\"日期\"]);\nif(!dateObj || isNaN(dateObj.getTime())){\n  return { payload: { success:false, message:\"数据写入失败\", details:\"错误原因: 日期格式不正确，需为日/月/年\"} };\n}\n\nlet formattedDate = formatDateToYMD(dateObj);\n\nmsg.submission = submission;\nmsg.date = formattedDate;  // 传递格式化后的日期，供后续使用\nmsg.submissionId = formSubmissions[\"1748322080790\"][0].id || \"\";\nreturn msg;\n\n\n",
+        "func": "// 解析 DMY 日期格式\nfunction parseDMYtoDate(str) {\n  let parts = str.split(\"/\");\n  if(parts.length !== 3) return null;\n  let day = parseInt(parts[0], 10);\n  let month = parseInt(parts[1], 10);\n  let year = parseInt(parts[2], 10);\n  if(isNaN(day) || isNaN(month) || isNaN(year)) return null;\n  return new Date(year, month - 1, day);\n}\n\n// 格式化为 YYYY-MM-DD\nfunction formatDateToYMD(date) {\n  let y = date.getFullYear();\n  let m = (date.getMonth() + 1).toString().padStart(2, \"0\");\n  let d = date.getDate().toString().padStart(2, \"0\");\n  return `${y}-${m}-${d}`;\n}\n\nvar formSubmissions = global.get(\"formSubmissions\");\nif(!formSubmissions || !formSubmissions[\"1748322080790\"] || !formSubmissions[\"1748322080790\"][0]){\n  msg.payload = { success:false, message:\"无表单提交数据\", details:\"global.formSubmissions缺失或结构异常\" };\n  return msg;\n}\n\nvar submission = formSubmissions[\"1748322080790\"][0].data.submission;\nif(!submission[\"日期\"]){\n  msg.payload = { success:false, message:\"数据写入失败\", details:\"错误原因: 日期缺失\" };\n  return msg;\n}\n\nlet dateObj = parseDMYtoDate(submission[\"日期\"]);\nif(!dateObj || isNaN(dateObj.getTime())){\n  msg.payload = { success:false, message:\"数据写入失败\", details:\"错误原因: 日期格式不正确，需为日/月/年\" };\n  return msg;\n}\n\nlet formattedDate = formatDateToYMD(dateObj);\n\nmsg.submission = submission;\nmsg.date = formattedDate;  // 传递格式化后的日期，供后续使用\nmsg.submissionId = formSubmissions[\"1748322080790\"][0].id || \"\";\n\nreturn msg;\n\n\n",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 260,
-        "y": 1380,
+        "x": 140,
+        "y": 1420,
         "wires": [
             [
                 "validate-date"
@@ -23335,15 +23334,15 @@
         "type": "function",
         "z": "api-configs-individual-flow",
         "name": "验证日期是否为历史",
-        "func": "let today = new Date();\ntoday.setHours(0,0,0,0);\n\nlet inputDate = new Date(msg.date);\ninputDate.setHours(0,0,0,0);\n\nif(inputDate >= today){\n  return { payload: { success:false, message:\"数据写入失败\", details:\"错误原因: 日期不能为今天或未来\"} };\n}\n\nreturn msg;\n",
+        "func": "let today = new Date();\ntoday.setHours(0,0,0,0);\n\nlet inputDate = new Date(msg.date);\ninputDate.setHours(0,0,0,0);\n\nif(inputDate >= today){\n  msg.payload = { success:false, message:\"数据写入失败\", details:\"错误原因: 日期不能为今天或未来\" };\n  return msg;\n}\n\nreturn msg;\n",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 160,
-        "y": 1480,
+        "x": 360,
+        "y": 1400,
         "wires": [
             [
                 "check-duplicate-sql"
@@ -23389,7 +23388,7 @@
         "type": "function",
         "z": "api-configs-individual-flow",
         "name": "验证是否重复",
-        "func": "if(msg.payload && msg.payload[0] && msg.payload[0].count > 0){\n  // 发现重复，输出第一个口（错误口），第二个口不输出\n  return [{ \n    payload: { success:false, message:\"数据写入失败\", details:\"错误原因: 数据重复\" } \n  }, null];\n}\n\n// 不重复，输出第二个口（正常口），第一个口不输出\nreturn [null, msg];\n\n",
+        "func": "if(msg.payload && msg.payload[0] && msg.payload[0].count > 0){\n  // 发现重复，复制msg，填充失败信息，走第一个输出口\n  let failMsg = Object.assign({}, msg); // 简单克隆（msg内无函数）\n  failMsg.payload = { success:false, message:\"数据写入失败\", details:\"错误原因: 数据重复\" };\n  return [failMsg, null];\n}\n\n// 不重复，走第二输出口\nreturn [null, msg];\n\n\n",
         "outputs": 2,
         "timeout": "",
         "noerr": 0,
@@ -23400,8 +23399,7 @@
         "y": 1540,
         "wires": [
             [
-                "4edb0192b2c34088",
-                "a0dc9ab7e2aa678e"
+                "4edb0192b2c34088"
             ],
             [
                 "de65236cfa33a34a"
@@ -23414,12 +23412,11 @@
         "z": "api-configs-individual-flow",
         "mydb": "e3d5e9572467c502",
         "name": "插入数据库",
-        "x": 790,
-        "y": 1380,
+        "x": 750,
+        "y": 1420,
         "wires": [
             [
-                "return-success",
-                "bd55dabfcf78e2b8"
+                "return-success"
             ]
         ]
     },
@@ -23428,7 +23425,7 @@
         "type": "function",
         "z": "api-configs-individual-flow",
         "name": "返回成功信息",
-        "func": "return {\n  payload: {\n    success: true,\n    message: \"数据已成功写入数据库\",\n    details: `表单ID: ${msg.submissionId}, 提交时间: ${new Date().toISOString()}`\n  }\n};\n",
+        "func": "if(msg.payload && msg.payload.affectedRows === 1){\n  msg.payload = { success:true, message:\"数据写入成功\" };\n} else {\n  msg.payload = { success:false, message:\"数据写入失败\" };\n}\nreturn msg;\n\n",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -23448,7 +23445,7 @@
         "type": "function",
         "z": "api-configs-individual-flow",
         "name": "构造插入SQL",
-        "func": "function parseDMYtoDate(str) {\n  const parts = str.split(\"/\");\n  if (parts.length !== 3) return null;\n  const day = parseInt(parts[0], 10);\n  const month = parseInt(parts[1], 10);\n  const year = parseInt(parts[2], 10);\n  if (isNaN(day) || isNaN(month) || isNaN(year)) return null;\n  return new Date(year, month - 1, day);\n}\n\nfunction formatDateToYMD(date) {\n  const y = date.getFullYear();\n  const m = String(date.getMonth() + 1).padStart(2, \"0\");\n  const d = String(date.getDate()).padStart(2, \"0\");\n  return `${y}-${m}-${d}`;\n}\n\nfunction formatDateTimeToSQL(date) {\n  const y = date.getFullYear();\n  const m = String(date.getMonth() + 1).padStart(2, \"0\");\n  const d = String(date.getDate()).padStart(2, \"0\");\n  const hh = String(date.getHours()).padStart(2, \"0\");\n  const mm = String(date.getMinutes()).padStart(2, \"0\");\n  const ss = String(date.getSeconds()).padStart(2, \"0\");\n  return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;\n}\n\nfunction toNumberSafe(val) {\n  const n = Number(val);\n  return isNaN(n) ? 0 : n;\n}\n\n// 安全读取全局变量中的表单数据\nconst formSubmissions = global.get(\"formSubmissions\");\nif (!formSubmissions || !formSubmissions[\"1748322080790\"] || !formSubmissions[\"1748322080790\"][0]) {\n  return { payload: { success: false, message: \"无表单提交数据\", details: \"global.formSubmissions缺失或结构异常\" } };\n}\n\nconst submission = formSubmissions[\"1748322080790\"][0].data.submission;\nconst rawDate = submission[\"日期\"];\n\nif (!rawDate) {\n  return { payload: { success: false, message: \"数据写入失败\", details: \"错误原因: 日期缺失\" } };\n}\n\nconst dateObj = parseDMYtoDate(rawDate);\nif (!dateObj || isNaN(dateObj.getTime())) {\n  return { payload: { success: false, message: \"数据写入失败\", details: \"错误原因: 日期格式不正确，需为日/月/年\" } };\n}\n\nconst formattedDate = formatDateToYMD(dateObj);\nconst now = new Date();\nconst createdAtStr = formatDateTimeToSQL(now);\n\n// 处理上传文件或图片，拼接 URL 字符串\nlet imageUrls = \"\";\nif (Array.isArray(submission[\"上传文件或图片\"])) {\n  imageUrls = submission[\"上传文件或图片\"]\n    .map(file => file.file_url)\n    .filter(url => url) // 过滤空值\n    .join(\",\");\n}\n\n// 质量字段拼接，避免空值\nconst inQualityArr = [\n  submission[\"COD平均值(mg/L)\"] ? `COD:${submission[\"COD平均值(mg/L)\"]}` : null,\n  submission[\"氨氮平均值(mg/L)\"] ? `氨氮:${submission[\"氨氮平均值(mg/L)\"]}` : null,\n  submission[\"总磷平均值(mg/L)\"] ? `总磷:${submission[\"总磷平均值(mg/L)\"]}` : null,\n  submission[\"总氮平均值(mg/L)\"] ? `总氮:${submission[\"总氮平均值(mg/L)\"]}` : null\n].filter(Boolean);\n\nconst outQualityArr = [\n  submission[\"最高COD(mg/L)\"] ? `最高COD:${submission[\"最高COD(mg/L)\"]}` : null\n].filter(Boolean);\n\nmsg.metadata = {\n  date: formattedDate,\n  submissionId: formSubmissions[\"1748322080790\"][0].id || \"\",\n  created_at: createdAtStr\n};\n\nmsg.payload = {\n  date: formattedDate, // YYYY-MM-DD\n  operator: submission[\"值班员\"] || \"\",\n  inflow: toNumberSafe(submission[\"进水流量累计(m³)\"]),\n  outflow: toNumberSafe(submission[\"出水流量累计(m³)\"]),\n  in_quality: inQualityArr.join(\", \") || \"\",\n  out_quality: outQualityArr.join(\", \") || \"\",\n  water_quality_anomalies: submission[\"水质异常情况报告\"] || null,\n  equipment_status: submission[\"主要设备运行情况\"] || \"\",\n  equipment_issues: submission[\"设备故障或问题\"] || null,\n  carbon_source: toNumberSafe(submission[\"碳源投加量(L)\"]),\n  phosphorus_removal: toNumberSafe(submission[\"除磷剂投加量(L)\"]),\n  disinfectant: toNumberSafe(submission[\"消毒剂投加量(L)\"]),\n  chemical_effect: submission[\"药剂投加效果和问题\"] || \"\",\n  sludge_quantity: toNumberSafe(submission[\"产泥量(T)\"]),\n  other_notes: submission[\"巡查情况及上报问题\"] || null,\n  report_id: msg.metadata.submissionId || null,\n  imagesurl: imageUrls || null,\n  created_at: createdAtStr\n};\n\nmsg.topic = `INSERT INTO daily_report (\n  date, operator, inflow, outflow, in_quality, out_quality, water_quality_anomalies,\n  equipment_status, equipment_issues, carbon_source, phosphorus_removal, disinfectant,\n  chemical_effect, sludge_quantity, other_notes, report_id, imagesurl, created_at\n) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`;\n\nmsg.payload = [\n  msg.payload.date,\n  msg.payload.operator,\n  msg.payload.inflow,\n  msg.payload.outflow,\n  msg.payload.in_quality,\n  msg.payload.out_quality,\n  msg.payload.water_quality_anomalies,\n  msg.payload.equipment_status,\n  msg.payload.equipment_issues,\n  msg.payload.carbon_source,\n  msg.payload.phosphorus_removal,\n  msg.payload.disinfectant,\n  msg.payload.chemical_effect,\n  msg.payload.sludge_quantity,\n  msg.payload.other_notes,\n  msg.payload.report_id,\n  msg.payload.imagesurl,\n  msg.payload.created_at\n];\n\nreturn msg;\n\n",
+        "func": "function parseDMYtoDate(str) {\n  const parts = str.split(\"/\");\n  if (parts.length !== 3) return null;\n  const day = parseInt(parts[0], 10);\n  const month = parseInt(parts[1], 10);\n  const year = parseInt(parts[2], 10);\n  if (isNaN(day) || isNaN(month) || isNaN(year)) return null;\n  return new Date(year, month - 1, day);\n}\n\nfunction formatDateToYMD(date) {\n  const y = date.getFullYear();\n  const m = String(date.getMonth() + 1).padStart(2, \"0\");\n  const d = String(date.getDate()).padStart(2, \"0\");\n  return `${y}-${m}-${d}`;\n}\n\nfunction formatDateTimeToSQL(date) {\n  const y = date.getFullYear();\n  const m = String(date.getMonth() + 1).padStart(2, \"0\");\n  const d = String(date.getDate()).padStart(2, \"0\");\n  const hh = String(date.getHours()).padStart(2, \"0\");\n  const mm = String(date.getMinutes()).padStart(2, \"0\");\n  const ss = String(date.getSeconds()).padStart(2, \"0\");\n  return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;\n}\n\nfunction toNumberSafe(val) {\n  const n = Number(val);\n  return isNaN(n) ? 0 : n;\n}\n\nconst formSubmissions = global.get(\"formSubmissions\");\nif (!formSubmissions || !formSubmissions[\"1748322080790\"] || !formSubmissions[\"1748322080790\"][0]) {\n  msg.payload = { success: false, message: \"无表单提交数据\", details: \"global.formSubmissions缺失或结构异常\" };\n  return msg;\n}\n\nconst submission = formSubmissions[\"1748322080790\"][0].data.submission;\nconst rawDate = submission[\"日期\"];\n\nif (!rawDate) {\n  msg.payload = { success: false, message: \"数据写入失败\", details: \"错误原因: 日期缺失\" };\n  return msg;\n}\n\nconst dateObj = parseDMYtoDate(rawDate);\nif (!dateObj || isNaN(dateObj.getTime())) {\n  msg.payload = { success: false, message: \"数据写入失败\", details: \"错误原因: 日期格式不正确，需为日/月/年\" };\n  return msg;\n}\n\nconst formattedDate = formatDateToYMD(dateObj);\nconst now = new Date();\nconst createdAtStr = formatDateTimeToSQL(now);\n\nlet imageUrls = \"\";\nif (Array.isArray(submission[\"上传文件或图片\"])) {\n  imageUrls = submission[\"上传文件或图片\"]\n    .map(file => file.file_url)\n    .filter(url => url) // 过滤空值\n    .join(\",\");\n}\n\nconst inQualityArr = [\n  submission[\"COD平均值(mg/L)\"] ? `COD:${submission[\"COD平均值(mg/L)\"]}` : null,\n  submission[\"氨氮平均值(mg/L)\"] ? `氨氮:${submission[\"氨氮平均值(mg/L)\"]}` : null,\n  submission[\"总磷平均值(mg/L)\"] ? `总磷:${submission[\"总磷平均值(mg/L)\"]}` : null,\n  submission[\"总氮平均值(mg/L)\"] ? `总氮:${submission[\"总氮平均值(mg/L)\"]}` : null\n].filter(Boolean);\n\nconst outQualityArr = [\n  submission[\"最高COD(mg/L)\"] ? `最高COD:${submission[\"最高COD(mg/L)\"]}` : null\n].filter(Boolean);\n\nmsg.metadata = {\n  date: formattedDate,\n  submissionId: formSubmissions[\"1748322080790\"][0].id || \"\",\n  created_at: createdAtStr\n};\n\nmsg.payload = {\n  date: formattedDate, // YYYY-MM-DD\n  operator: submission[\"值班员\"] || \"\",\n  inflow: toNumberSafe(submission[\"进水流量累计(m³)\"]),\n  outflow: toNumberSafe(submission[\"出水流量累计(m³)\"]),\n  in_quality: inQualityArr.join(\", \") || \"\",\n  out_quality: outQualityArr.join(\", \") || \"\",\n  water_quality_anomalies: submission[\"水质异常情况报告\"] || null,\n  equipment_status: submission[\"主要设备运行情况\"] || \"\",\n  equipment_issues: submission[\"设备故障或问题\"] || null,\n  carbon_source: toNumberSafe(submission[\"碳源投加量(L)\"]),\n  phosphorus_removal: toNumberSafe(submission[\"除磷剂投加量(L)\"]),\n  disinfectant: toNumberSafe(submission[\"消毒剂投加量(L)\"]),\n  chemical_effect: submission[\"药剂投加效果和问题\"] || \"\",\n  sludge_quantity: toNumberSafe(submission[\"产泥量(T)\"]),\n  other_notes: submission[\"巡查情况及上报问题\"] || null,\n  report_id: msg.metadata.submissionId || null,\n  imagesurl: imageUrls || null,\n  created_at: createdAtStr\n};\n\nmsg.topic = `INSERT INTO daily_report (\n  date, operator, inflow, outflow, in_quality, out_quality, water_quality_anomalies,\n  equipment_status, equipment_issues, carbon_source, phosphorus_removal, disinfectant,\n  chemical_effect, sludge_quantity, other_notes, report_id, imagesurl, created_at\n) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`;\n\nmsg.payload = [\n  msg.payload.date,\n  msg.payload.operator,\n  msg.payload.inflow,\n  msg.payload.outflow,\n  msg.payload.in_quality,\n  msg.payload.out_quality,\n  msg.payload.water_quality_anomalies,\n  msg.payload.equipment_status,\n  msg.payload.equipment_issues,\n  msg.payload.carbon_source,\n  msg.payload.phosphorus_removal,\n  msg.payload.disinfectant,\n  msg.payload.chemical_effect,\n  msg.payload.sludge_quantity,\n  msg.payload.other_notes,\n  msg.payload.report_id,\n  msg.payload.imagesurl,\n  msg.payload.created_at\n];\n\nreturn msg;\n\n\n",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -23456,28 +23453,12 @@
         "finalize": "",
         "libs": [],
         "x": 620,
-        "y": 1380,
+        "y": 1460,
         "wires": [
             [
                 "insert-db"
             ]
         ]
-    },
-    {
-        "id": "bd55dabfcf78e2b8",
-        "type": "debug",
-        "z": "api-configs-individual-flow",
-        "name": "debug 28",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 940,
-        "y": 1340,
-        "wires": []
     },
     {
         "id": "4edb0192b2c34088",
@@ -23488,41 +23469,8 @@
         "headers": {
             "content-type": "application/json"
         },
-        "x": 870,
+        "x": 850,
         "y": 1540,
-        "wires": []
-    },
-    {
-        "id": "9346d256a5146350",
-        "type": "debug",
-        "z": "api-configs-individual-flow",
-        "name": "debug 7",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 510,
-        "y": 1700,
-        "wires": []
-    },
-    {
-        "id": "a0dc9ab7e2aa678e",
-        "type": "debug",
-        "z": "api-configs-individual-flow",
-        "name": "debug 33",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 790,
-        "y": 1600,
         "wires": []
     }
 ]
