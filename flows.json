@@ -22972,7 +22972,8 @@
         "y": 820,
         "wires": [
             [
-                "forms-delete-function"
+                "forms-delete-function",
+                "364ea09dde27062a"
             ]
         ]
     },
@@ -23243,6 +23244,22 @@
         "statusType": "auto",
         "x": 380,
         "y": 940,
+        "wires": []
+    },
+    {
+        "id": "364ea09dde27062a",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 26",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 930,
+        "y": 760,
         "wires": []
     }
 ]
