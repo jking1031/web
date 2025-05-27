@@ -23543,5 +23543,24 @@
                 "insert-db"
             ]
         ]
+    },
+    {
+        "id": "79bd503369700148",
+        "type": "inject",
+        "z": "api-configs-individual-flow",
+        "name": "",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 400,
+        "y": 1360,
+        "wires": [
+            [
+                "de65236cfa33a34a"
+            ]
+        ]
     }
 ]
