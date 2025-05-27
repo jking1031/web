@@ -23399,7 +23399,8 @@
         "y": 1540,
         "wires": [
             [
-                "4edb0192b2c34088"
+                "4edb0192b2c34088",
+                "a8534ef5f20e8f26"
             ],
             [
                 "de65236cfa33a34a"
@@ -23471,6 +23472,23 @@
         },
         "x": 850,
         "y": 1540,
+        "wires": []
+    },
+    {
+        "id": "a8534ef5f20e8f26",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 7",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 850,
+        "y": 1600,
         "wires": []
     }
 ]
