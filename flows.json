@@ -22776,7 +22776,8 @@
         "y": 640,
         "wires": [
             [
-                "forms-get-all-function"
+                "forms-get-all-function",
+                "2db97de2c567ba74"
             ]
         ]
     },
@@ -22795,7 +22796,8 @@
         "y": 640,
         "wires": [
             [
-                "forms-get-all-response"
+                "forms-get-all-response",
+                "2db97de2c567ba74"
             ]
         ]
     },
@@ -22825,7 +22827,8 @@
         "y": 700,
         "wires": [
             [
-                "forms-get-by-id-function"
+                "forms-get-by-id-function",
+                "02950076369bba26"
             ]
         ]
     },
@@ -22844,7 +22847,8 @@
         "y": 700,
         "wires": [
             [
-                "forms-get-by-id-response"
+                "forms-get-by-id-response",
+                "02950076369bba26"
             ]
         ]
     },
@@ -22874,7 +22878,8 @@
         "y": 760,
         "wires": [
             [
-                "forms-create-function"
+                "forms-create-function",
+                "a8bce5fbe8f3a818"
             ]
         ]
     },
@@ -22893,7 +22898,8 @@
         "y": 760,
         "wires": [
             [
-                "forms-create-response"
+                "forms-create-response",
+                "a8bce5fbe8f3a818"
             ]
         ]
     },
@@ -22923,7 +22929,8 @@
         "y": 820,
         "wires": [
             [
-                "forms-update-function"
+                "forms-update-function",
+                "cc93e37cb7155a83"
             ]
         ]
     },
@@ -22942,7 +22949,8 @@
         "y": 820,
         "wires": [
             [
-                "forms-update-response"
+                "forms-update-response",
+                "cc93e37cb7155a83"
             ]
         ]
     },
@@ -22972,7 +22980,8 @@
         "y": 880,
         "wires": [
             [
-                "forms-delete-function"
+                "forms-delete-function",
+                "81ef4bf9cf0aad19"
             ]
         ]
     },
@@ -22991,7 +23000,8 @@
         "y": 880,
         "wires": [
             [
-                "forms-delete-response"
+                "forms-delete-response",
+                "81ef4bf9cf0aad19"
             ]
         ]
     },
@@ -23021,7 +23031,8 @@
         "y": 940,
         "wires": [
             [
-                "forms-submit-function"
+                "forms-submit-function",
+                "e22070ac1db0ed49"
             ]
         ]
     },
@@ -23040,7 +23051,8 @@
         "y": 940,
         "wires": [
             [
-                "forms-submit-response"
+                "forms-submit-response",
+                "e22070ac1db0ed49"
             ],
             [
                 "forms-process-submission"
@@ -23074,7 +23086,9 @@
         "x": 660,
         "y": 1000,
         "wires": [
-            []
+            [
+                "ef17042183b256a5"
+            ]
         ]
     },
     {
@@ -23090,7 +23104,8 @@
         "y": 1060,
         "wires": [
             [
-                "forms-get-submissions-function"
+                "forms-get-submissions-function",
+                "32bb6ba03b9a7d09"
             ]
         ]
     },
@@ -23109,7 +23124,8 @@
         "y": 1060,
         "wires": [
             [
-                "forms-get-submissions-response"
+                "forms-get-submissions-response",
+                "32bb6ba03b9a7d09"
             ]
         ]
     },
@@ -23124,6 +23140,134 @@
         },
         "x": 650,
         "y": 1060,
+        "wires": []
+    },
+    {
+        "id": "2db97de2c567ba74",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 7",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 350,
+        "y": 580,
+        "wires": []
+    },
+    {
+        "id": "02950076369bba26",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 26",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 550,
+        "y": 600,
+        "wires": []
+    },
+    {
+        "id": "a8bce5fbe8f3a818",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 28",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 770,
+        "y": 680,
+        "wires": []
+    },
+    {
+        "id": "cc93e37cb7155a83",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 33",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 890,
+        "y": 720,
+        "wires": []
+    },
+    {
+        "id": "81ef4bf9cf0aad19",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 36",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 890,
+        "y": 780,
+        "wires": []
+    },
+    {
+        "id": "e22070ac1db0ed49",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 38",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 910,
+        "y": 840,
+        "wires": []
+    },
+    {
+        "id": "32bb6ba03b9a7d09",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 39",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 930,
+        "y": 900,
+        "wires": []
+    },
+    {
+        "id": "ef17042183b256a5",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 40",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 940,
+        "y": 960,
         "wires": []
     }
 ]
