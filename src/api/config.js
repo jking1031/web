@@ -44,8 +44,8 @@ export const API_ENDPOINTS = {
   CHECK_ADMIN_STATUS: '/admin-api/api/check-admin-status',
 
   // 用户管理相关 - 使用zziot.jzz77.cn:9003
-  USERS: '/auth-api/api/users',
-  USER_ROLES: '/auth-api/api/users/roles',
+  USERS: '/api/users',
+  USER_ROLES: '/api/users/roles',
   ASSIGN_ROLE: '/auth-api/api/users/assign-role',
   REMOVE_ROLE: '/auth-api/api/users/remove-role',
   TOGGLE_ADMIN: '/auth-api/api/users/toggle-admin',

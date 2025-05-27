@@ -32,10 +32,6 @@ const TopContent = () => {
     if (path.startsWith('/reports/pump-station')) return '泵站运行周报';
     if (path.startsWith('/report-query')) return '报告查询';
     if (path.startsWith('/dynamic-reports')) return '动态报表';
-    if (path === '/lab-data') return '化验数据管理';
-    if (path.startsWith('/lab-data/entry')) return '化验数据填写';
-    if (path.startsWith('/lab-data/sludge')) return '污泥化验数据填报';
-    if (path.startsWith('/lab-data/ao')) return 'AO池数据填报';
     if (path === '/tickets') return '工单系统';
     if (path.startsWith('/tickets/create')) return '创建工单';
     if (path.startsWith('/carbon-calc')) return '碳源计算';
@@ -53,7 +49,6 @@ const TopContent = () => {
   // 是否显示返回按钮
   const showBackButton = !isHomePage && !location.pathname.endsWith('/sites') &&
                          !location.pathname.endsWith('/reports') &&
-                         !location.pathname.endsWith('/lab-data') &&
                          !location.pathname.endsWith('/tickets');
 
   if (isHomePage) {

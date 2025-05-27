@@ -98,8 +98,6 @@ const Sidebar = ({ collapsed, onMenuClick }) => {
     if (path.startsWith('/user-management')) return ['user-management'];
     if (path.startsWith('/settings')) return ['settings'];
     if (path.startsWith('/api-management')) return ['api-management'];
-    if (path.startsWith('/query-management')) return ['query-management'];
-    if (path.startsWith('/db-test')) return ['db-test'];
     if (path.startsWith('/profile')) return ['profile'];
 
     // API 示例页面
@@ -125,14 +123,10 @@ const Sidebar = ({ collapsed, onMenuClick }) => {
       onClick: () => handleNavigate('/sites'),
     },
     {
-      key: 'data-center',
+      key: 'data-query-center',
       icon: <BarChartOutlined />,
-      label: '数据中心',
+      label: '查询系统',
       children: [
-        {
-          key: 'data-query-center',
-          label: '查询系统',
-          children: [
             {
               key: 'history-data',
               label: '历史数据查询',
@@ -143,8 +137,6 @@ const Sidebar = ({ collapsed, onMenuClick }) => {
               label: '历史报告查询',
               onClick: () => handleNavigate('/report-query'),
             },
-          ],
-        },
       ],
     },
     
@@ -234,29 +226,6 @@ const Sidebar = ({ collapsed, onMenuClick }) => {
     },
   ];
 
-  // API 示例菜单项
-  menuItems.push({
-    key: 'api-examples',
-    icon: <ApiOutlined />,
-    label: 'API 示例',
-    children: [
-      {
-        key: 'api-example',
-        label: '函数组件示例',
-        onClick: () => handleNavigate('/api-example'),
-      },
-      {
-        key: 'api-class-example',
-        label: '类组件示例',
-        onClick: () => handleNavigate('/api-class-example'),
-      },
-      {
-        key: 'api-dashboard',
-        label: 'API 仪表盘',
-        onClick: () => handleNavigate('/api-dashboard'),
-      },
-    ],
-  });
 
   // 管理员菜单项
   if (isAdmin) {
@@ -281,20 +250,14 @@ const Sidebar = ({ collapsed, onMenuClick }) => {
       onClick: () => handleNavigate('/api-management'),
     });
 
-    menuItems.push({
-      key: 'query-management',
-      icon: <DatabaseOutlined />,
-      label: '查询管理',
-      onClick: () => handleNavigate('/query-management'),
-    });
+    // 已删除的菜单项，注释掉
+    // menuItems.push({
+    //   key: 'query-management',
+    //   icon: <DatabaseOutlined />,
+    //   label: '查询管理',
+    //   onClick: () => handleNavigate('/query-management'),
+    // });
     
-    // 旧版历史数据查询页面 (仅管理员可见)
-    menuItems.push({
-      key: 'history-data-old',
-      icon: <DatabaseOutlined />,
-      label: '旧版历史数据查询',
-      onClick: () => handleNavigate('/history-data/old'),
-    });
   }
 
   return (

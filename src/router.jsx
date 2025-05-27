@@ -10,7 +10,7 @@ import { dataEntryRoutes } from './features/dataEntry/routes';
 // 使用懒加载方式导入组件
 const EnhancedDashboard = lazy(() => import('./features/dashboard/components/EnhancedDashboard'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard/AdminDashboard'));
-const DatabaseTest = lazy(() => import('./components/DatabaseTest/DatabaseTest'));
+//const DatabaseTest = lazy(() => import('./components/DatabaseTest/DatabaseTest'));
 const ApiManagement = lazy(() => import('./pages/ApiManagement/ApiManagement'));
 // 示例组件已移除，不再导入
 const ApiDashboard = lazy(() => import('./features/dashboard/pages/ApiDashboard'));
@@ -35,10 +35,10 @@ const ReportQuery = lazy(() => import('./pages/Reports/ReportQuery'));
 const FormSubmissionVerify = lazy(() => import('./features/dataEntry/pages/FormSubmissionVerify'));
 
 // 原有的数据填报页面（保留作为备用）
-const LabData = lazy(() => import('./pages/LabData/LabData'));
-const LabDataEntry = lazy(() => import('./pages/LabData/LabDataEntry'));
-const SludgeDataEntry = lazy(() => import('./pages/LabData/SludgeDataEntry'));
-const AODataEntry = lazy(() => import('./pages/LabData/AODataEntry'));
+//const LabData = lazy(() => import('./pages/LabData/LabData'));
+//const LabDataEntry = lazy(() => import('./pages/LabData/LabDataEntry'));
+//const SludgeDataEntry = lazy(() => import('./pages/LabData/SludgeDataEntry'));
+//const AODataEntry = lazy(() => import('./pages/LabData/AODataEntry'));
 
 const TicketList = lazy(() => import('./pages/Tickets/TicketList'));
 const TicketDetail = lazy(() => import('./pages/Tickets/TicketDetail'));
@@ -49,7 +49,7 @@ const DosingCalculator = lazy(() => import('./pages/Calculators/DosingCalculator
 const ExcessSludgeCalculator = lazy(() => import('./pages/Calculators/ExcessSludgeCalculator'));
 const UserManagement = lazy(() => import('./pages/Admin/UserManagement'));
 const Settings = lazy(() => import('./pages/Admin/Settings'));
-const QueryManagement = lazy(() => import('./pages/QueryManagement/QueryManagement'));
+//const QueryManagement = lazy(() => import('./pages/QueryManagement/QueryManagement'));
 const NotFound = lazy(() => import('./pages/NotFound/NotFound'));
 
 // 加载中组件
@@ -87,11 +87,11 @@ const router = createHashRouter(
         element: <Suspense fallback={<LoadingFallback />}>{route.element}</Suspense>
       })),
       
-      // 原有的数据填报页面路由（保留兼容性）
-      { path: 'lab-data', element: <Suspense fallback={<LoadingFallback />}><LabData /></Suspense> },
-      { path: 'lab-data-entry', element: <Suspense fallback={<LoadingFallback />}><LabDataEntry /></Suspense> },
-      { path: 'sludge-data-entry', element: <Suspense fallback={<LoadingFallback />}><SludgeDataEntry /></Suspense> },
-      { path: 'ao-data-entry', element: <Suspense fallback={<LoadingFallback />}><AODataEntry /></Suspense> },
+      // 原有的数据填报页面路由（保留兼容性）- 已注释，这些组件已删除
+      // { path: 'lab-data', element: <Suspense fallback={<LoadingFallback />}><LabData /></Suspense> },
+      // { path: 'lab-data-entry', element: <Suspense fallback={<LoadingFallback />}><LabDataEntry /></Suspense> },
+      // { path: 'sludge-data-entry', element: <Suspense fallback={<LoadingFallback />}><SludgeDataEntry /></Suspense> },
+      // { path: 'ao-data-entry', element: <Suspense fallback={<LoadingFallback />}><AODataEntry /></Suspense> },
       
       // 工单系统
       { path: 'tickets', element: <Suspense fallback={<LoadingFallback />}><TicketList /></Suspense> },
@@ -105,8 +105,9 @@ const router = createHashRouter(
       // 管理功能 - 只有管理员可以访问
       { path: 'user-management', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><UserManagement /></Suspense></AdminRoute> },
       { path: 'settings', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><Settings /></Suspense></AdminRoute> },
-      { path: 'query-management', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><QueryManagement /></Suspense></AdminRoute> },
-      { path: 'db-test', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><ErrorBoundary showDetails={true}><DatabaseTest /></ErrorBoundary></Suspense></AdminRoute> },
+      // 以下路由对应的组件已删除，注释掉路由
+      // { path: 'query-management', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><QueryManagement /></Suspense></AdminRoute> },
+      // { path: 'db-test', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><ErrorBoundary showDetails={true}><DatabaseTest /></ErrorBoundary></Suspense></AdminRoute> },
       // API 仪表盘页面
       { path: 'api-dashboard', element: <Suspense fallback={<LoadingFallback />}><ErrorBoundary showDetails={true}><ApiDashboard /></ErrorBoundary></Suspense> },
       // API 管理路由
