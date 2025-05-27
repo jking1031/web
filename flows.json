@@ -23305,7 +23305,8 @@
         "y": 1620,
         "wires": [
             [
-                "prepare-data"
+                "prepare-data",
+                "9346d256a5146350"
             ]
         ]
     },
@@ -23488,6 +23489,22 @@
         },
         "x": 870,
         "y": 1500,
+        "wires": []
+    },
+    {
+        "id": "9346d256a5146350",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 7",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 510,
+        "y": 1700,
         "wires": []
     }
 ]
