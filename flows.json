@@ -23302,7 +23302,7 @@
         "upload": false,
         "swaggerDoc": "",
         "x": 200,
-        "y": 1620,
+        "y": 1640,
         "wires": [
             [
                 "prepare-data",
@@ -23400,7 +23400,8 @@
         "y": 1500,
         "wires": [
             [
-                "4edb0192b2c34088"
+                "4edb0192b2c34088",
+                "a0dc9ab7e2aa678e"
             ],
             [
                 "de65236cfa33a34a"
@@ -23487,8 +23488,8 @@
         "headers": {
             "content-type": "application/json"
         },
-        "x": 870,
-        "y": 1500,
+        "x": 950,
+        "y": 1520,
         "wires": []
     },
     {
@@ -23505,6 +23506,22 @@
         "statusType": "auto",
         "x": 510,
         "y": 1700,
+        "wires": []
+    },
+    {
+        "id": "a0dc9ab7e2aa678e",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 33",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 790,
+        "y": 1600,
         "wires": []
     }
 ]
