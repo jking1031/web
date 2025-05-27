@@ -22776,7 +22776,8 @@
         "y": 580,
         "wires": [
             [
-                "forms-get-all-function"
+                "forms-get-all-function",
+                "9d229bc2456953de"
             ]
         ]
     },
@@ -22825,7 +22826,8 @@
         "y": 640,
         "wires": [
             [
-                "forms-get-by-id-function"
+                "forms-get-by-id-function",
+                "5411af168ac20b0e"
             ]
         ]
     },
@@ -22874,7 +22876,8 @@
         "y": 700,
         "wires": [
             [
-                "forms-create-function"
+                "forms-create-function",
+                "f82849ef62e59163"
             ]
         ]
     },
@@ -22923,7 +22926,8 @@
         "y": 760,
         "wires": [
             [
-                "forms-update-function"
+                "forms-update-function",
+                "d474019612e36f51"
             ]
         ]
     },
@@ -23421,6 +23425,70 @@
         },
         "x": 850,
         "y": 1540,
+        "wires": []
+    },
+    {
+        "id": "9d229bc2456953de",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 7",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 430,
+        "y": 520,
+        "wires": []
+    },
+    {
+        "id": "5411af168ac20b0e",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 28",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 730,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "f82849ef62e59163",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 33",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 930,
+        "y": 640,
+        "wires": []
+    },
+    {
+        "id": "d474019612e36f51",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 36",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 910,
+        "y": 680,
         "wires": []
     }
 ]
