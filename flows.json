@@ -23393,7 +23393,8 @@
         "y": 1520,
         "wires": [
             [
-                "check-duplicate-sql"
+                "check-duplicate-sql",
+                "64ec35a2bb00041f"
             ]
         ]
     },
@@ -23408,7 +23409,8 @@
         "y": 1520,
         "wires": [
             [
-                "check-duplicate-db"
+                "check-duplicate-db",
+                "876f1f87ae6a8b0a"
             ]
         ]
     },
@@ -23422,7 +23424,8 @@
         "y": 1540,
         "wires": [
             [
-                "validate-duplicate"
+                "validate-duplicate",
+                "a8a7c3dd84976ae1"
             ]
         ]
     },
@@ -23437,7 +23440,8 @@
         "y": 1480,
         "wires": [
             [
-                "build-insert-sql"
+                "build-insert-sql",
+                "7858bba2b81d5b49"
             ]
         ]
     },
@@ -23449,10 +23453,11 @@
         "func": "var p = msg.payload;\nmsg.topic = `\n  INSERT INTO daily_report (\n    date, operator, inflow, outflow, in_quality, out_quality, water_quality_anomalies,\n    equipment_status, equipment_issues, carbon_source, phosphorus_removal, disinfectant,\n    chemical_effect, sludge_quantity, other_notes, report_id, imagesurl, created_at\n  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;\n\nmsg.payload = [\n  p.date, p.operator, p.inflow, p.outflow, p.in_quality, p.out_quality,\n  p.water_quality_anomalies, p.equipment_status, p.equipment_issues,\n  p.carbon_source, p.phosphorus_removal, p.disinfectant,\n  p.chemical_effect, p.sludge_quantity, p.other_notes,\n  p.report_id, p.imagesurl, p.created_at\n];\nreturn msg;",
         "outputs": 1,
         "x": 580,
-        "y": 1400,
+        "y": 1420,
         "wires": [
             [
-                "insert-db"
+                "insert-db",
+                "e92863410e4e987e"
             ]
         ]
     },
@@ -23466,7 +23471,8 @@
         "y": 1400,
         "wires": [
             [
-                "return-success"
+                "return-success",
+                "116047e443e91e46"
             ]
         ]
     },
@@ -23536,6 +23542,102 @@
         "statusType": "auto",
         "x": 450,
         "y": 1360,
+        "wires": []
+    },
+    {
+        "id": "64ec35a2bb00041f",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 36",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 290,
+        "y": 1600,
+        "wires": []
+    },
+    {
+        "id": "876f1f87ae6a8b0a",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 38",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 470,
+        "y": 1620,
+        "wires": []
+    },
+    {
+        "id": "a8a7c3dd84976ae1",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 39",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 730,
+        "y": 1600,
+        "wires": []
+    },
+    {
+        "id": "7858bba2b81d5b49",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 40",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 790,
+        "y": 1460,
+        "wires": []
+    },
+    {
+        "id": "e92863410e4e987e",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 41",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 690,
+        "y": 1360,
+        "wires": []
+    },
+    {
+        "id": "116047e443e91e46",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 42",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 950,
+        "y": 1300,
         "wires": []
     }
 ]
