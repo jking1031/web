@@ -22773,11 +22773,10 @@
         "upload": false,
         "swaggerDoc": "",
         "x": 150,
-        "y": 640,
+        "y": 580,
         "wires": [
             [
-                "forms-get-all-function",
-                "2db97de2c567ba74"
+                "forms-get-all-function"
             ]
         ]
     },
@@ -22793,11 +22792,10 @@
         "finalize": "",
         "libs": [],
         "x": 390,
-        "y": 640,
+        "y": 580,
         "wires": [
             [
-                "forms-get-all-response",
-                "2db97de2c567ba74"
+                "forms-get-all-response"
             ]
         ]
     },
@@ -22811,7 +22809,7 @@
             "content-type": "application/json"
         },
         "x": 630,
-        "y": 640,
+        "y": 580,
         "wires": []
     },
     {
@@ -22824,11 +22822,10 @@
         "upload": false,
         "swaggerDoc": "",
         "x": 160,
-        "y": 700,
+        "y": 640,
         "wires": [
             [
-                "forms-get-by-id-function",
-                "02950076369bba26"
+                "forms-get-by-id-function"
             ]
         ]
     },
@@ -22844,11 +22841,10 @@
         "finalize": "",
         "libs": [],
         "x": 390,
-        "y": 700,
+        "y": 640,
         "wires": [
             [
-                "forms-get-by-id-response",
-                "02950076369bba26"
+                "forms-get-by-id-response"
             ]
         ]
     },
@@ -22862,7 +22858,7 @@
             "content-type": "application/json"
         },
         "x": 620,
-        "y": 700,
+        "y": 640,
         "wires": []
     },
     {
@@ -22875,11 +22871,10 @@
         "upload": false,
         "swaggerDoc": "",
         "x": 150,
-        "y": 760,
+        "y": 700,
         "wires": [
             [
-                "forms-create-function",
-                "a8bce5fbe8f3a818"
+                "forms-create-function"
             ]
         ]
     },
@@ -22895,11 +22890,10 @@
         "finalize": "",
         "libs": [],
         "x": 380,
-        "y": 760,
+        "y": 700,
         "wires": [
             [
-                "forms-create-response",
-                "a8bce5fbe8f3a818"
+                "forms-create-response"
             ]
         ]
     },
@@ -22913,7 +22907,7 @@
             "content-type": "application/json"
         },
         "x": 640,
-        "y": 760,
+        "y": 700,
         "wires": []
     },
     {
@@ -22926,11 +22920,10 @@
         "upload": false,
         "swaggerDoc": "",
         "x": 150,
-        "y": 820,
+        "y": 760,
         "wires": [
             [
-                "forms-update-function",
-                "cc93e37cb7155a83"
+                "forms-update-function"
             ]
         ]
     },
@@ -22946,11 +22939,10 @@
         "finalize": "",
         "libs": [],
         "x": 380,
-        "y": 820,
+        "y": 760,
         "wires": [
             [
-                "forms-update-response",
-                "cc93e37cb7155a83"
+                "forms-update-response"
             ]
         ]
     },
@@ -22964,7 +22956,7 @@
             "content-type": "application/json"
         },
         "x": 640,
-        "y": 820,
+        "y": 760,
         "wires": []
     },
     {
@@ -22977,11 +22969,10 @@
         "upload": false,
         "swaggerDoc": "",
         "x": 150,
-        "y": 880,
+        "y": 820,
         "wires": [
             [
-                "forms-delete-function",
-                "81ef4bf9cf0aad19"
+                "forms-delete-function"
             ]
         ]
     },
@@ -22997,11 +22988,10 @@
         "finalize": "",
         "libs": [],
         "x": 380,
-        "y": 880,
+        "y": 820,
         "wires": [
             [
-                "forms-delete-response",
-                "81ef4bf9cf0aad19"
+                "forms-delete-response"
             ]
         ]
     },
@@ -23015,7 +23005,7 @@
             "content-type": "application/json"
         },
         "x": 640,
-        "y": 880,
+        "y": 820,
         "wires": []
     },
     {
@@ -23028,11 +23018,10 @@
         "upload": false,
         "swaggerDoc": "",
         "x": 150,
-        "y": 940,
+        "y": 880,
         "wires": [
             [
-                "forms-submit-function",
-                "e22070ac1db0ed49"
+                "forms-submit-function"
             ]
         ]
     },
@@ -23048,11 +23037,10 @@
         "finalize": "",
         "libs": [],
         "x": 380,
-        "y": 940,
+        "y": 880,
         "wires": [
             [
-                "forms-submit-response",
-                "e22070ac1db0ed49"
+                "forms-submit-response"
             ],
             [
                 "forms-process-submission"
@@ -23069,7 +23057,7 @@
             "content-type": "application/json"
         },
         "x": 660,
-        "y": 940,
+        "y": 880,
         "wires": []
     },
     {
@@ -23084,11 +23072,9 @@
         "finalize": "",
         "libs": [],
         "x": 660,
-        "y": 1000,
+        "y": 940,
         "wires": [
-            [
-                "ef17042183b256a5"
-            ]
+            []
         ]
     },
     {
@@ -23101,11 +23087,10 @@
         "upload": false,
         "swaggerDoc": "",
         "x": 170,
-        "y": 1060,
+        "y": 1000,
         "wires": [
             [
-                "forms-get-submissions-function",
-                "32bb6ba03b9a7d09"
+                "forms-get-submissions-function"
             ]
         ]
     },
@@ -23121,11 +23106,10 @@
         "finalize": "",
         "libs": [],
         "x": 420,
-        "y": 1060,
+        "y": 1000,
         "wires": [
             [
-                "forms-get-submissions-response",
-                "32bb6ba03b9a7d09"
+                "forms-get-submissions-response"
             ]
         ]
     },
@@ -23139,135 +23123,108 @@
             "content-type": "application/json"
         },
         "x": 650,
+        "y": 1000,
+        "wires": []
+    },
+    {
+        "id": "forms-webhook-endpoint",
+        "type": "http in",
+        "z": "api-configs-individual-flow",
+        "name": "表单Webhook接收端点",
+        "url": "/api/forms/webhook/:formId",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 170,
+        "y": 1060,
+        "wires": [
+            [
+                "forms-webhook-process"
+            ]
+        ]
+    },
+    {
+        "id": "forms-webhook-process",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "处理Webhook数据",
+        "func": "// 获取表单ID\nconst formId = msg.req.params.formId;\n\n// 获取表单数据\nconst formData = msg.payload;\n\n// 获取webhook密钥(如果有)\nconst webhookKey = msg.req.headers['x-webhook-key'];\n\n// 获取已有表单\nconst storedForms = global.get('forms') || [];\nconst form = storedForms.find(form => form.id === formId);\n\n// 验证表单存在\nif (!form) {\n    msg.payload = {\n        success: false,\n        message: `表单ID ${formId} 不存在`\n    };\n    msg.statusCode = 404;\n    return msg;\n}\n\n// 验证webhook密钥(如果表单配置了webhookKey)\nif (form.webhookKey && form.webhookKey !== webhookKey) {\n    msg.payload = {\n        success: false,\n        message: 'Webhook密钥验证失败'\n    };\n    msg.statusCode = 401;\n    return msg;\n}\n\n// 获取现有提交\nconst storedSubmissions = global.get('formSubmissions') || {};\n\n// 初始化该表单的提交数组\nif (!storedSubmissions[formId]) {\n    storedSubmissions[formId] = [];\n}\n\n// 添加新提交\nconst submission = {\n    id: Date.now().toString(),\n    formId: formId,\n    data: formData,\n    submittedBy: 'webhook',\n    submittedAt: new Date().toISOString(),\n    status: 'pending',\n    source: 'webhook'\n};\n\nstoredSubmissions[formId].push(submission);\nglobal.set('formSubmissions', storedSubmissions);\n\n// 设置提交数据用于后续处理\nmsg.submission = submission;\n\n// 返回成功响应\nmsg.payload = {\n    success: true,\n    message: '通过Webhook接收的表单数据已成功保存',\n    submissionId: submission.id\n};\n\nreturn [msg, msg];",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 1060,
+        "wires": [
+            [
+                "forms-webhook-response"
+            ],
+            [
+                "forms-process-submission"
+            ]
+        ]
+    },
+    {
+        "id": "forms-webhook-response",
+        "type": "http response",
+        "z": "api-configs-individual-flow",
+        "name": "返回Webhook结果",
+        "statusCode": "",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 660,
         "y": 1060,
         "wires": []
     },
     {
-        "id": "2db97de2c567ba74",
-        "type": "debug",
+        "id": "forms-update-webhook-key",
+        "type": "http in",
         "z": "api-configs-individual-flow",
-        "name": "debug 7",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 350,
-        "y": 580,
-        "wires": []
+        "name": "更新Webhook密钥",
+        "url": "/api/forms/:id/webhook-key",
+        "method": "patch",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 170,
+        "y": 1120,
+        "wires": [
+            [
+                "forms-update-webhook-key-function"
+            ]
+        ]
     },
     {
-        "id": "02950076369bba26",
-        "type": "debug",
+        "id": "forms-update-webhook-key-function",
+        "type": "function",
         "z": "api-configs-individual-flow",
-        "name": "debug 26",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 550,
-        "y": 600,
-        "wires": []
+        "name": "处理Webhook密钥更新",
+        "func": "// 获取表单ID\nconst formId = msg.req.params.id;\n\n// 获取新的webhook密钥\nconst { webhookKey } = msg.payload;\n\n// 获取已有表单\nconst storedForms = global.get('forms') || [];\nconst formIndex = storedForms.findIndex(form => form.id === formId);\n\n// 验证表单存在\nif (formIndex === -1) {\n    msg.payload = {\n        success: false,\n        message: `表单ID ${formId} 不存在`\n    };\n    msg.statusCode = 404;\n    return msg;\n}\n\n// 更新webhook密钥\nstoredForms[formIndex] = {\n    ...storedForms[formIndex],\n    webhookKey,\n    updatedAt: new Date().toISOString()\n};\n\n// 保存更新后的表单\nglobal.set('forms', storedForms);\n\n// 返回成功响应\nmsg.payload = {\n    success: true,\n    message: 'Webhook密钥已更新',\n    data: {\n        id: formId,\n        webhookKey\n    }\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 420,
+        "y": 1120,
+        "wires": [
+            [
+                "forms-update-webhook-key-response"
+            ]
+        ]
     },
     {
-        "id": "a8bce5fbe8f3a818",
-        "type": "debug",
+        "id": "forms-update-webhook-key-response",
+        "type": "http response",
         "z": "api-configs-individual-flow",
-        "name": "debug 28",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 770,
-        "y": 680,
-        "wires": []
-    },
-    {
-        "id": "cc93e37cb7155a83",
-        "type": "debug",
-        "z": "api-configs-individual-flow",
-        "name": "debug 33",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 890,
-        "y": 720,
-        "wires": []
-    },
-    {
-        "id": "81ef4bf9cf0aad19",
-        "type": "debug",
-        "z": "api-configs-individual-flow",
-        "name": "debug 36",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 890,
-        "y": 780,
-        "wires": []
-    },
-    {
-        "id": "e22070ac1db0ed49",
-        "type": "debug",
-        "z": "api-configs-individual-flow",
-        "name": "debug 38",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 910,
-        "y": 840,
-        "wires": []
-    },
-    {
-        "id": "32bb6ba03b9a7d09",
-        "type": "debug",
-        "z": "api-configs-individual-flow",
-        "name": "debug 39",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 930,
-        "y": 900,
-        "wires": []
-    },
-    {
-        "id": "ef17042183b256a5",
-        "type": "debug",
-        "z": "api-configs-individual-flow",
-        "name": "debug 40",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 940,
-        "y": 960,
+        "name": "返回Webhook密钥更新结果",
+        "statusCode": "",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 680,
+        "y": 1120,
         "wires": []
     }
 ]
