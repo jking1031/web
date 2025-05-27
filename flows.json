@@ -23261,5 +23261,55 @@
         "x": 930,
         "y": 760,
         "wires": []
+    },
+    {
+        "id": "aaa61b95969b237d",
+        "type": "http in",
+        "z": "api-configs-individual-flow",
+        "name": "",
+        "url": "/api/nextcloud/files",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 170,
+        "y": 1320,
+        "wires": [
+            [
+                "2249c9c20bd59222"
+            ]
+        ]
+    },
+    {
+        "id": "2249c9c20bd59222",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "function 91",
+        "func": "const username = \"common_user\";\nconst password = \"yourpassword\";\n\nmsg.headers = {\n    \"Content-Type\": \"application/xml\",\n    \"Authorization\": \"Basic \" + Buffer.from(username + \":\" + password).toString(\"base64\")\n};\n\nmsg.method = \"PROPFIND\";\nmsg.url = \"http://112.28.56.235:11000/remote.php/dav/files/dsws001/\";\n\nmsg.payload = `<?xml version=\"1.0\"?>\n<d:propfind xmlns:d=\"DAV:\">\n  <d:prop>\n    <d:displayname />\n    <d:getcontentlength />\n    <d:getlastmodified />\n    <d:resourcetype />\n  </d:prop>\n</d:propfind>`;\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 1320,
+        "wires": [
+            [
+                "0b74b3a7fa78f6b1"
+            ]
+        ]
+    },
+    {
+        "id": "0b74b3a7fa78f6b1",
+        "type": "http response",
+        "z": "api-configs-individual-flow",
+        "name": "返回Webhook结果",
+        "statusCode": "",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 670,
+        "y": 1320,
+        "wires": []
     }
 ]
