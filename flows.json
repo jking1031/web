@@ -23131,7 +23131,7 @@
         "type": "http in",
         "z": "api-configs-individual-flow",
         "name": "表单Webhook接收端点",
-        "url": "/api/forms/webhook/:formId",
+        "url": "/api/forms/webhook/1748309054320",
         "method": "post",
         "upload": false,
         "swaggerDoc": "",
