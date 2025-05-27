@@ -22762,5 +22762,368 @@
         "x": 300,
         "y": 180,
         "wires": []
+    },
+    {
+        "id": "forms-get-all",
+        "type": "http in",
+        "z": "api-configs-individual-flow",
+        "name": "Get All Forms",
+        "url": "/api/forms",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 150,
+        "y": 640,
+        "wires": [
+            [
+                "forms-get-all-function"
+            ]
+        ]
+    },
+    {
+        "id": "forms-get-all-function",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "Process Get All Forms",
+        "func": "// Get forms from context or database\nconst storedForms = global.get('forms') || [];\n\n// Return success response\nmsg.payload = {\n    success: true,\n    message: `Successfully retrieved ${storedForms.length} forms`,\n    data: storedForms\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 390,
+        "y": 640,
+        "wires": [
+            [
+                "forms-get-all-response"
+            ]
+        ]
+    },
+    {
+        "id": "forms-get-all-response",
+        "type": "http response",
+        "z": "api-configs-individual-flow",
+        "name": "Return Forms List",
+        "statusCode": "",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 630,
+        "y": 640,
+        "wires": []
+    },
+    {
+        "id": "forms-get-by-id",
+        "type": "http in",
+        "z": "api-configs-individual-flow",
+        "name": "Get Form By ID",
+        "url": "/api/forms/:id",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 160,
+        "y": 700,
+        "wires": [
+            [
+                "forms-get-by-id-function"
+            ]
+        ]
+    },
+    {
+        "id": "forms-get-by-id-function",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "Process Get Form By ID",
+        "func": "// Get form ID from request parameters\nconst formId = msg.req.params.id;\n\n// Get forms from context or database\nconst storedForms = global.get('forms') || [];\n\n// Find the requested form\nconst form = storedForms.find(form => form.id === formId);\n\nif (!form) {\n    msg.payload = {\n        success: false,\n        message: `Form with ID ${formId} not found`\n    };\n    msg.statusCode = 404;\n    return msg;\n}\n\n// Return success response\nmsg.payload = {\n    success: true,\n    message: 'Form found',\n    data: form\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 390,
+        "y": 700,
+        "wires": [
+            [
+                "forms-get-by-id-response"
+            ]
+        ]
+    },
+    {
+        "id": "forms-get-by-id-response",
+        "type": "http response",
+        "z": "api-configs-individual-flow",
+        "name": "Return Form",
+        "statusCode": "",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 620,
+        "y": 700,
+        "wires": []
+    },
+    {
+        "id": "forms-create",
+        "type": "http in",
+        "z": "api-configs-individual-flow",
+        "name": "Create Form",
+        "url": "/api/forms",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 150,
+        "y": 760,
+        "wires": [
+            [
+                "forms-create-function"
+            ]
+        ]
+    },
+    {
+        "id": "forms-create-function",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "Process Create Form",
+        "func": "// Get form data from request\nconst formData = msg.payload;\n\n// Validate required fields\nif (!formData.title || !formData.embedUrl) {\n    msg.payload = {\n        success: false,\n        message: 'Title and embed URL are required'\n    };\n    msg.statusCode = 400;\n    return msg;\n}\n\n// Get existing forms\nconst storedForms = global.get('forms') || [];\n\n// Create new form with unique ID and timestamp\nconst newForm = {\n    id: Date.now().toString(),\n    title: formData.title,\n    embedUrl: formData.embedUrl,\n    description: formData.description || '',\n    status: formData.status || 'active',\n    createdAt: new Date().toISOString(),\n    updatedAt: new Date().toISOString()\n};\n\n// Add to forms array and save to global context\nstoredForms.push(newForm);\nglobal.set('forms', storedForms);\n\n// Return success response\nmsg.payload = {\n    success: true,\n    message: 'Form created successfully',\n    data: newForm\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 760,
+        "wires": [
+            [
+                "forms-create-response"
+            ]
+        ]
+    },
+    {
+        "id": "forms-create-response",
+        "type": "http response",
+        "z": "api-configs-individual-flow",
+        "name": "Return Created Form",
+        "statusCode": "",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 640,
+        "y": 760,
+        "wires": []
+    },
+    {
+        "id": "forms-update",
+        "type": "http in",
+        "z": "api-configs-individual-flow",
+        "name": "Update Form",
+        "url": "/api/forms/:id",
+        "method": "put",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 150,
+        "y": 820,
+        "wires": [
+            [
+                "forms-update-function"
+            ]
+        ]
+    },
+    {
+        "id": "forms-update-function",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "Process Update Form",
+        "func": "// Get form ID from request parameters\nconst formId = msg.req.params.id;\n\n// Get form data from request\nconst formData = msg.payload;\n\n// Get existing forms\nconst storedForms = global.get('forms') || [];\n\n// Find the form to update\nconst formIndex = storedForms.findIndex(form => form.id === formId);\n\nif (formIndex === -1) {\n    msg.payload = {\n        success: false,\n        message: `Form with ID ${formId} not found`\n    };\n    msg.statusCode = 404;\n    return msg;\n}\n\n// Update form with new data\nconst updatedForm = {\n    ...storedForms[formIndex],\n    title: formData.title || storedForms[formIndex].title,\n    embedUrl: formData.embedUrl || storedForms[formIndex].embedUrl,\n    description: formData.description !== undefined ? formData.description : storedForms[formIndex].description,\n    status: formData.status || storedForms[formIndex].status,\n    updatedAt: new Date().toISOString()\n};\n\n// Update the form in the array\nstoredForms[formIndex] = updatedForm;\n\n// Save updated forms to global context\nglobal.set('forms', storedForms);\n\n// Return success response\nmsg.payload = {\n    success: true,\n    message: 'Form updated successfully',\n    data: updatedForm\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 820,
+        "wires": [
+            [
+                "forms-update-response"
+            ]
+        ]
+    },
+    {
+        "id": "forms-update-response",
+        "type": "http response",
+        "z": "api-configs-individual-flow",
+        "name": "Return Updated Form",
+        "statusCode": "",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 640,
+        "y": 820,
+        "wires": []
+    },
+    {
+        "id": "forms-delete",
+        "type": "http in",
+        "z": "api-configs-individual-flow",
+        "name": "Delete Form",
+        "url": "/api/forms/:id",
+        "method": "delete",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 150,
+        "y": 880,
+        "wires": [
+            [
+                "forms-delete-function"
+            ]
+        ]
+    },
+    {
+        "id": "forms-delete-function",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "Process Delete Form",
+        "func": "// Get form ID from request parameters\nconst formId = msg.req.params.id;\n\n// Get existing forms\nconst storedForms = global.get('forms') || [];\n\n// Find the form to delete\nconst formIndex = storedForms.findIndex(form => form.id === formId);\n\nif (formIndex === -1) {\n    msg.payload = {\n        success: false,\n        message: `Form with ID ${formId} not found`\n    };\n    msg.statusCode = 404;\n    return msg;\n}\n\n// Remove the form from the array\nstoredForms.splice(formIndex, 1);\n\n// Save updated forms to global context\nglobal.set('forms', storedForms);\n\n// Also remove form submissions\nconst storedSubmissions = global.get('formSubmissions') || {};\ndelete storedSubmissions[formId];\nglobal.set('formSubmissions', storedSubmissions);\n\n// Return success response\nmsg.payload = {\n    success: true,\n    message: 'Form deleted successfully'\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 880,
+        "wires": [
+            [
+                "forms-delete-response"
+            ]
+        ]
+    },
+    {
+        "id": "forms-delete-response",
+        "type": "http response",
+        "z": "api-configs-individual-flow",
+        "name": "Return Delete Result",
+        "statusCode": "",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 640,
+        "y": 880,
+        "wires": []
+    },
+    {
+        "id": "forms-submit",
+        "type": "http in",
+        "z": "api-configs-individual-flow",
+        "name": "Submit Form",
+        "url": "/api/forms/:id/submit",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 150,
+        "y": 940,
+        "wires": [
+            [
+                "forms-submit-function"
+            ]
+        ]
+    },
+    {
+        "id": "forms-submit-function",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "Process Form Submission",
+        "func": "// Get form ID from request parameters\nconst formId = msg.req.params.id;\n\n// Get form data from request\nconst formData = msg.payload;\n\n// Get existing forms to verify form exists\nconst storedForms = global.get('forms') || [];\nconst form = storedForms.find(form => form.id === formId);\n\nif (!form) {\n    msg.payload = {\n        success: false,\n        message: `Form with ID ${formId} not found`\n    };\n    msg.statusCode = 404;\n    return msg;\n}\n\n// Get existing submissions\nconst storedSubmissions = global.get('formSubmissions') || {};\n\n// Initialize array for this form if it doesn't exist\nif (!storedSubmissions[formId]) {\n    storedSubmissions[formId] = [];\n}\n\n// Create new submission entry\nconst newSubmission = {\n    id: Date.now().toString(),\n    formId: formId,\n    data: formData,\n    submittedBy: msg.req.headers['x-user-id'] || 'anonymous',\n    submittedAt: new Date().toISOString(),\n    status: 'pending'\n};\n\n// Add to submissions and save to global context\nstoredSubmissions[formId].push(newSubmission);\nglobal.set('formSubmissions', storedSubmissions);\n\n// Set the submission for further processing\nmsg.submission = newSubmission;\n\n// Return success response\nmsg.payload = {\n    success: true,\n    message: 'Form submitted successfully',\n    data: {\n        submissionId: newSubmission.id,\n        timestamp: newSubmission.submittedAt\n    }\n};\n\nreturn [msg, msg];",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 940,
+        "wires": [
+            [
+                "forms-submit-response"
+            ],
+            [
+                "forms-process-submission"
+            ]
+        ]
+    },
+    {
+        "id": "forms-submit-response",
+        "type": "http response",
+        "z": "api-configs-individual-flow",
+        "name": "Return Submission Result",
+        "statusCode": "",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 660,
+        "y": 940,
+        "wires": []
+    },
+    {
+        "id": "forms-process-submission",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "Process Submission Data",
+        "func": "// Get the submission from the message\nconst submission = msg.submission;\n\n// Perform any additional processing here\n// For example, sending data to external systems, transforming data, etc.\n\n// Update submission status to processed\nconst storedSubmissions = global.get('formSubmissions') || {};\nconst formSubmissions = storedSubmissions[submission.formId] || [];\n\nconst submissionIndex = formSubmissions.findIndex(sub => sub.id === submission.id);\nif (submissionIndex !== -1) {\n    formSubmissions[submissionIndex].status = 'processed';\n    storedSubmissions[submission.formId] = formSubmissions;\n    global.set('formSubmissions', storedSubmissions);\n}\n\n// Log the processed submission\nnode.log(`Processed form submission: ${submission.id} for form: ${submission.formId}`);\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 660,
+        "y": 1000,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "forms-get-submissions",
+        "type": "http in",
+        "z": "api-configs-individual-flow",
+        "name": "Get Form Submissions",
+        "url": "/api/forms/:id/submissions",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 170,
+        "y": 1060,
+        "wires": [
+            [
+                "forms-get-submissions-function"
+            ]
+        ]
+    },
+    {
+        "id": "forms-get-submissions-function",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "Process Get Submissions",
+        "func": "// Get form ID from request parameters\nconst formId = msg.req.params.id;\n\n// Get stored submissions\nconst storedSubmissions = global.get('formSubmissions') || {};\nconst formSubmissions = storedSubmissions[formId] || [];\n\n// Return success response\nmsg.payload = {\n    success: true,\n    message: `Successfully retrieved ${formSubmissions.length} submissions`,\n    data: formSubmissions\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 420,
+        "y": 1060,
+        "wires": [
+            [
+                "forms-get-submissions-response"
+            ]
+        ]
+    },
+    {
+        "id": "forms-get-submissions-response",
+        "type": "http response",
+        "z": "api-configs-individual-flow",
+        "name": "Return Submissions",
+        "statusCode": "",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 650,
+        "y": 1060,
+        "wires": []
     }
 ]
