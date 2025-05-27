@@ -23450,7 +23450,8 @@
         "y": 1480,
         "wires": [
             [
-                "build-insert-sql"
+                "build-insert-sql",
+                "8e180072c9ef7144"
             ]
         ]
     },
@@ -23524,5 +23525,22 @@
                 "prepare-data"
             ]
         ]
+    },
+    {
+        "id": "8e180072c9ef7144",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 7",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 770,
+        "y": 1540,
+        "wires": []
     }
 ]
