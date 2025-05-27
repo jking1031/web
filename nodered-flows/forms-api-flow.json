@@ -1,0 +1,474 @@
+[
+  {
+    "id": "forms-api-flow",
+    "type": "tab",
+    "label": "Forms API",
+    "disabled": false,
+    "info": "Flow for handling form management and submissions via API",
+    "env": []
+  },
+  {
+    "id": "forms-get-all",
+    "type": "http in",
+    "z": "forms-api-flow",
+    "name": "Get All Forms",
+    "url": "/api/forms",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 120,
+    "y": 80,
+    "wires": [
+      [
+        "forms-get-all-function"
+      ]
+    ]
+  },
+  {
+    "id": "forms-get-all-function",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "Process Get All Forms",
+    "func": "// Get forms from context or database\nconst storedForms = global.get('forms') || [];\n\n// Return success response\nmsg.payload = {\n    success: true,\n    message: `Successfully retrieved ${storedForms.length} forms`,\n    data: storedForms\n};\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 80,
+    "wires": [
+      [
+        "forms-get-all-response"
+      ]
+    ]
+  },
+  {
+    "id": "forms-get-all-response",
+    "type": "http response",
+    "z": "forms-api-flow",
+    "name": "Return Forms List",
+    "statusCode": "",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "x": 600,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "forms-get-by-id",
+    "type": "http in",
+    "z": "forms-api-flow",
+    "name": "Get Form By ID",
+    "url": "/api/forms/:id",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 130,
+    "y": 140,
+    "wires": [
+      [
+        "forms-get-by-id-function"
+      ]
+    ]
+  },
+  {
+    "id": "forms-get-by-id-function",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "Process Get Form By ID",
+    "func": "// Get form ID from request parameters\nconst formId = msg.req.params.id;\n\n// Get forms from context or database\nconst storedForms = global.get('forms') || [];\n\n// Find the requested form\nconst form = storedForms.find(form => form.id === formId);\n\nif (!form) {\n    msg.payload = {\n        success: false,\n        message: `Form with ID ${formId} not found`\n    };\n    msg.statusCode = 404;\n    return msg;\n}\n\n// Return success response\nmsg.payload = {\n    success: true,\n    message: 'Form found',\n    data: form\n};\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 140,
+    "wires": [
+      [
+        "forms-get-by-id-response"
+      ]
+    ]
+  },
+  {
+    "id": "forms-get-by-id-response",
+    "type": "http response",
+    "z": "forms-api-flow",
+    "name": "Return Form",
+    "statusCode": "",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "x": 590,
+    "y": 140,
+    "wires": []
+  },
+  {
+    "id": "forms-create",
+    "type": "http in",
+    "z": "forms-api-flow",
+    "name": "Create Form",
+    "url": "/api/forms",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 120,
+    "y": 200,
+    "wires": [
+      [
+        "forms-create-function"
+      ]
+    ]
+  },
+  {
+    "id": "forms-create-function",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "Process Create Form",
+    "func": "// Get form data from request\nconst formData = msg.payload;\n\n// Validate required fields\nif (!formData.title || !formData.embedUrl) {\n    msg.payload = {\n        success: false,\n        message: 'Title and embed URL are required'\n    };\n    msg.statusCode = 400;\n    return msg;\n}\n\n// Get existing forms\nconst storedForms = global.get('forms') || [];\n\n// Create new form with unique ID and timestamp\nconst newForm = {\n    id: Date.now().toString(),\n    title: formData.title,\n    embedUrl: formData.embedUrl,\n    description: formData.description || '',\n    status: formData.status || 'active',\n    createdAt: new Date().toISOString(),\n    updatedAt: new Date().toISOString()\n};\n\n// Add to forms array and save to global context\nstoredForms.push(newForm);\nglobal.set('forms', storedForms);\n\n// Return success response\nmsg.payload = {\n    success: true,\n    message: 'Form created successfully',\n    data: newForm\n};\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 350,
+    "y": 200,
+    "wires": [
+      [
+        "forms-create-response"
+      ]
+    ]
+  },
+  {
+    "id": "forms-create-response",
+    "type": "http response",
+    "z": "forms-api-flow",
+    "name": "Return Created Form",
+    "statusCode": "",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "x": 610,
+    "y": 200,
+    "wires": []
+  },
+  {
+    "id": "forms-update",
+    "type": "http in",
+    "z": "forms-api-flow",
+    "name": "Update Form",
+    "url": "/api/forms/:id",
+    "method": "put",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 120,
+    "y": 260,
+    "wires": [
+      [
+        "forms-update-function"
+      ]
+    ]
+  },
+  {
+    "id": "forms-update-function",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "Process Update Form",
+    "func": "// Get form ID from request parameters\nconst formId = msg.req.params.id;\n\n// Get form data from request\nconst formData = msg.payload;\n\n// Get existing forms\nconst storedForms = global.get('forms') || [];\n\n// Find the form to update\nconst formIndex = storedForms.findIndex(form => form.id === formId);\n\nif (formIndex === -1) {\n    msg.payload = {\n        success: false,\n        message: `Form with ID ${formId} not found`\n    };\n    msg.statusCode = 404;\n    return msg;\n}\n\n// Update form with new data\nconst updatedForm = {\n    ...storedForms[formIndex],\n    title: formData.title || storedForms[formIndex].title,\n    embedUrl: formData.embedUrl || storedForms[formIndex].embedUrl,\n    description: formData.description !== undefined ? formData.description : storedForms[formIndex].description,\n    status: formData.status || storedForms[formIndex].status,\n    updatedAt: new Date().toISOString()\n};\n\n// Update the form in the array\nstoredForms[formIndex] = updatedForm;\n\n// Save updated forms to global context\nglobal.set('forms', storedForms);\n\n// Return success response\nmsg.payload = {\n    success: true,\n    message: 'Form updated successfully',\n    data: updatedForm\n};\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 350,
+    "y": 260,
+    "wires": [
+      [
+        "forms-update-response"
+      ]
+    ]
+  },
+  {
+    "id": "forms-update-response",
+    "type": "http response",
+    "z": "forms-api-flow",
+    "name": "Return Updated Form",
+    "statusCode": "",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "x": 610,
+    "y": 260,
+    "wires": []
+  },
+  {
+    "id": "forms-delete",
+    "type": "http in",
+    "z": "forms-api-flow",
+    "name": "Delete Form",
+    "url": "/api/forms/:id",
+    "method": "delete",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 120,
+    "y": 320,
+    "wires": [
+      [
+        "forms-delete-function"
+      ]
+    ]
+  },
+  {
+    "id": "forms-delete-function",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "Process Delete Form",
+    "func": "// Get form ID from request parameters\nconst formId = msg.req.params.id;\n\n// Get existing forms\nconst storedForms = global.get('forms') || [];\n\n// Find the form to delete\nconst formIndex = storedForms.findIndex(form => form.id === formId);\n\nif (formIndex === -1) {\n    msg.payload = {\n        success: false,\n        message: `Form with ID ${formId} not found`\n    };\n    msg.statusCode = 404;\n    return msg;\n}\n\n// Remove the form from the array\nstoredForms.splice(formIndex, 1);\n\n// Save updated forms to global context\nglobal.set('forms', storedForms);\n\n// Also remove form submissions\nconst storedSubmissions = global.get('formSubmissions') || {};\ndelete storedSubmissions[formId];\nglobal.set('formSubmissions', storedSubmissions);\n\n// Return success response\nmsg.payload = {\n    success: true,\n    message: 'Form deleted successfully'\n};\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 350,
+    "y": 320,
+    "wires": [
+      [
+        "forms-delete-response"
+      ]
+    ]
+  },
+  {
+    "id": "forms-delete-response",
+    "type": "http response",
+    "z": "forms-api-flow",
+    "name": "Return Delete Result",
+    "statusCode": "",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "x": 610,
+    "y": 320,
+    "wires": []
+  },
+  {
+    "id": "forms-submit",
+    "type": "http in",
+    "z": "forms-api-flow",
+    "name": "Submit Form",
+    "url": "/api/forms/:id/submit",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 120,
+    "y": 380,
+    "wires": [
+      [
+        "forms-submit-function"
+      ]
+    ]
+  },
+  {
+    "id": "forms-submit-function",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "Process Form Submission",
+    "func": "// Get form ID from request parameters\nconst formId = msg.req.params.id;\n\n// Get form data from request\nconst formData = msg.payload;\n\n// Get existing forms to verify form exists\nconst storedForms = global.get('forms') || [];\nconst form = storedForms.find(form => form.id === formId);\n\nif (!form) {\n    msg.payload = {\n        success: false,\n        message: `Form with ID ${formId} not found`\n    };\n    msg.statusCode = 404;\n    return msg;\n}\n\n// Get existing submissions\nconst storedSubmissions = global.get('formSubmissions') || {};\n\n// Initialize array for this form if it doesn't exist\nif (!storedSubmissions[formId]) {\n    storedSubmissions[formId] = [];\n}\n\n// Create new submission entry\nconst newSubmission = {\n    id: Date.now().toString(),\n    formId: formId,\n    data: formData,\n    submittedBy: msg.req.headers['x-user-id'] || 'anonymous',\n    submittedAt: new Date().toISOString(),\n    status: 'pending'\n};\n\n// Add to submissions and save to global context\nstoredSubmissions[formId].push(newSubmission);\nglobal.set('formSubmissions', storedSubmissions);\n\n// Set the submission for further processing\nmsg.submission = newSubmission;\n\n// Return success response\nmsg.payload = {\n    success: true,\n    message: 'Form submitted successfully',\n    data: {\n        submissionId: newSubmission.id,\n        timestamp: newSubmission.submittedAt\n    }\n};\n\nreturn [msg, msg];",
+    "outputs": 2,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 350,
+    "y": 380,
+    "wires": [
+      [
+        "forms-submit-response"
+      ],
+      [
+        "forms-process-submission"
+      ]
+    ]
+  },
+  {
+    "id": "forms-submit-response",
+    "type": "http response",
+    "z": "forms-api-flow",
+    "name": "Return Submission Result",
+    "statusCode": "",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "x": 630,
+    "y": 380,
+    "wires": []
+  },
+  {
+    "id": "forms-process-submission",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "Process Submission Data",
+    "func": "// Get the submission from the message\nconst submission = msg.submission;\n\n// Perform any additional processing here\n// For example, sending data to external systems, transforming data, etc.\n\n// Update submission status to processed\nconst storedSubmissions = global.get('formSubmissions') || {};\nconst formSubmissions = storedSubmissions[submission.formId] || [];\n\nconst submissionIndex = formSubmissions.findIndex(sub => sub.id === submission.id);\nif (submissionIndex !== -1) {\n    formSubmissions[submissionIndex].status = 'processed';\n    storedSubmissions[submission.formId] = formSubmissions;\n    global.set('formSubmissions', storedSubmissions);\n}\n\n// Log the processed submission\nnode.log(`Processed form submission: ${submission.id} for form: ${submission.formId}`);\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 630,
+    "y": 440,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "forms-get-submissions",
+    "type": "http in",
+    "z": "forms-api-flow",
+    "name": "Get Form Submissions",
+    "url": "/api/forms/:id/submissions",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 140,
+    "y": 500,
+    "wires": [
+      [
+        "forms-get-submissions-function"
+      ]
+    ]
+  },
+  {
+    "id": "forms-get-submissions-function",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "Process Get Submissions",
+    "func": "// Get form ID from request parameters\nconst formId = msg.req.params.id;\n\n// Get stored submissions\nconst storedSubmissions = global.get('formSubmissions') || {};\nconst formSubmissions = storedSubmissions[formId] || [];\n\n// Return success response\nmsg.payload = {\n    success: true,\n    message: `Successfully retrieved ${formSubmissions.length} submissions`,\n    data: formSubmissions\n};\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 390,
+    "y": 500,
+    "wires": [
+      [
+        "forms-get-submissions-response"
+      ]
+    ]
+  },
+  {
+    "id": "forms-get-submissions-response",
+    "type": "http response",
+    "z": "forms-api-flow",
+    "name": "Return Submissions",
+    "statusCode": "",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "x": 620,
+    "y": 500,
+    "wires": []
+  },
+  {
+    "id": "forms-webhook-endpoint",
+    "type": "http in",
+    "z": "forms-api-flow",
+    "name": "表单Webhook接收端点",
+    "url": "/api/forms/webhook/:formId",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 140,
+    "y": 560,
+    "wires": [
+      [
+        "forms-webhook-process"
+      ]
+    ]
+  },
+  {
+    "id": "forms-webhook-process",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "处理Webhook数据",
+    "func": "// 获取表单ID\nconst formId = msg.req.params.formId;\n\n// 获取表单数据\nconst formData = msg.payload;\n\n// 获取webhook密钥(如果有)\nconst webhookKey = msg.req.headers['x-webhook-key'];\n\n// 获取已有表单\nconst storedForms = global.get('forms') || [];\nconst form = storedForms.find(form => form.id === formId);\n\n// 验证表单存在\nif (!form) {\n    msg.payload = {\n        success: false,\n        message: `表单ID ${formId} 不存在`\n    };\n    msg.statusCode = 404;\n    return msg;\n}\n\n// 验证webhook密钥(如果表单配置了webhookKey)\nif (form.webhookKey && form.webhookKey !== webhookKey) {\n    msg.payload = {\n        success: false,\n        message: 'Webhook密钥验证失败'\n    };\n    msg.statusCode = 401;\n    return msg;\n}\n\n// 获取现有提交\nconst storedSubmissions = global.get('formSubmissions') || {};\n\n// 初始化该表单的提交数组\nif (!storedSubmissions[formId]) {\n    storedSubmissions[formId] = [];\n}\n\n// 添加新提交\nconst submission = {\n    id: Date.now().toString(),\n    formId: formId,\n    data: formData,\n    submittedBy: 'webhook',\n    submittedAt: new Date().toISOString(),\n    status: 'pending',\n    source: 'webhook'\n};\n\nstoredSubmissions[formId].push(submission);\nglobal.set('formSubmissions', storedSubmissions);\n\n// 设置提交数据用于后续处理\nmsg.submission = submission;\n\n// 返回成功响应\nmsg.payload = {\n    success: true,\n    message: '通过Webhook接收的表单数据已成功保存',\n    submissionId: submission.id\n};\n\nreturn [msg, msg];",
+    "outputs": 2,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 370,
+    "y": 560,
+    "wires": [
+      [
+        "forms-webhook-response"
+      ],
+      [
+        "forms-process-submission"
+      ]
+    ]
+  },
+  {
+    "id": "forms-webhook-response",
+    "type": "http response",
+    "z": "forms-api-flow",
+    "name": "返回Webhook结果",
+    "statusCode": "",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "x": 630,
+    "y": 560,
+    "wires": []
+  },
+  {
+    "id": "forms-update-webhook-key",
+    "type": "http in",
+    "z": "forms-api-flow",
+    "name": "更新Webhook密钥",
+    "url": "/api/forms/:id/webhook-key",
+    "method": "patch",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 140,
+    "y": 620,
+    "wires": [
+      [
+        "forms-update-webhook-key-function"
+      ]
+    ]
+  },
+  {
+    "id": "forms-update-webhook-key-function",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "处理Webhook密钥更新",
+    "func": "// 获取表单ID\nconst formId = msg.req.params.id;\n\n// 获取新的webhook密钥\nconst { webhookKey } = msg.payload;\n\n// 获取已有表单\nconst storedForms = global.get('forms') || [];\nconst formIndex = storedForms.findIndex(form => form.id === formId);\n\n// 验证表单存在\nif (formIndex === -1) {\n    msg.payload = {\n        success: false,\n        message: `表单ID ${formId} 不存在`\n    };\n    msg.statusCode = 404;\n    return msg;\n}\n\n// 更新webhook密钥\nstoredForms[formIndex] = {\n    ...storedForms[formIndex],\n    webhookKey,\n    updatedAt: new Date().toISOString()\n};\n\n// 保存更新后的表单\nglobal.set('forms', storedForms);\n\n// 返回成功响应\nmsg.payload = {\n    success: true,\n    message: 'Webhook密钥已更新',\n    data: {\n        id: formId,\n        webhookKey\n    }\n};\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 390,
+    "y": 620,
+    "wires": [
+      [
+        "forms-update-webhook-key-response"
+      ]
+    ]
+  },
+  {
+    "id": "forms-update-webhook-key-response",
+    "type": "http response",
+    "z": "forms-api-flow",
+    "name": "返回Webhook密钥更新结果",
+    "statusCode": "",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "x": 650,
+    "y": 620,
+    "wires": []
+  }
+] 

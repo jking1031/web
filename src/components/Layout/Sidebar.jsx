@@ -17,6 +17,7 @@ import {
   UploadOutlined,
   ApiOutlined,
   DatabaseOutlined,
+  FormOutlined,
 } from '@ant-design/icons';
 import styles from './Sidebar.module.scss';
 
@@ -58,16 +59,16 @@ const Sidebar = ({ collapsed, onMenuClick }) => {
     }
     if (path.startsWith('/report-query')) return ['data-center', 'data-query-center', 'report-query'];
 
-    // 数据填报中心
-    if (path.startsWith('/data-entry')) {
-      if (path === '/data-entry') {
-        return ['data-center', 'data-entry-center', 'data-entry'];
+    // 表单系统
+    if (path.startsWith('/forms')) {
+      if (path === '/forms') {
+        return ['data-center', 'forms-system', 'forms-admin'];
       }
-      return ['data-center', 'data-entry-center'];
+      if (path.startsWith('/forms/list')) {
+        return ['data-center', 'forms-system', 'forms-list'];
+      }
+      return ['data-center', 'forms-system'];
     }
-    if (path.startsWith('/ao-data-entry')) return ['data-center', 'data-entry-center', 'ao-data-entry'];
-    if (path.startsWith('/lab-data-entry')) return ['data-center', 'data-entry-center', 'lab-data-entry'];
-    if (path.startsWith('/sludge-data-entry')) return ['data-center', 'data-entry-center', 'sludge-data-entry'];
 
     // 报表系统
     if (path === '/reports') return ['reports'];
@@ -130,7 +131,7 @@ const Sidebar = ({ collapsed, onMenuClick }) => {
       children: [
         {
           key: 'data-query-center',
-          label: '数据查询中心',
+          label: '查询系统',
           children: [
             {
               key: 'history-data',
@@ -139,63 +140,29 @@ const Sidebar = ({ collapsed, onMenuClick }) => {
             },
             {
               key: 'report-query',
-              label: '报告查询',
+              label: '历史报告查询',
               onClick: () => handleNavigate('/report-query'),
-            },
-          ],
-        },
-        {
-          key: 'data-entry-center',
-          label: '数据填报中心',
-          children: [
-            {
-              key: 'data-entry',
-              label: '表单填报平台',
-              onClick: () => handleNavigate('/data-entry'),
-            },
-            {
-              key: 'ao-data-entry',
-              label: 'AO池数据填报',
-              onClick: () => handleNavigate('/ao-data-entry'),
-            },
-            {
-              key: 'lab-data-entry',
-              label: '化验数据填报',
-              onClick: () => handleNavigate('/lab-data-entry'),
-            },
-            {
-              key: 'sludge-data-entry',
-              label: '污泥化验数据填报',
-              onClick: () => handleNavigate('/sludge-data-entry'),
             },
           ],
         },
       ],
     },
+    
+    // 将表单系统移到顶级菜单
     {
-      key: 'reports',
-      icon: <FileOutlined />,
-      label: '报表系统',
+      key: 'forms-system',
+      icon: <FormOutlined />,
+      label: '表单系统',
       children: [
         {
-          key: 'report-high-speed',
-          label: '高铁污水厂运行日报',
-          onClick: () => handleNavigate('/reports/high-speed'),
+          key: 'forms-list',
+          label: '填写表单',
+          onClick: () => handleNavigate('/forms/list'),
         },
         {
-          key: 'report-5000',
-          label: '5000吨处理厂日报',
-          onClick: () => handleNavigate('/reports/5000'),
-        },
-        {
-          key: 'report-sludge',
-          label: '污泥车间日报',
-          onClick: () => handleNavigate('/reports/sludge'),
-        },
-        {
-          key: 'report-pump-station',
-          label: '泵站运行周报',
-          onClick: () => handleNavigate('/reports/pump-station'),
+          key: 'forms-admin',
+          label: '表单管理',
+          onClick: () => handleNavigate('/forms'),
         },
       ],
     },
@@ -262,7 +229,7 @@ const Sidebar = ({ collapsed, onMenuClick }) => {
     {
       key: 'file-upload',
       icon: <UploadOutlined />,
-      label: '文件上传',
+      label: '共享网盘',
       onClick: () => handleNavigate('/file-upload'),
     },
   ];
@@ -343,7 +310,7 @@ const Sidebar = ({ collapsed, onMenuClick }) => {
         theme="dark"
         mode="inline"
         selectedKeys={getSelectedKeys()}
-        defaultOpenKeys={['data-center', 'data-query-center', 'data-entry-center', 'reports', 'tickets', 'tools', 'calculators']}
+        defaultOpenKeys={['data-center', 'data-query-center', 'forms-system', 'reports', 'tickets', 'tools', 'calculators']}
         items={menuItems}
         className={styles.menu}
       />

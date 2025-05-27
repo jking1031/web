@@ -5,6 +5,7 @@ import ProtectedRoute from './components/Auth/ProtectedRoute';
 import AdminRoute from './components/Auth/AdminRoute';
 import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
 import { WebSocketProvider } from './context/WebSocketContext';
+import { dataEntryRoutes } from './features/dataEntry/routes';
 
 // 使用懒加载方式导入组件
 const EnhancedDashboard = lazy(() => import('./features/dashboard/components/EnhancedDashboard'));
@@ -30,8 +31,8 @@ const ReportFormSludge = lazy(() => import('./pages/Reports/ReportFormSludge'));
 const ReportFormPumpStation = lazy(() => import('./pages/Reports/ReportFormPumpStation'));
 const ReportQuery = lazy(() => import('./pages/Reports/ReportQuery'));
 
-// 新的数据填报中心
-const DataEntryCenter = lazy(() => import('./features/dataEntry/pages/DataEntryCenter'));
+// 表单管理系统组件导入
+const FormSubmissionVerify = lazy(() => import('./features/dataEntry/pages/FormSubmissionVerify'));
 
 // 原有的数据填报页面（保留作为备用）
 const LabData = lazy(() => import('./pages/LabData/LabData'));
@@ -77,8 +78,14 @@ const router = createHashRouter(
       { path: 'reports/pump-station', element: <Suspense fallback={<LoadingFallback />}><ReportFormPumpStation /></Suspense> },
       { path: 'report-query', element: <Suspense fallback={<LoadingFallback />}><ReportQuery /></Suspense> },
       
-      // 新的数据填报中心 - 统一入口
-      { path: 'data-entry', element: <Suspense fallback={<LoadingFallback />}><DataEntryCenter /></Suspense> },
+      // 数据填报中心 - 重定向到表单列表
+      { path: 'data-entry', element: <Navigate to="/forms/list" replace /> },
+      
+      // 表单系统路由 - 从routes模块导入
+      ...dataEntryRoutes.map(route => ({
+        ...route,
+        element: <Suspense fallback={<LoadingFallback />}>{route.element}</Suspense>
+      })),
       
       // 原有的数据填报页面路由（保留兼容性）
       { path: 'lab-data', element: <Suspense fallback={<LoadingFallback />}><LabData /></Suspense> },
@@ -98,7 +105,7 @@ const router = createHashRouter(
       // 管理功能 - 只有管理员可以访问
       { path: 'user-management', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><UserManagement /></Suspense></AdminRoute> },
       { path: 'settings', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><Settings /></Suspense></AdminRoute> },
-      { path: 'query-management', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><ErrorBoundary showDetails={false}><QueryManagement /></ErrorBoundary></Suspense></AdminRoute> },
+      { path: 'query-management', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><QueryManagement /></Suspense></AdminRoute> },
       { path: 'db-test', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><ErrorBoundary showDetails={true}><DatabaseTest /></ErrorBoundary></Suspense></AdminRoute> },
       // API 仪表盘页面
       { path: 'api-dashboard', element: <Suspense fallback={<LoadingFallback />}><ErrorBoundary showDetails={true}><ApiDashboard /></ErrorBoundary></Suspense> },
@@ -122,6 +129,11 @@ const router = createHashRouter(
     path: '/forgot-password',
     element: <Suspense fallback={<LoadingFallback />}><ForgotPassword /></Suspense>,
   },
+  // 独立表单验证路由 - 无需布局和导航
+  {
+    path: '/form-verify',
+    element: <Suspense fallback={<LoadingFallback />}><FormSubmissionVerify standalone={true} /></Suspense>,
+  }
 ], {
   basename: '/' // 设置基础路径
 });

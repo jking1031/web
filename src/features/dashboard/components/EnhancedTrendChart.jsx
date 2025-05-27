@@ -642,7 +642,7 @@ const EnhancedTrendChart = ({ refreshMode = 'realtime', refreshInterval = 10 }) 
       }}>
         <Typography variant="h6" component="div" sx={{ display: 'flex', alignItems: 'center' }}>
           <LineChartOutlined style={{ marginRight: 8, color: THEME_COLOR }} />
-          生产趋势分析
+          实时数据趋势
           {loading && <CircularProgress size={20} sx={{ ml: 1 }} />}
             </Typography>
         <Box>

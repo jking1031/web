@@ -1,98 +1,73 @@
 /**
- * 数据填报中心类型定义
+ * 表单嵌入类型
  */
+export type FormEmbedType = 'link' | 'iframe';
 
-// 表单模板类型
-export interface FormTemplate {
+/**
+ * 表单状态
+ */
+export type FormStatus = boolean;
+
+/**
+ * 表单结构
+ */
+export interface Form {
   id: string;
-  name: string;
-  description?: string;
-  category: string;
-  schema: FormSchema;
-  version: string;
-  status: 'draft' | 'published' | 'archived';
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
-  permissions: string[];
-}
-
-// 表单Schema类型
-export interface FormSchema {
-  type: 'object';
-  properties: Record<string, FormField>;
-  required?: string[];
-  'x-component'?: string;
-  'x-component-props'?: Record<string, any>;
-}
-
-// 表单字段类型
-export interface FormField {
-  type: string;
   title: string;
   description?: string;
-  'x-component': string;
-  'x-component-props'?: Record<string, any>;
-  'x-decorator'?: string;
-  'x-decorator-props'?: Record<string, any>;
-  'x-validator'?: any[];
-  'x-reactions'?: any[];
-  enum?: Array<{ label: string; value: any }>;
-  default?: any;
-  required?: boolean;
+  embedType: FormEmbedType;
+  embedUrl: string;
+  embedCode?: string;
+  status: FormStatus;
+  createdAt: string;
+  updatedAt?: string;
+  enableWebhook?: boolean;
+  webhookKey?: string;
 }
 
-// 表单提交数据类型
+/**
+ * 表单提交来源
+ */
+export type SubmissionSource = 'direct' | 'webhook' | 'other';
+
+/**
+ * 表单提交状态
+ */
+export type SubmissionStatus = 'pending' | 'processed' | 'error';
+
+/**
+ * 表单提交结构
+ */
 export interface FormSubmission {
   id: string;
-  templateId: string;
-  templateName: string;
+  formId: string;
   data: Record<string, any>;
-  submittedBy: string;
   submittedAt: string;
-  status: 'pending' | 'approved' | 'rejected';
-  reviewedBy?: string;
-  reviewedAt?: string;
-  comments?: string;
+  submittedBy: string;
+  status: SubmissionStatus;
+  source: SubmissionSource;
 }
 
-// 用户角色类型
-export type UserRole = 'admin' | 'user';
-
-// 权限类型
-export interface Permission {
-  resource: string;
-  actions: string[];
+/**
+ * Webhook信息
+ */
+export interface WebhookInfo {
+  url: string;
+  withKeyUrl: string;
+  headers: {
+    'Content-Type': string;
+    'X-Webhook-Key': string;
+  };
+  formId?: string;
+  formTitle?: string;
+  webhookKey?: string;
 }
 
-// API响应类型
+/**
+ * API响应结构
+ */
 export interface ApiResponse<T = any> {
   success: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
-}
-
-// 表单分类类型
-export interface FormCategory {
-  id: string;
-  name: string;
-  description?: string;
-  icon?: string;
-  order: number;
-}
-
-// 表单验证规则类型
-export interface ValidationRule {
-  type: 'required' | 'pattern' | 'min' | 'max' | 'custom';
   message: string;
-  value?: any;
-  validator?: (value: any) => boolean | string;
-}
-
-// 表单组件配置类型
-export interface ComponentConfig {
-  component: string;
-  props?: Record<string, any>;
-  children?: ComponentConfig[];
+  data?: T;
 } 

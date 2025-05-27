@@ -712,7 +712,7 @@ const RealtimeTrendChart = ({ refreshMode = 'realtime', refreshInterval = 10 }) 
       }}>
         <Typography variant="h6" component="div" sx={{ display: 'flex', alignItems: 'center' }}>
           <LineChartOutlined style={{ marginRight: 8, color: THEME_COLOR }} />
-          实时趋势数据
+          运行数据趋势
           {loading && <CircularProgress size={20} sx={{ ml: 1 }} />}
             </Typography>
         <Box>
