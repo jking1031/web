@@ -15804,7 +15804,7 @@
         "finalize": "",
         "libs": [],
         "x": 530,
-        "y": 1860,
+        "y": 1840,
         "wires": [
             [
                 "44972e6a2efc6e83"
@@ -15823,8 +15823,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 850,
-        "y": 1860,
+        "x": 870,
+        "y": 1820,
         "wires": [
             [
                 "a0d17fd70e3bf00e"
@@ -15838,7 +15838,7 @@
         "mydb": "e3d5e9572467c502",
         "name": "",
         "x": 700,
-        "y": 1860,
+        "y": 1820,
         "wires": [
             [
                 "c40eee087d06aa0f"
@@ -23043,9 +23043,7 @@
             [
                 "forms-submit-response"
             ],
-            [
-                "forms-process-submission"
-            ]
+            []
         ]
     },
     {
@@ -23057,8 +23055,8 @@
         "headers": {
             "content-type": "application/json"
         },
-        "x": 660,
-        "y": 880,
+        "x": 650,
+        "y": 860,
         "wires": []
     },
     {
@@ -23072,8 +23070,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 790,
-        "y": 940,
+        "x": 670,
+        "y": 1060,
         "wires": [
             [
                 "54a03280229a9d59"
@@ -23142,8 +23140,7 @@
         "y": 1060,
         "wires": [
             [
-                "forms-webhook-process",
-                "9f7f9fec6068e3f3"
+                "forms-webhook-process"
             ]
         ]
     },
@@ -23158,15 +23155,14 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 400,
+        "x": 410,
         "y": 1060,
         "wires": [
             [
                 "forms-webhook-response"
             ],
             [
-                "forms-process-submission",
-                "21ea1314f6328579"
+                "forms-process-submission"
             ]
         ]
     },
@@ -23179,8 +23175,8 @@
         "headers": {
             "content-type": "application/json"
         },
-        "x": 730,
-        "y": 1060,
+        "x": 950,
+        "y": 960,
         "wires": []
     },
     {
@@ -23230,23 +23226,6 @@
         },
         "x": 680,
         "y": 1120,
-        "wires": []
-    },
-    {
-        "id": "9f7f9fec6068e3f3",
-        "type": "debug",
-        "z": "api-configs-individual-flow",
-        "name": "debug 7",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 380,
-        "y": 940,
         "wires": []
     },
     {
@@ -23316,23 +23295,6 @@
         "wires": []
     },
     {
-        "id": "21ea1314f6328579",
-        "type": "debug",
-        "z": "api-configs-individual-flow",
-        "name": "debug 28",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 910,
-        "y": 1100,
-        "wires": []
-    },
-    {
         "id": "54a03280229a9d59",
         "type": "debug",
         "z": "api-configs-individual-flow",
@@ -23345,8 +23307,212 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 970,
-        "y": 960,
+        "x": 860,
+        "y": 900,
         "wires": []
+    },
+    {
+        "id": "e5ca352ab545aff5",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "处理数据",
+        "func": "var formSubmissions = global.get(\"formSubmissions\");\nvar submission = formSubmissions[\"1748322080790\"][0].data.submission;\n\nvar time = global.get(\"mariaDBTime\"); // 假设它是字符串格式，如 \"2025-05-27T10:00:00Z\"\n\n// 转换上传图片为字符串（多个图片的话你可以拼接）\nlet imageUrls = \"\";\nif (Array.isArray(submission[\"上传文件或图片\"])) {\n  imageUrls = submission[\"上传文件或图片\"]\n    .map(file => file.file_url)\n    .join(\",\");\n}\n\n// 构建 payload 对象\nmsg.payload = {\n  date: submission[\"日期\"] || \"\",\n  operator: submission[\"值班员\"] || \"\",\n  inflow: submission[\"进水流量累计(m³)\"] || 0,\n  outflow: submission[\"出水流量累计(m³)\"] || 0,\n  in_quality: `COD:${submission[\"COD平均值(mg/L)\"]}, 氨氮:${submission[\"氨氮平均值(mg/L)\"]}, 总磷:${submission[\"总磷平均值(mg/L)\"]}, 总氮:${submission[\"总氮平均值(mg/L)\"]}`,\n  out_quality: `最高COD:${submission[\"最高COD(mg/L)\"]}`,\n  water_quality_anomalies: submission[\"水质异常情况报告\"] || \"\",\n  equipment_status: submission[\"主要设备运行情况\"] || \"\",\n  equipment_issues: submission[\"设备故障或问题\"] || \"\",\n  carbon_source: submission[\"碳源投加量(L)\"] || 0,\n  phosphorus_removal: submission[\"除磷剂投加量(L)\"] || 0,\n  disinfectant: submission[\"消毒剂投加量(L)\"] || 0,\n  chemical_effect: submission[\"药剂投加效果和问题\"] || \"\",\n  sludge_quantity: submission[\"产泥量(T)\"] || 0,\n  other_notes: submission[\"巡查情况及上报问题\"] || \"\",\n  report_id: msg.payload.submissionId || \"\",\n  imagesurl: imageUrls,\n  created_at: time\n};\n\n// 准备 SQL 插入语句\nmsg.topic = `\n  INSERT INTO daily_report (\n    date, operator, inflow, outflow, in_quality, out_quality, water_quality_anomalies,\n    equipment_status, equipment_issues, carbon_source, phosphorus_removal, disinfectant,\n    chemical_effect, sludge_quantity, other_notes, report_id, imagesurl, created_at\n  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)\n`;\n\nmsg.payload = [\n  msg.payload.date,\n  msg.payload.operator,\n  msg.payload.inflow,\n  msg.payload.outflow,\n  msg.payload.in_quality,\n  msg.payload.out_quality,\n  msg.payload.water_quality_anomalies,\n  msg.payload.equipment_status,\n  msg.payload.equipment_issues,\n  msg.payload.carbon_source,\n  msg.payload.phosphorus_removal,\n  msg.payload.disinfectant,\n  msg.payload.chemical_effect,\n  msg.payload.sludge_quantity,\n  msg.payload.other_notes,\n  msg.payload.report_id,\n  msg.payload.imagesurl,\n  msg.payload.created_at\n];\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 480,
+        "y": 1200,
+        "wires": [
+            [
+                "8cfa306139e90d61"
+            ]
+        ]
+    },
+    {
+        "id": "8cfa306139e90d61",
+        "type": "mysql",
+        "z": "api-configs-individual-flow",
+        "mydb": "e3d5e9572467c502",
+        "name": "",
+        "x": 840,
+        "y": 1180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "03638e9bcd38f983",
+        "type": "http in",
+        "z": "api-configs-individual-flow",
+        "name": "",
+        "url": "/api/forms/:formId/verify-submission",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 200,
+        "y": 1200,
+        "wires": [
+            [
+                "e5ca352ab545aff5",
+                "prepare-data"
+            ]
+        ]
+    },
+    {
+        "id": "prepare-data",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "准备提交数据",
+        "func": "var formSubmissions = global.get(\"formSubmissions\");\nvar submission = formSubmissions[\"1748322080790\"][0].data.submission;\n\nvar time = global.get(\"mariaDBTime\");\n\nlet imageUrls = \"\";\nif (Array.isArray(submission[\"上传文件或图片\"])) {\n  imageUrls = submission[\"上传文件或图片\"].map(file => file.file_url).join(\",\");\n}\n\nmsg.metadata = {\n  date: submission[\"日期\"] || \"\",\n  submissionId: msg.payload.submissionId || \"\",\n  created_at: time || \"\"\n};\n\nmsg.payload = {\n  date: submission[\"日期\"] || \"\",\n  operator: submission[\"值班员\"] || \"\",\n  inflow: submission[\"进水流量累计(m³)\"] || 0,\n  outflow: submission[\"出水流量累计(m³)\"] || 0,\n  in_quality: `COD:${submission[\"COD平均值(mg/L)\"]}, 氨氮:${submission[\"氨氮平均值(mg/L)\"]}, 总磷:${submission[\"总磷平均值(mg/L)\"]}, 总氮:${submission[\"总氮平均值(mg/L)\"]}` || \"\",\n  out_quality: `最高COD:${submission[\"最高COD(mg/L)\"]}` || \"\",\n  water_quality_anomalies: submission[\"水质异常情况报告\"] || \"\",\n  equipment_status: submission[\"主要设备运行情况\"] || \"\",\n  equipment_issues: submission[\"设备故障或问题\"] || \"\",\n  carbon_source: submission[\"碳源投加量(L)\"] || 0,\n  phosphorus_removal: submission[\"除磷剂投加量(L)\"] || 0,\n  disinfectant: submission[\"消毒剂投加量(L)\"] || 0,\n  chemical_effect: submission[\"药剂投加效果和问题\"] || \"\",\n  sludge_quantity: submission[\"产泥量(T)\"] || 0,\n  other_notes: submission[\"巡查情况及上报问题\"] || \"\",\n  report_id: msg.payload.submissionId || \"\",\n  imagesurl: imageUrls,\n  created_at: time\n};\n\nreturn msg;",
+        "outputs": 1,
+        "x": 280,
+        "y": 1420,
+        "wires": [
+            [
+                "validate-date"
+            ]
+        ]
+    },
+    {
+        "id": "validate-date",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "验证日期是否为历史",
+        "func": "let today = new Date();\ntoday.setHours(0, 0, 0, 0);\n\nlet inputDate = new Date(msg.payload.date);\ninputDate.setHours(0, 0, 0, 0);\n\nif (inputDate >= today) {\n  return {\n    payload: {\n      success: false,\n      message: \"数据写入失败\",\n      details: \"错误原因: 日期不能为今天或未来\"\n    }\n  };\n}\nreturn msg;",
+        "outputs": 1,
+        "x": 160,
+        "y": 1520,
+        "wires": [
+            [
+                "check-duplicate-sql"
+            ]
+        ]
+    },
+    {
+        "id": "check-duplicate-sql",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "构造查重SQL",
+        "func": "msg.topic = \"SELECT COUNT(*) AS count FROM daily_report WHERE date = ?\";\nmsg.payload = [msg.payload.date];\nreturn msg;",
+        "outputs": 1,
+        "x": 360,
+        "y": 1520,
+        "wires": [
+            [
+                "check-duplicate-db"
+            ]
+        ]
+    },
+    {
+        "id": "check-duplicate-db",
+        "type": "mysql",
+        "z": "api-configs-individual-flow",
+        "mydb": "e3d5e9572467c502",
+        "name": "查重数据库",
+        "x": 550,
+        "y": 1540,
+        "wires": [
+            [
+                "validate-duplicate"
+            ]
+        ]
+    },
+    {
+        "id": "validate-duplicate",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "验证是否重复",
+        "func": "if (msg.payload && msg.payload[0].count > 0) {\n  return {\n    payload: {\n      success: false,\n      message: \"数据写入失败\",\n      details: \"错误原因: 数据重复\"\n    }\n  };\n}\nreturn msg;",
+        "outputs": 1,
+        "x": 560,
+        "y": 1480,
+        "wires": [
+            [
+                "build-insert-sql"
+            ]
+        ]
+    },
+    {
+        "id": "build-insert-sql",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "构造插入SQL",
+        "func": "var p = msg.payload;\nmsg.topic = `\n  INSERT INTO daily_report (\n    date, operator, inflow, outflow, in_quality, out_quality, water_quality_anomalies,\n    equipment_status, equipment_issues, carbon_source, phosphorus_removal, disinfectant,\n    chemical_effect, sludge_quantity, other_notes, report_id, imagesurl, created_at\n  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;\n\nmsg.payload = [\n  p.date, p.operator, p.inflow, p.outflow, p.in_quality, p.out_quality,\n  p.water_quality_anomalies, p.equipment_status, p.equipment_issues,\n  p.carbon_source, p.phosphorus_removal, p.disinfectant,\n  p.chemical_effect, p.sludge_quantity, p.other_notes,\n  p.report_id, p.imagesurl, p.created_at\n];\nreturn msg;",
+        "outputs": 1,
+        "x": 580,
+        "y": 1400,
+        "wires": [
+            [
+                "insert-db"
+            ]
+        ]
+    },
+    {
+        "id": "insert-db",
+        "type": "mysql",
+        "z": "api-configs-individual-flow",
+        "mydb": "e3d5e9572467c502",
+        "name": "插入数据库",
+        "x": 750,
+        "y": 1460,
+        "wires": [
+            [
+                "return-success"
+            ]
+        ]
+    },
+    {
+        "id": "return-success",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "返回成功信息",
+        "func": "return {\n  payload: {\n    success: true,\n    message: \"数据已成功写入数据库\",\n    details: `表单ID: ${msg.metadata.submissionId}, 提交时间: ${msg.metadata.created_at}`\n  }\n};",
+        "outputs": 1,
+        "x": 960,
+        "y": 1460,
+        "wires": [
+            [
+                "8a454a11070c2188"
+            ]
+        ]
+    },
+    {
+        "id": "8a454a11070c2188",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 7",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 830,
+        "y": 1560,
+        "wires": []
+    },
+    {
+        "id": "578af9f94c502c69",
+        "type": "inject",
+        "z": "api-configs-individual-flow",
+        "name": "",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 90,
+        "y": 1420,
+        "wires": [
+            [
+                "prepare-data"
+            ]
+        ]
     }
 ]
