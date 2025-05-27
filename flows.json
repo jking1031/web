@@ -23302,7 +23302,7 @@
         "upload": false,
         "swaggerDoc": "",
         "x": 200,
-        "y": 1640,
+        "y": 1600,
         "wires": [
             [
                 "prepare-data",
@@ -23396,8 +23396,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 600,
-        "y": 1500,
+        "x": 520,
+        "y": 1540,
         "wires": [
             [
                 "4edb0192b2c34088",
@@ -23488,8 +23488,8 @@
         "headers": {
             "content-type": "application/json"
         },
-        "x": 950,
-        "y": 1520,
+        "x": 870,
+        "y": 1540,
         "wires": []
     },
     {
@@ -23517,7 +23517,8 @@
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "false",
+        "complete": "true",
+        "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
         "x": 790,
