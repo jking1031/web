@@ -470,8 +470,11 @@ const HistoryDataQueryBuilder = ({ onQuerySubmit }) => {
 
   // 构建最终的查询对象，整合时间范围和高级条件
   const buildFinalQuery = () => {
-    // 创建查询副本
-    let finalQuery = {...query};
+    // 创建查询的深拷贝，特别是rules数组
+    let finalQuery = {
+      ...query,
+      rules: [...(query.rules || [])] // 确保rules是一个新数组
+    };
     
     // 如果有时间字段和时间范围，自动添加时间条件
     if (timeField && timeRange) {

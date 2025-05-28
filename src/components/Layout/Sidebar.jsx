@@ -84,7 +84,6 @@ const Sidebar = ({ collapsed, onMenuClick }) => {
     if (path.startsWith('/tickets/my')) return ['tickets', 'my-tickets'];
 
     // 工具箱
-    if (path === '/tools') return ['tools'];
     if (path.startsWith('/carbon-calc')) return ['tools', 'carbon-calc'];
     if (path.startsWith('/calculators/pac')) return ['tools', 'calculators', 'pac-calculator'];
     if (path.startsWith('/calculators/pam')) return ['tools', 'calculators', 'pam-calculator'];
@@ -93,6 +92,7 @@ const Sidebar = ({ collapsed, onMenuClick }) => {
 
     // 文件上传
     if (path.startsWith('/file-upload')) return ['file-upload'];
+    if (path.startsWith('/file-manager')) return ['file-manager'];
 
     // 管理员菜单
     if (path.startsWith('/user-management')) return ['user-management'];
@@ -219,10 +219,10 @@ const Sidebar = ({ collapsed, onMenuClick }) => {
       ],
     },
     {
-      key: 'file-upload',
+      key: 'file-manager',
       icon: <UploadOutlined />,
       label: '共享网盘',
-      onClick: () => handleNavigate('/file-upload'),
+      onClick: () => handleNavigate('/file-manager'),
     },
   ];
 

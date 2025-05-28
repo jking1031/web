@@ -52,6 +52,9 @@ const Settings = lazy(() => import('./pages/Admin/Settings'));
 //const QueryManagement = lazy(() => import('./pages/QueryManagement/QueryManagement'));
 const NotFound = lazy(() => import('./pages/NotFound/NotFound'));
 
+// WebDAV文件管理器 - 使用新的特性目录组件
+const WebDAVFileManager = lazy(() => import('./pages/FileManagement/WebDAVFileManager'));
+
 // 加载中组件
 const LoadingFallback = () => <div className="loading-container">加载中...</div>;
 
@@ -102,6 +105,10 @@ const router = createHashRouter(
       { path: 'calculators/pam', element: <Suspense fallback={<LoadingFallback />}><PamCalculator /></Suspense> },
       { path: 'calculators/dosing', element: <Suspense fallback={<LoadingFallback />}><DosingCalculator /></Suspense> },
       { path: 'calculators/sludge', element: <Suspense fallback={<LoadingFallback />}><ExcessSludgeCalculator /></Suspense> },
+      
+      // WebDAV文件管理器 - 共享网盘
+      { path: 'file-manager', element: <Suspense fallback={<LoadingFallback />}><WebDAVFileManager /></Suspense> },
+      
       // 管理功能 - 只有管理员可以访问
       { path: 'user-management', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><UserManagement /></Suspense></AdminRoute> },
       { path: 'settings', element: <AdminRoute><Suspense fallback={<LoadingFallback />}><Settings /></Suspense></AdminRoute> },

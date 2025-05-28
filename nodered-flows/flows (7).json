@@ -1,0 +1,196 @@
+[
+    {
+        "id": "2991fd1028058da2",
+        "type": "http in",
+        "z": "api-configs-individual-flow",
+        "name": "WebDAV代理接口",
+        "url": "/api/webdav/proxy/:action",
+        "method": "post",
+        "upload": true,
+        "swaggerDoc": "",
+        "x": 150,
+        "y": 1580,
+        "wires": [
+            [
+                "fix_filename",
+                "480618f204399306"
+            ]
+        ]
+    },
+    {
+        "id": "bad8cedc86ba52ab",
+        "type": "switch",
+        "z": "api-configs-individual-flow",
+        "name": "路由请求",
+        "property": "target",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "webdav-request",
+                "vt": "str"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 600,
+        "y": 1480,
+        "wires": [
+            [
+                "66502eb759e8bf1b"
+            ],
+            [
+                "75189d578bcdc4d0"
+            ]
+        ]
+    },
+    {
+        "id": "66502eb759e8bf1b",
+        "type": "http request",
+        "z": "api-configs-individual-flow",
+        "name": "转发到WebDAV服务器",
+        "method": "use",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "authType": "none",
+        "senderr": false,
+        "x": 820,
+        "y": 1480,
+        "wires": [
+            [
+                "webdav-response-handler"
+            ]
+        ]
+    },
+    {
+        "id": "75189d578bcdc4d0",
+        "type": "http response",
+        "z": "api-configs-individual-flow",
+        "name": "返回响应",
+        "statusCode": "",
+        "headers": {},
+        "x": 1160,
+        "y": 1640,
+        "wires": []
+    },
+    {
+        "id": "d1ab424db5b17465",
+        "type": "http in",
+        "z": "api-configs-individual-flow",
+        "name": "WebDAV CORS预检",
+        "url": "/api/webdav/proxy/:action",
+        "method": "options",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 150,
+        "y": 1640,
+        "wires": [
+            [
+                "76ac5712e39f49b8"
+            ]
+        ]
+    },
+    {
+        "id": "76ac5712e39f49b8",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "处理CORS预检",
+        "func": "// 设置CORS头\nmsg.headers = {\n    'Access-Control-Allow-Origin': '*',\n    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',\n    'Access-Control-Allow-Headers': 'Content-Type, X-WebDAV-Server, X-WebDAV-Username, X-WebDAV-Password'\n};\n\n// 设置响应状态码\nmsg.statusCode = 200;\nmsg.payload = \"\";\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 1640,
+        "wires": [
+            [
+                "75189d578bcdc4d0"
+            ]
+        ]
+    },
+    {
+        "id": "webdav-response-handler",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "处理响应",
+        "func": "// 获取原始请求的操作类型\nconst action = msg.req.params.action;\n\n// 设置CORS头\nmsg.headers = {\n    'Access-Control-Allow-Origin': '*',\n    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',\n    'Access-Control-Allow-Headers': 'Content-Type, X-WebDAV-Server, X-WebDAV-Username, X-WebDAV-Password'\n};\n\n// 如果是下载操作且响应是二进制数据（Buffer），需要保留原始Content-Type\nif (action === 'download' && msg.statusCode === 200 && msg.payload instanceof Buffer) {\n    if (msg.headers && msg.headers['content-type']) {\n        msg.headers['Content-Type'] = msg.headers['content-type'];\n    }\n    return msg; // 直接返回二进制数据，不做进一步处理\n}\n\n// 对于其他操作，设置默认Content-Type为JSON\nmsg.headers['Content-Type'] = 'application/json; charset=utf-8';\n\n// 如果是列表请求，处理XML响应\nif (action === 'list' && msg.statusCode === 207) {\n    try {\n        // 检查响应是否为XML数据\n        if (typeof msg.payload === 'string' && msg.payload.includes('<?xml')) {\n            // 确保XML使用UTF-8编码\n            if (!msg.payload.includes('encoding=\"UTF-8\"')) {\n                msg.payload = msg.payload.replace('<?xml version=\"1.0\"?>', '<?xml version=\"1.0\" encoding=\"UTF-8\"?>');\n            }\n            \n            // 在Node-RED环境中，我们不能使用DOMParser（那是浏览器API）\n            // 仅将原始XML传递给前端，让前端处理解析\n            // 检查是否是根目录请求，如果是就过滤掉用户名目录\n            let requestBody = {};\n            try {\n                if (typeof msg.req.body === 'string') {\n                    requestBody = JSON.parse(msg.req.body);\n                } else if (typeof msg.req.body === 'object' && msg.req.body !== null) {\n                    requestBody = msg.req.body;\n                }\n            } catch (e) {\n                // 使用空对象继续\n                requestBody = {};\n            }\n            \n            if (requestBody && requestBody.path === '') {\n                const username = msg.req.headers['x-webdav-username'] ? \n                    decodeURIComponent(msg.req.headers['x-webdav-username']) : '';\n                \n                // 包装带有用户名信息的响应，以便前端可以过滤\n                msg.payload = {\n                    success: true,\n                    statusCode: msg.statusCode,\n                    raw: msg.payload,  // 保留原始XML\n                    username: username,  // 添加用户名信息以便前端过滤\n                    encoding: 'UTF-8'    // 指明编码\n                };\n            } else {\n                // 非根目录请求，正常返回\n                msg.payload = {\n                    success: true,\n                    statusCode: msg.statusCode,\n                    raw: msg.payload,  // 保留原始XML\n                    encoding: 'UTF-8'   // 指明编码\n                };\n            }\n        }\n        // 如果是对象，可能已经被解析过\n        else if (typeof msg.payload === 'object' && !(msg.payload instanceof Buffer)) {\n            // 确保包含success标志\n            msg.payload.success = true;\n            msg.payload.statusCode = msg.statusCode;\n            msg.payload.encoding = 'UTF-8';\n        }\n    } catch (error) {\n        console.error('处理WebDAV响应时出错:', error);\n        msg.payload = {\n            success: false,\n            error: '处理WebDAV响应时出错',\n            statusCode: msg.statusCode,\n            message: error ? error.message : '未知错误'\n        };\n    }\n}\n// 对于错误状态码，格式化响应\nelse if (msg.statusCode >= 400) {\n    // 尝试解析错误消息\n    let errorMessage = '';\n    if (typeof msg.payload === 'string') {\n        errorMessage = msg.payload;\n    } else if (typeof msg.payload === 'object' && !(msg.payload instanceof Buffer)) {\n        try {\n            errorMessage = JSON.stringify(msg.payload);\n        } catch (e) {\n            errorMessage = '无法解析错误详情';\n        }\n    }\n    \n    msg.payload = {\n        success: false,\n        statusCode: msg.statusCode,\n        error: '请求失败',\n        message: errorMessage\n    };\n}\n// 对于其他成功状态码，确保添加成功标记\nelse if (msg.statusCode >= 200 && msg.statusCode < 300) {\n    // 如果是字符串响应，包装为对象\n    if (typeof msg.payload === 'string') {\n        // 检查是否为XML或JSON字符串\n        if (msg.payload.trim().startsWith('<?xml') || \n            msg.payload.trim().startsWith('{')) {\n            // 包装XML或JSON响应\n            msg.payload = {\n                success: true,\n                statusCode: msg.statusCode,\n                raw: msg.payload,\n                encoding: 'UTF-8'\n            };\n        } else {\n            // 普通文本响应\n            msg.payload = {\n                success: true,\n                statusCode: msg.statusCode,\n                data: msg.payload,\n                encoding: 'UTF-8'\n            };\n        }\n    }\n    // 如果已经是对象但不是Buffer，确保有success标记\n    else if (typeof msg.payload === 'object' && !(msg.payload instanceof Buffer)) {\n        msg.payload.success = true;\n        msg.payload.statusCode = msg.statusCode;\n        msg.payload.encoding = 'UTF-8';\n    }\n    // Buffer类型处理已在最上方完成\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1040,
+        "y": 1520,
+        "wires": [
+            [
+                "75189d578bcdc4d0"
+            ]
+        ]
+    },
+    {
+        "id": "fix_filename",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "修复中文文件名",
+        "func": "// 从请求头中提取 WebDAV 信息\nconst webdavServer = decodeURIComponent(msg.req.headers['x-webdav-server'] || '');\nconst webdavUsername = decodeURIComponent(msg.req.headers['x-webdav-username'] || '');\nconst webdavPassword = decodeURIComponent(msg.req.headers['x-webdav-password'] || '');\n\nif (!webdavServer || !webdavUsername || !webdavPassword) {\n    msg.statusCode = 400;\n    msg.payload = { error: \"缺少 WebDAV 服务器认证信息\" };\n    return msg;\n}\n\n// 清理 BOM 等特殊字符\nlet cleanServer = webdavServer.replace(/[\\uFEFF\\uFFFE\\u200B]/g, '').replace(/%EF%BB%BF/g, '');\nconst cleanUsername = webdavUsername.replace(/[\\uFEFF\\uFFFE\\u200B]/g, '');\nconst authHeader = 'Basic ' + Buffer.from(cleanUsername + ':' + webdavPassword).toString('base64');\n\n// 获取请求的操作类型\nconst action = msg.req.params.action;\nconsole.log(`处理 WebDAV ${action} 操作`);\n\n// 将认证信息放入 msg.webdav\nmsg.webdav = {\n    server: cleanServer,\n    username: cleanUsername,\n    password: webdavPassword,\n    auth: authHeader\n};\n\n// 根据操作类型进行分派\nswitch (action) {\n    case 'upload':\n        return handleUpload(msg);\n    case 'list':\n        return handleList(msg);\n    case 'download':\n        return handleDownload(msg);\n    case 'mkdir':\n        return handleMkdir(msg);\n    case 'delete':\n        return handleDelete(msg);\n    default:\n        msg.statusCode = 400;\n        msg.payload = { error: `不支持的操作: ${action}` };\n        return msg;\n}\n\n// 处理上传操作\nfunction handleUpload(msg) {\n    let file = msg.req.files?.[0];\n    if (!file) {\n        msg.statusCode = 400;\n        msg.payload = { error: \"未检测到上传文件\" };\n        return msg;\n    }\n\n    // 修复中文文件名乱码问题\n    file.originalname_utf8 = Buffer.from(file.originalname, 'latin1').toString('utf8');\n    console.log(`原始文件名: ${file.originalname} -> 修复后: ${file.originalname_utf8}`);\n    \n    // 设置上传路径\n    const uploadPath = msg.req.body?.path || '/';\n    \n    // 填充上传信息\n    msg.upload = {\n        path: uploadPath,\n        filename: file.originalname_utf8,\n        fileBuffer: file.buffer,\n        mimetype: file.mimetype || 'application/octet-stream'\n    };\n    \n    // 传递给下一个节点处理\n    return msg;\n}\n\n// 处理列表操作\nfunction handleList(msg) {\n    let requestBody = {};\n    try {\n        if (typeof msg.payload === 'string' && msg.payload.trim()) {\n            requestBody = JSON.parse(msg.payload);\n        } else if (typeof msg.payload === 'object' && msg.payload !== null) {\n            requestBody = msg.payload;\n        }\n    } catch (e) {\n        console.error('解析请求体失败:', e.message);\n        requestBody = {};\n    }\n    \n    const path = requestBody.path || '';\n    \n    // 对路径进行安全处理\n    let safePath = '';\n    try {\n        // 解码已编码的路径，然后重新编码\n        const rawPath = decodeURIComponent(path);\n        // 编码路径（处理中文或特殊字符）- 保留/符号\n        safePath = encodeURIComponent(rawPath).replace(/%2F/g, '/');\n    } catch (e) {\n        // 如果解码失败，可能路径本身就是未编码的\n        safePath = encodeURIComponent(path).replace(/%2F/g, '/');\n    }\n    \n    console.log(`列表路径: ${path} -> 安全路径: ${safePath}`);\n    \n    // 完全模拟curl的PROPFIND请求\n    msg.url = `${msg.webdav.server}${safePath}`;\n    msg.method = 'PROPFIND';\n    msg.headers = {\n        'Depth': '1',\n        'Content-Type': 'application/xml; charset=utf-8',\n        'Authorization': msg.webdav.auth,\n        'User-Agent': 'WebDAV-Proxy/1.0',\n        'Accept': '*/*',\n        'Accept-Charset': 'utf-8'\n    };\n    // 使用空字符串作为请求体\n    msg.payload = '';\n    // 设置请求目标，使用http request节点\n    msg.target = 'webdav-request';\n    return msg;\n}\n\n// 处理下载操作\nfunction handleDownload(msg) {\n    let requestBody = {};\n    try {\n        if (typeof msg.payload === 'string' && msg.payload.trim()) {\n            requestBody = JSON.parse(msg.payload);\n        } else if (typeof msg.payload === 'object' && msg.payload !== null) {\n            requestBody = msg.payload;\n        }\n    } catch (e) {\n        console.error('解析请求体失败:', e.message);\n        requestBody = {};\n    }\n    \n    const path = requestBody.path || '';\n    \n    // 对路径进行安全处理\n    let safePath = '';\n    try {\n        // 使用latin1转utf8修复可能的中文路径\n        const fixedPath = Buffer.from(path, 'latin1').toString('utf8');\n        // 再进行编码处理\n        const rawPath = decodeURIComponent(fixedPath);\n        // 编码路径（处理中文或特殊字符）- 保留/符号\n        safePath = encodeURIComponent(rawPath).replace(/%2F/g, '/');\n    } catch (e) {\n        // 如果修复失败，使用原始路径进行编码\n        safePath = encodeURIComponent(path).replace(/%2F/g, '/');\n    }\n    \n    console.log(`下载路径: ${path} -> 安全路径: ${safePath}`);\n    \n    // 准备发送GET请求\n    msg.url = `${msg.webdav.server}${safePath}`;\n    msg.method = 'GET';\n    msg.headers = {\n        'Authorization': msg.webdav.auth,\n        'User-Agent': 'WebDAV-Proxy/1.0',\n        'Accept': '*/*',\n        'Accept-Charset': 'utf-8'\n    };\n    // 设置请求目标，使用http request节点\n    msg.target = 'webdav-request';\n    return msg;\n}\n\n// 处理创建目录操作\nfunction handleMkdir(msg) {\n    let requestBody = {};\n    try {\n        if (typeof msg.payload === 'string' && msg.payload.trim()) {\n            requestBody = JSON.parse(msg.payload);\n        } else if (typeof msg.payload === 'object' && msg.payload !== null) {\n            requestBody = msg.payload;\n        }\n    } catch (e) {\n        console.error('解析请求体失败:', e.message);\n        requestBody = {};\n    }\n    \n    const path = requestBody.path || '';\n    \n    // 对路径进行安全处理\n    let safePath = '';\n    try {\n        // 使用latin1转utf8修复可能的中文路径\n        const fixedPath = Buffer.from(path, 'latin1').toString('utf8');\n        // 再进行编码处理\n        const rawPath = decodeURIComponent(fixedPath);\n        // 编码路径（处理中文或特殊字符）- 保留/符号\n        safePath = encodeURIComponent(rawPath).replace(/%2F/g, '/');\n    } catch (e) {\n        // 如果修复失败，使用原始路径进行编码\n        safePath = encodeURIComponent(path).replace(/%2F/g, '/');\n    }\n    \n    console.log(`创建目录路径: ${path} -> 安全路径: ${safePath}`);\n    \n    // 准备发送MKCOL请求\n    msg.url = `${msg.webdav.server}${safePath}`;\n    msg.method = 'MKCOL';\n    msg.headers = {\n        'Authorization': msg.webdav.auth,\n        'User-Agent': 'WebDAV-Proxy/1.0',\n        'Accept': '*/*',\n        'Accept-Charset': 'utf-8',\n        'Content-Type': 'application/xml; charset=utf-8'\n    };\n    // 设置空请求体 - 某些WebDAV服务器需要这个\n    msg.payload = '';\n    // 设置请求目标，使用http request节点\n    msg.target = 'webdav-request';\n    return msg;\n}\n\n// 处理删除操作\nfunction handleDelete(msg) {\n    let requestBody = {};\n    try {\n        if (typeof msg.payload === 'string' && msg.payload.trim()) {\n            requestBody = JSON.parse(msg.payload);\n        } else if (typeof msg.payload === 'object' && msg.payload !== null) {\n            requestBody = msg.payload;\n        }\n    } catch (e) {\n        console.error('解析请求体失败:', e.message);\n        requestBody = {};\n    }\n    \n    const path = requestBody.path || '';\n    \n    // 对路径进行安全处理\n    let safePath = '';\n    try {\n        // 使用latin1转utf8修复可能的中文路径\n        const fixedPath = Buffer.from(path, 'latin1').toString('utf8');\n        // 再进行编码处理\n        const rawPath = decodeURIComponent(fixedPath);\n        // 编码路径（处理中文或特殊字符）- 保留/符号\n        safePath = encodeURIComponent(rawPath).replace(/%2F/g, '/');\n    } catch (e) {\n        // 如果修复失败，使用原始路径进行编码\n        safePath = encodeURIComponent(path).replace(/%2F/g, '/');\n    }\n    \n    console.log(`删除路径: ${path} -> 安全路径: ${safePath}`);\n    \n    // 准备发送DELETE请求\n    msg.url = `${msg.webdav.server}${safePath}`;\n    msg.method = 'DELETE';\n    msg.headers = {\n        'Authorization': msg.webdav.auth,\n        'User-Agent': 'WebDAV-Proxy/1.0',\n        'Accept': '*/*',\n        'Accept-Charset': 'utf-8'\n    };\n    // 设置请求目标，使用http request节点\n    msg.target = 'webdav-request';\n    return msg;\n}",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 1480,
+        "wires": [
+            [
+                "bad8cedc86ba52ab"
+            ]
+        ]
+    },
+    {
+        "id": "480618f204399306",
+        "type": "debug",
+        "z": "api-configs-individual-flow",
+        "name": "debug 7",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 450,
+        "y": 1580,
+        "wires": []
+    },
+    {
+        "id": "b07979beac1bd5ec",
+        "type": "function",
+        "z": "api-configs-individual-flow",
+        "name": "构建上传请求",
+        "func": "const { server, auth } = msg.webdav;\nconst { path, filename, fileBuffer, mimetype } = msg.upload;\n\n// 安全处理路径和文件名\nlet safePath = '';\nlet safeFilename = '';\ntry {\n    safePath = encodeURIComponent(decodeURIComponent(path)).replace(/%2F/g, '/');\n    safeFilename = encodeURIComponent(decodeURIComponent(filename));\n} catch (e) {\n    safePath = encodeURIComponent(path).replace(/%2F/g, '/');\n    safeFilename = encodeURIComponent(filename);\n}\n\n// 构建上传 URL 和请求\nmsg.url = `${server}${safePath}/${safeFilename}`;\nmsg.method = 'PUT';\nmsg.headers = {\n    'Content-Type': mimetype,\n    'Content-Disposition': `attachment; filename*=UTF-8''${safeFilename}`,\n    'Authorization': auth,\n    'User-Agent': 'WebDAV-Proxy/1.0',\n    'Accept': '*/*',\n    'Accept-Charset': 'utf-8'\n};\nmsg.payload = fileBuffer;\nmsg.target = 'webdav-request';\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 600,
+        "y": 1580,
+        "wires": [
+            [
+                "bad8cedc86ba52ab"
+            ]
+        ]
+    }
+]

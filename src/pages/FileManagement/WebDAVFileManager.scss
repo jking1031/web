@@ -1,0 +1,441 @@
+// 主题颜色变量
+$nextcloud-blue: #0082c9;
+$nextcloud-dark-blue: #006aa3;
+$nextcloud-light-blue: #00a2e9;
+$nextcloud-bg: #f8f9fa;
+$nextcloud-dark-bg: #f1f3f5;
+$nextcloud-hover: #f0f5fa;
+$nextcloud-border: #e0e4e8;
+$success-color: #52c41a;
+$error-color: #ff4d4f;
+$warning-color: #faad14;
+
+// 文件类型颜色
+$document-color: #4285f4;  // 蓝色 - 文档
+$spreadsheet-color: #0f9d58;  // 绿色 - 表格
+$presentation-color: #db4437;  // 红色 - 演示文稿
+$pdf-color: #ff5722;  // 橙红色 - PDF
+$image-color: #673ab7;  // 紫色 - 图片
+$archive-color: #795548;  // 棕色 - 压缩文件
+$code-color: #607d8b;  // 蓝灰色 - 代码
+$markdown-color: #00bcd4;  // 青色 - Markdown
+
+.webdav-container {
+  padding: 20px;
+  max-width: 100%;
+  background-color: $nextcloud-bg;
+  min-height: calc(100vh - 64px); // 减去头部高度
+}
+
+// 连接页面样式
+.webdav-connect-card {
+  max-width: 600px;
+  margin: 0 auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+}
+
+.webdav-connect-simple {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 120px);
+  
+  .webdav-welcome-card {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    border: none;
+    
+    .webdav-welcome-content {
+      padding: 24px;
+      
+      .webdav-welcome-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 32px;
+        
+        .webdav-avatar {
+          background-color: $nextcloud-blue;
+          margin-bottom: 16px;
+          box-shadow: 0 4px 12px rgba(0, 130, 201, 0.25);
+          padding: 8px;
+          font-size: 32px;
+        }
+        
+        h2 {
+          margin-bottom: 8px;
+          font-weight: 600;
+        }
+      }
+      
+      .webdav-welcome-description {
+        text-align: center;
+        font-size: 16px;
+        margin-bottom: 32px;
+        color: rgba(0, 0, 0, 0.65);
+      }
+      
+      .webdav-status-configured, 
+      .webdav-status-not-configured {
+        margin-bottom: 24px;
+      }
+      
+      .webdav-actions {
+        display: flex;
+        justify-content: center;
+        gap: 16px;
+        margin-top: 24px;
+        
+        button {
+          min-width: 140px;
+          height: 44px;
+          border-radius: 8px;
+          font-size: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          
+          &[type="primary"] {
+            background-color: $nextcloud-blue;
+            border-color: $nextcloud-blue;
+            box-shadow: 0 4px 12px rgba(0, 130, 201, 0.25);
+            
+            &:hover {
+              background-color: $nextcloud-light-blue;
+              border-color: $nextcloud-light-blue;
+            }
+          }
+        }
+      }
+      
+      .admin-mode-switch {
+        margin-top: 32px;
+        text-align: center;
+      }
+    }
+  }
+}
+
+// 文件管理器样式
+.webdav-file-manager {
+  &.nextcloud-style {
+    .nextcloud-header {
+      .nextcloud-logo {
+        background-color: $nextcloud-blue;
+        box-shadow: 0 4px 8px rgba(0, 130, 201, 0.15);
+      }
+      
+      .connection-tag {
+        font-size: 12px;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        border-radius: 4px;
+      }
+    }
+    
+    .nextcloud-card {
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      border: none;
+      overflow: hidden;
+    }
+    
+    .nextcloud-button {
+      border-color: $nextcloud-blue;
+      color: $nextcloud-blue;
+      border-radius: 6px;
+      
+      &:hover {
+        border-color: $nextcloud-light-blue;
+        color: $nextcloud-light-blue;
+        background-color: rgba(0, 130, 201, 0.05);
+      }
+    }
+    
+    .nextcloud-breadcrumb {
+      font-size: 14px;
+      
+      .nextcloud-breadcrumb-home, 
+      .nextcloud-breadcrumb-link {
+        color: $nextcloud-blue;
+        
+        &:hover {
+          color: $nextcloud-light-blue;
+        }
+      }
+    }
+    
+    .nextcloud-action-button {
+      border-radius: 6px;
+      
+      &:hover {
+        color: $nextcloud-blue;
+        border-color: $nextcloud-blue;
+        background-color: rgba(0, 130, 201, 0.05);
+      }
+    }
+    
+    .nextcloud-upload-button {
+      background-color: $nextcloud-blue;
+      border-color: $nextcloud-blue;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0, 130, 201, 0.15);
+      
+      &:hover {
+        background-color: $nextcloud-light-blue;
+        border-color: $nextcloud-light-blue;
+        box-shadow: 0 4px 12px rgba(0, 130, 201, 0.25);
+      }
+    }
+    
+    .nextcloud-divider {
+      background-color: $nextcloud-border;
+    }
+    
+    .nextcloud-table {
+      .ant-table-thead > tr > th {
+        background-color: $nextcloud-dark-bg;
+        color: rgba(0, 0, 0, 0.85);
+        font-weight: 600;
+      }
+      
+      .nextcloud-table-row {
+        transition: all 0.3s ease;
+        
+        &:hover {
+          background-color: $nextcloud-hover !important;
+        }
+      }
+      
+      .nextcloud-folder-icon {
+        color: #ffa92c;
+        font-size: 16px;
+      }
+      
+      .nextcloud-file-icon {
+        color: #747474;
+        font-size: 16px;
+        
+        // 文件类型图标样式
+        &.document-icon {
+          color: $document-color;
+        }
+        
+        &.spreadsheet-icon {
+          color: $spreadsheet-color;
+        }
+        
+        &.presentation-icon {
+          color: $presentation-color;
+        }
+        
+        &.pdf-icon {
+          color: $pdf-color;
+        }
+        
+        &.image-icon {
+          color: $image-color;
+        }
+        
+        &.archive-icon {
+          color: $archive-color;
+        }
+        
+        &.code-icon {
+          color: $code-color;
+        }
+        
+        &.markdown-icon {
+          color: $markdown-color;
+        }
+      }
+      
+      .nextcloud-link {
+        color: $nextcloud-blue;
+        
+        &:hover {
+          color: $nextcloud-light-blue;
+          text-decoration: underline;
+        }
+      }
+      
+      .nextcloud-action-button {
+        border: none;
+        background: transparent;
+        
+        &:hover {
+          color: $nextcloud-blue;
+          background-color: rgba(0, 130, 201, 0.1);
+        }
+      }
+    }
+    
+    .nextcloud-empty {
+      padding: 40px 0;
+    }
+    
+    .nextcloud-pagination {
+      margin-top: 16px;
+      
+      .ant-pagination-item-active {
+        border-color: $nextcloud-blue;
+        
+        a {
+          color: $nextcloud-blue;
+        }
+      }
+    }
+  }
+
+  .file-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: flex-start;
+      
+      .file-actions {
+        margin-top: 16px;
+        width: 100%;
+      }
+    }
+  }
+  
+  .ant-breadcrumb {
+    margin-bottom: 8px;
+  }
+  
+  .file-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .ant-table-wrapper {
+    margin-top: 16px;
+  }
+  
+  .ant-table-row {
+    cursor: pointer;
+  }
+  
+  .ant-empty {
+    margin: 32px 0;
+  }
+}
+
+// 模态框样式
+.nextcloud-modal {
+  .ant-modal-content {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.15);
+  }
+  
+  .ant-modal-header {
+    border-radius: 12px 12px 0 0;
+  }
+  
+  .nextcloud-input {
+    border-color: $nextcloud-border;
+    border-radius: 6px;
+    
+    &:focus, &:hover {
+      border-color: $nextcloud-blue;
+    }
+  }
+}
+
+// 上传组件样式
+.nextcloud-upload {
+  border: 2px dashed $nextcloud-border;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  padding: 24px;
+  
+  &:hover {
+    border-color: $nextcloud-blue;
+  }
+  
+  .nextcloud-upload-icon {
+    color: $nextcloud-blue;
+    font-size: 48px;
+  }
+  
+  .ant-upload-text {
+    font-size: 16px;
+    margin: 12px 0;
+  }
+  
+  .ant-upload-hint {
+    color: rgba(0, 0, 0, 0.45);
+  }
+}
+
+// 上传文件列表样式
+.upload-file-list {
+  margin-top: 16px;
+  
+  .ant-divider {
+    margin: 16px 0;
+    color: rgba(0, 0, 0, 0.45);
+  }
+  
+  .upload-file-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    
+    .upload-filename {
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+  
+  .ant-list-item {
+    padding: 8px 0;
+  }
+}
+
+.ant-upload-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 16px;
+}
+
+// 进度条样式
+.ant-progress-status-success .ant-progress-bg {
+  background-color: $success-color;
+}
+
+.ant-progress-status-exception .ant-progress-bg {
+  background-color: $error-color;
+}
+
+// 响应式样式
+@media (max-width: 576px) {
+  .webdav-container {
+    padding: 10px;
+  }
+  
+  .webdav-connect-card {
+    box-shadow: none;
+  }
+  
+  .webdav-welcome-card {
+    box-shadow: none;
+    border-radius: 0;
+  }
+} 
