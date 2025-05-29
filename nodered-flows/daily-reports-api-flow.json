@@ -1,0 +1,504 @@
+[
+    {
+        "id": "daily-reports-api-flow",
+        "type": "tab",
+        "label": "日报数据管理系统",
+        "disabled": false,
+        "info": "处理日报数据的API系统",
+        "env": []
+    },
+    {
+        "id": "mysql-config",
+        "type": "mysql-config",
+        "name": "ReportDB",
+        "host": "localhost",
+        "port": "3306",
+        "db": "zziot_reports",
+        "user": "root",
+        "pass": "password"
+    },
+    {
+        "id": "cors-headers",
+        "type": "function",
+        "z": "daily-reports-api-flow",
+        "name": "设置CORS和通用响应头",
+        "func": "// 设置CORS头\nmsg.headers = {\n    'Access-Control-Allow-Origin': '*',\n    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',\n    'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization',\n    'Content-Type': 'application/json'\n};\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 920,
+        "y": 60,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "api-endpoints",
+        "type": "http in",
+        "z": "daily-reports-api-flow",
+        "name": "API端点",
+        "url": "/api/reports",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 120,
+        "wires": [
+            [
+                "validate-query-params"
+            ]
+        ]
+    },
+    {
+        "id": "validate-query-params",
+        "type": "function",
+        "z": "daily-reports-api-flow",
+        "name": "验证查询参数",
+        "func": "// 获取查询参数\nconst reportType = msg.req.query.reportType;\nconst startDate = msg.req.query.startDate;\nconst endDate = msg.req.query.endDate;\n\n// 验证参数\nlet errors = [];\n\nif (!startDate) {\n    errors.push('开始日期不能为空');\n}\n\nif (!endDate) {\n    errors.push('结束日期不能为空');\n}\n\n// 如果有错误，返回错误响应\nif (errors.length > 0) {\n    msg.statusCode = 400;\n    msg.payload = { success: false, errors };\n    return [null, msg];\n}\n\n// 构建查询参数\nmsg.queryParams = {\n    reportType,\n    startDate,\n    endDate\n};\n\nreturn [msg, null];",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 310,
+        "y": 120,
+        "wires": [
+            [
+                "build-sql-query"
+            ],
+            [
+                "format-error-response"
+            ]
+        ]
+    },
+    {
+        "id": "build-sql-query",
+        "type": "function",
+        "z": "daily-reports-api-flow",
+        "name": "构建SQL查询",
+        "func": "// 获取查询参数\nconst { reportType, startDate, endDate } = msg.queryParams;\n\n// 基础查询\nlet query = `SELECT * FROM daily_reports WHERE date BETWEEN '${startDate}' AND '${endDate}'`;\n\n// 如果有报告类型，添加过滤条件\nif (reportType) {\n    query += ` AND report_type = '${reportType}'`;\n}\n\n// 按日期降序排序\nquery += ` ORDER BY date DESC`;\n\n// 设置查询\nmsg.topic = query;\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 500,
+        "y": 120,
+        "wires": [
+            [
+                "query-reports"
+            ]
+        ]
+    },
+    {
+        "id": "query-reports",
+        "type": "mysql",
+        "z": "daily-reports-api-flow",
+        "mydb": "mysql-config",
+        "name": "查询日报数据",
+        "x": 680,
+        "y": 120,
+        "wires": [
+            [
+                "format-response"
+            ]
+        ]
+    },
+    {
+        "id": "format-response",
+        "type": "function",
+        "z": "daily-reports-api-flow",
+        "name": "格式化响应",
+        "func": "// 格式化响应数据\nmsg.payload = {\n    success: true,\n    data: msg.payload,\n    total: msg.payload.length,\n    params: msg.queryParams\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 120,
+        "wires": [
+            [
+                "cors-headers",
+                "api-response"
+            ]
+        ]
+    },
+    {
+        "id": "api-response",
+        "type": "http response",
+        "z": "daily-reports-api-flow",
+        "name": "API响应",
+        "statusCode": "",
+        "headers": {},
+        "x": 1040,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "format-error-response",
+        "type": "function",
+        "z": "daily-reports-api-flow",
+        "name": "格式化错误响应",
+        "func": "// 如果没有设置状态码，默认为400\nif (!msg.statusCode) {\n    msg.statusCode = 400;\n}\n\n// 确保有错误消息\nif (!msg.payload || !msg.payload.errors) {\n    msg.payload = {\n        success: false,\n        errors: ['未知错误']\n    };\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 520,
+        "y": 180,
+        "wires": [
+            [
+                "cors-headers",
+                "api-response"
+            ]
+        ]
+    },
+    {
+        "id": "report-detail-endpoint",
+        "type": "http in",
+        "z": "daily-reports-api-flow",
+        "name": "报告详情API",
+        "url": "/api/reports/:id",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 130,
+        "y": 280,
+        "wires": [
+            [
+                "get-report-detail"
+            ]
+        ]
+    },
+    {
+        "id": "get-report-detail",
+        "type": "function",
+        "z": "daily-reports-api-flow",
+        "name": "获取报告ID",
+        "func": "// 获取路径参数中的报告ID\nconst reportId = msg.req.params.id;\n\nif (!reportId) {\n    msg.statusCode = 400;\n    msg.payload = { success: false, errors: ['报告ID不能为空'] };\n    return [null, msg];\n}\n\n// 构建查询\nmsg.topic = `SELECT * FROM daily_reports WHERE id = ${reportId} OR report_id = '${reportId}'`;\n\nreturn [msg, null];",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 310,
+        "y": 280,
+        "wires": [
+            [
+                "query-report-detail"
+            ],
+            [
+                "format-error-response"
+            ]
+        ]
+    },
+    {
+        "id": "query-report-detail",
+        "type": "mysql",
+        "z": "daily-reports-api-flow",
+        "mydb": "mysql-config",
+        "name": "查询报告详情",
+        "x": 510,
+        "y": 280,
+        "wires": [
+            [
+                "process-report-detail"
+            ]
+        ]
+    },
+    {
+        "id": "process-report-detail",
+        "type": "function",
+        "z": "daily-reports-api-flow",
+        "name": "处理报告详情",
+        "func": "// 检查是否找到报告\nif (!msg.payload || msg.payload.length === 0) {\n    msg.statusCode = 404;\n    msg.payload = { success: false, errors: ['未找到报告'] };\n    return [null, msg];\n}\n\n// 获取第一个结果（应该只有一个）\nconst report = msg.payload[0];\n\n// 格式化响应\nmsg.payload = {\n    success: true,\n    data: report\n};\n\nreturn [msg, null];",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 710,
+        "y": 280,
+        "wires": [
+            [
+                "cors-headers",
+                "api-response"
+            ],
+            [
+                "format-error-response"
+            ]
+        ]
+    },
+    {
+        "id": "pdf-endpoint",
+        "type": "http in",
+        "z": "daily-reports-api-flow",
+        "name": "PDF下载API",
+        "url": "/api/reports/:id/pdf",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 130,
+        "y": 340,
+        "wires": [
+            [
+                "get-report-for-pdf"
+            ]
+        ]
+    },
+    {
+        "id": "get-report-for-pdf",
+        "type": "function",
+        "z": "daily-reports-api-flow",
+        "name": "获取报告数据",
+        "func": "// 获取路径参数中的报告ID\nconst reportId = msg.req.params.id;\n\nif (!reportId) {\n    msg.statusCode = 400;\n    msg.payload = { success: false, errors: ['报告ID不能为空'] };\n    return [null, msg];\n}\n\n// 构建查询\nmsg.topic = `SELECT * FROM daily_reports WHERE id = ${reportId} OR report_id = '${reportId}'`;\n\nreturn [msg, null];",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 310,
+        "y": 340,
+        "wires": [
+            [
+                "query-report-for-pdf"
+            ],
+            [
+                "format-error-response"
+            ]
+        ]
+    },
+    {
+        "id": "query-report-for-pdf",
+        "type": "mysql",
+        "z": "daily-reports-api-flow",
+        "mydb": "mysql-config",
+        "name": "查询报告数据",
+        "x": 510,
+        "y": 340,
+        "wires": [
+            [
+                "generate-pdf"
+            ]
+        ]
+    },
+    {
+        "id": "generate-pdf",
+        "type": "function",
+        "z": "daily-reports-api-flow",
+        "name": "生成PDF",
+        "func": "// 检查是否找到报告\nif (!msg.payload || msg.payload.length === 0) {\n    msg.statusCode = 404;\n    msg.payload = { success: false, errors: ['未找到报告'] };\n    return [null, msg];\n}\n\n// 获取报告数据\nconst report = msg.payload[0];\n\n// 使用外部PDF生成服务或直接返回PDF文件\n// 这里使用puppeteer或其他PDF生成库来创建PDF\n// 为简化，我们假设PDF已经生成并可用\n\n// 设置响应头为PDF类型\nmsg.headers = {\n    'Content-Type': 'application/pdf',\n    'Content-Disposition': `attachment; filename=\"report_${report.id}.pdf\"`\n};\n\n// 这里应该是实际的PDF生成逻辑\n// 为演示目的，我们使用一个虚拟的PDF\nmsg.payload = Buffer.from('PDF content here');\n\nreturn [msg, null];",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 690,
+        "y": 340,
+        "wires": [
+            [
+                "pdf-response"
+            ],
+            [
+                "format-error-response"
+            ]
+        ]
+    },
+    {
+        "id": "pdf-response",
+        "type": "http response",
+        "z": "daily-reports-api-flow",
+        "name": "PDF响应",
+        "statusCode": "",
+        "headers": {},
+        "x": 860,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "create-tables",
+        "type": "inject",
+        "z": "daily-reports-api-flow",
+        "name": "初始化数据库",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 130,
+        "y": 400,
+        "wires": [
+            [
+                "create-db-tables"
+            ]
+        ]
+    },
+    {
+        "id": "create-db-tables",
+        "type": "function",
+        "z": "daily-reports-api-flow",
+        "name": "创建数据库表",
+        "func": "// 创建日报表\nconst createTableSQL = `\nCREATE TABLE IF NOT EXISTS daily_reports (\n  id INT(11) NOT NULL AUTO_INCREMENT,\n  date DATE NOT NULL,\n  operator VARCHAR(100) NOT NULL,\n  inflow DECIMAL(10,2) NOT NULL,\n  outflow DECIMAL(10,2) NOT NULL,\n  in_quality VARCHAR(255) NOT NULL,\n  out_quality VARCHAR(255) NOT NULL,\n  water_quality_anomalies TEXT,\n  equipment_status TEXT NOT NULL,\n  equipment_issues TEXT,\n  carbon_source DECIMAL(10,2) NOT NULL,\n  phosphorus_removal DECIMAL(10,2) NOT NULL,\n  disinfectant DECIMAL(10,2) NOT NULL,\n  chemical_effect TEXT NOT NULL,\n  sludge_quantity DECIMAL(10,2) NOT NULL,\n  other_notes TEXT,\n  report_id VARCHAR(255) UNIQUE,\n  imagesurl TEXT,\n  report_type VARCHAR(50) NOT NULL DEFAULT '高铁厂运行日报',\n  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (id)\n);\n`;\n\n// 插入示例数据的SQL\nconst insertExampleSQL = `\nINSERT INTO daily_reports \n(date, operator, inflow, outflow, in_quality, out_quality, water_quality_anomalies, \nequipment_status, equipment_issues, carbon_source, phosphorus_removal, \ndisinfectant, chemical_effect, sludge_quantity, other_notes, report_id, report_type)\nVALUES \n('2025-05-28', '朱申 常雷', 7227, 6815, \n'进水COD平均值137mg/L，最高COD187mg/L，氨氮平均值31.55mg/L', \n'出水COD平均值14.27mg/L，氨氮平均值0.028mg/L，总磷平均值0.076mg/L，总氮平均值4.65mg/L', \n'无', '正常', '一号滤池出水故障。', 1382, 547, 60, '良好', 8.55, \n'已完成巡查工作，铁盐投加中，出水总磷数据正常 磷源投加中，出水总氮数据正常，次氯酸钠白天正常投加，晚上六点关闭，其它数据一切正常。一号滤池出水阀故障中。', \n'REPORT-2025-05-28-001', '高铁厂运行日报')\n`;\n\n// 设置SQL查询\nmsg.topic = createTableSQL;\nmsg.createExampleData = true; // 标记是否创建示例数据\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 310,
+        "y": 400,
+        "wires": [
+            [
+                "execute-db-init"
+            ]
+        ]
+    },
+    {
+        "id": "execute-db-init",
+        "type": "mysql",
+        "z": "daily-reports-api-flow",
+        "mydb": "mysql-config",
+        "name": "执行数据库初始化",
+        "x": 520,
+        "y": 400,
+        "wires": [
+            [
+                "check-create-example"
+            ]
+        ]
+    },
+    {
+        "id": "check-create-example",
+        "type": "function",
+        "z": "daily-reports-api-flow",
+        "name": "检查是否创建示例数据",
+        "func": "// 如果需要创建示例数据\nif (msg.createExampleData) {\n    // 示例数据SQL\n    const insertExampleSQL = `\n    INSERT IGNORE INTO daily_reports \n    (date, operator, inflow, outflow, in_quality, out_quality, water_quality_anomalies, \n    equipment_status, equipment_issues, carbon_source, phosphorus_removal, \n    disinfectant, chemical_effect, sludge_quantity, other_notes, report_id, report_type)\n    VALUES \n    ('2025-05-28', '朱申 常雷', 7227, 6815, \n    '进水COD平均值137mg/L，最高COD187mg/L，氨氮平均值31.55mg/L', \n    '出水COD平均值14.27mg/L，氨氮平均值0.028mg/L，总磷平均值0.076mg/L，总氮平均值4.65mg/L', \n    '无', '正常', '一号滤池出水故障。', 1382, 547, 60, '良好', 8.55, \n    '已完成巡查工作，铁盐投加中，出水总磷数据正常 磷源投加中，出水总氮数据正常，次氯酸钠白天正常投加，晚上六点关闭，其它数据一切正常。一号滤池出水阀故障中。', \n    'REPORT-2025-05-28-001', '高铁厂运行日报'),\n    \n    ('2025-05-27', '李明', 7100, 6700, \n    '进水COD平均值140mg/L，最高COD190mg/L，氨氮平均值32mg/L', \n    '出水COD平均值15mg/L，氨氮平均值0.03mg/L，总磷平均值0.08mg/L，总氮平均值4.7mg/L', \n    '无', '正常', '无', 1350, 540, 58, '良好', 8.2, \n    '巡查工作顺利完成，各项指标正常。', \n    'REPORT-2025-05-27-001', '高铁厂运行日报'),\n    \n    ('2025-05-26', '张华', 6900, 6500, \n    '进水COD平均值142mg/L，最高COD195mg/L，氨氮平均值33mg/L', \n    '出水COD平均值14.5mg/L，氨氮平均值0.029mg/L，总磷平均值0.077mg/L，总氮平均值4.6mg/L', \n    '无', '正常', '无', 1360, 545, 59, '良好', 8.3, \n    '运行正常，水质达标。', \n    'REPORT-2025-05-26-001', '高铁厂运行日报'),\n    \n    ('2025-05-28', '王刚', 5000, 4800, \n    '进水COD平均值150mg/L，最高COD200mg/L，氨氮平均值34mg/L', \n    '出水COD平均值16mg/L，氨氮平均值0.031mg/L，总磷平均值0.079mg/L，总氮平均值4.8mg/L', \n    '无', '正常', '无', 1200, 500, 55, '良好', 7.8, \n    '处理站运行稳定，出水水质良好。', \n    'REPORT-2025-05-28-002', '5000吨处理站'),\n    \n    ('2025-05-27', '赵强', 4900, 4700, \n    '进水COD平均值155mg/L，最高COD205mg/L，氨氮平均值35mg/L', \n    '出水COD平均值16.5mg/L，氨氮平均值0.032mg/L，总磷平均值0.08mg/L，总氮平均值4.9mg/L', \n    '无', '正常', '无', 1190, 495, 54, '良好', 7.7, \n    '设备运行正常，处理效果良好。', \n    'REPORT-2025-05-27-002', '5000吨处理站')\n    `;\n    \n    // 设置SQL查询\n    msg.topic = insertExampleSQL;\n    return msg;\n}\n\n// 如果不需要创建示例数据，直接返回成功消息\nmsg.payload = { success: true, message: '数据库初始化成功' };\nreturn null;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 750,
+        "y": 400,
+        "wires": [
+            [
+                "insert-example-data"
+            ]
+        ]
+    },
+    {
+        "id": "insert-example-data",
+        "type": "mysql",
+        "z": "daily-reports-api-flow",
+        "mydb": "mysql-config",
+        "name": "插入示例数据",
+        "x": 930,
+        "y": 400,
+        "wires": [
+            [
+                "log-init-result"
+            ]
+        ]
+    },
+    {
+        "id": "log-init-result",
+        "type": "debug",
+        "z": "daily-reports-api-flow",
+        "name": "初始化结果",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1100,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "report-types-endpoint",
+        "type": "http in",
+        "z": "daily-reports-api-flow",
+        "name": "报告类型API",
+        "url": "/api/report-types",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 130,
+        "y": 460,
+        "wires": [
+            [
+                "get-report-types"
+            ]
+        ]
+    },
+    {
+        "id": "get-report-types",
+        "type": "function",
+        "z": "daily-reports-api-flow",
+        "name": "获取报告类型",
+        "func": "// 构建查询\nmsg.topic = `SELECT DISTINCT report_type FROM daily_reports`;\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 310,
+        "y": 460,
+        "wires": [
+            [
+                "query-report-types"
+            ]
+        ]
+    },
+    {
+        "id": "query-report-types",
+        "type": "mysql",
+        "z": "daily-reports-api-flow",
+        "mydb": "mysql-config",
+        "name": "查询报告类型",
+        "x": 510,
+        "y": 460,
+        "wires": [
+            [
+                "format-types-response"
+            ]
+        ]
+    },
+    {
+        "id": "format-types-response",
+        "type": "function",
+        "z": "daily-reports-api-flow",
+        "name": "格式化类型响应",
+        "func": "// 提取报告类型列表\nconst types = msg.payload.map(item => item.report_type);\n\n// 格式化响应\nmsg.payload = {\n    success: true,\n    data: types\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 720,
+        "y": 460,
+        "wires": [
+            [
+                "cors-headers",
+                "api-response"
+            ]
+        ]
+    }
+] 

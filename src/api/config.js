@@ -39,13 +39,13 @@ export const API_ENDPOINTS = {
   REGISTER: 'https://zziot.jzz77.cn:9003/api/register',
   LOGOUT: '/auth-api/api/logout',
   USER_INFO: '/auth-api/api/user',
-
+  USER_ROLES: 'https://nodered.jzz77.cn:9003/api/users/roles',
   // 管理员状态检查 - 使用nodered.jzz77.cn:9003
   CHECK_ADMIN_STATUS: '/admin-api/api/check-admin-status',
 
   // 用户管理相关 - 使用zziot.jzz77.cn:9003
   USERS: '/api/users',
-  USER_ROLES: '/api/users/roles',
+
   ASSIGN_ROLE: '/auth-api/api/users/assign-role',
   REMOVE_ROLE: '/auth-api/api/users/remove-role',
   TOGGLE_ADMIN: '/auth-api/api/users/toggle-admin',

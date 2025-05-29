@@ -97,12 +97,40 @@ export const AuthProvider = ({ children }) => {
       // 从本地存储获取用户信息
       const storedUserInfo = getUserInfo();
       if (storedUserInfo) {
+        // 设置基本用户信息
         setUser(storedUserInfo);
         setIsLoggedIn(true);
-        setIsAdmin(storedUserInfo.is_admin === true);
+        
+        // 设置初始管理员状态
+        const initialAdminStatus = storedUserInfo.is_admin === true;
+        setIsAdmin(initialAdminStatus);
+        
+        console.log('从本地存储恢复用户信息，初始管理员状态:', initialAdminStatus);
 
-        // 检查管理员状态
-        await checkAdminStatus();
+        try {
+          // 1. 获取用户角色
+          if (storedUserInfo.id) {
+            const roles = await fetchUserRoles(storedUserInfo.id);
+            setUserRoles(roles);
+            
+            // 2. 根据角色判断是否为管理员
+            const hasAdminRole = checkIsAdminByRoles(roles);
+            
+            // 3. 如果角色判断为管理员，但当前状态不是，则更新状态
+            if (hasAdminRole && !initialAdminStatus) {
+              console.log('基于角色判断用户为管理员，更新状态');
+              updateUserInfo({
+                is_admin: true
+              });
+              setIsAdmin(true);
+            }
+          }
+          
+          // 4. 再次检查管理员状态
+          await checkAdminStatus();
+        } catch (roleError) {
+          console.error('获取用户角色失败:', roleError);
+        }
       } else {
         // 如果本地没有用户信息，尝试从API获取
         try {
@@ -209,6 +237,21 @@ export const AuthProvider = ({ children }) => {
           // 获取用户角色
           const roles = await fetchUserRoles(userData.id);
           setUserRoles(roles);
+          
+          // 检查用户角色是否包含管理员角色
+          const hasAdminRole = checkIsAdminByRoles(roles);
+          if (hasAdminRole && !adminStatus) {
+            console.log('用户角色包含管理员角色，但API返回非管理员状态，更新为管理员');
+            
+            // 更新用户信息
+            const updatedUserData = {
+              ...enhancedUserData,
+              is_admin: true
+            };
+            saveUserInfo(updatedUserData);
+            setUser(updatedUserData);
+            setIsAdmin(true);
+          }
 
         } catch (adminCheckError) {
           console.error('查询管理员状态失败:', adminCheckError);
@@ -391,12 +434,44 @@ export const AuthProvider = ({ children }) => {
       // 获取用户角色
       const roles = await fetchUserRoles(userInfo.id);
       setUserRoles(roles);
+      
+      // 检查角色是否包含管理员
+      const hasAdminRole = checkIsAdminByRoles(roles);
+      if (hasAdminRole && !adminStatus) {
+        console.log('角色显示为管理员，但API状态不是管理员，更新为管理员状态');
+        updateUserInfo({
+          is_admin: true
+        });
+        setIsAdmin(true);
+        return true;
+      }
 
-      return adminStatus;
+      return adminStatus || hasAdminRole;
     } catch (error) {
       console.error('[AuthContext] 检查管理员状态失败:', error.message);
       return isAdmin;
     }
+  };
+
+  /**
+   * 通过角色数组判断用户是否为管理员
+   * @param {Array} roles - 角色数组
+   * @returns {boolean} 是否为管理员
+   */
+  const checkIsAdminByRoles = (roles) => {
+    if (!roles || !Array.isArray(roles) || roles.length === 0) {
+      return false;
+    }
+
+    // 处理格式为 [{"name":"管理员"}] 或 [{"name":"部门管理员"}] 的角色数据
+    return roles.some(role => {
+      if (typeof role === 'string') {
+        return role === 'admin' || role === '管理员' || role === '部门管理员';
+      } else if (role && typeof role === 'object' && role.name) {
+        return role.name === 'admin' || role.name === '管理员' || role.name === '部门管理员';
+      }
+      return false;
+    });
   };
 
   /**
@@ -418,6 +493,24 @@ export const AuthProvider = ({ children }) => {
 
       const roles = await fetchUserRoles(userId, forceRefresh);
       setUserRoles(roles);
+      
+      // 检查角色中是否包含管理员角色
+      const hasAdminRole = checkIsAdminByRoles(roles);
+      
+      // 如果角色判断为管理员，但当前状态不是管理员，则更新状态
+      if (hasAdminRole) {
+        console.log('基于角色判断用户为管理员:', 
+          roles.map(r => typeof r === 'string' ? r : (r.name || 'unknown')).join(', '));
+        
+        // 只有当前用户不是管理员时才更新状态
+        if (!isAdmin) {
+          updateUserInfo({
+            is_admin: true
+          });
+          setIsAdmin(true);
+        }
+      }
+      
       return roles;
     } catch (error) {
       console.error('获取用户角色失败:', error);

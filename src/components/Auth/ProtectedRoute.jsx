@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Spin } from 'antd';
@@ -18,12 +18,14 @@ const ProtectedRoute = ({ children }) => {
     return (
       <div style={{ 
         display: 'flex', 
+        flexDirection: 'column',
         justifyContent: 'center', 
         alignItems: 'center', 
         height: '100vh',
         background: '#f0f2f5'
       }}>
-        <Spin size="large" tip="加载中..." />
+        <Spin size="large" />
+        <div style={{ marginTop: 16 }}>加载中...</div>
       </div>
     );
   }

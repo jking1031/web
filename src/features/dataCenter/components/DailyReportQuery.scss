@@ -1,0 +1,35 @@
+.daily-report-query {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 24px;
+  
+  .query-header {
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 16px;
+    color: #1f1f1f;
+    display: flex;
+    align-items: center;
+    
+    .anticon {
+      margin-right: 8px;
+      color: #1890ff;
+    }
+  }
+  
+  .ant-form-item {
+    margin-bottom: 16px;
+  }
+  
+  .ant-alert {
+    margin-top: 16px;
+  }
+}
+
+// 响应式调整
+@media (max-width: 768px) {
+  .daily-report-query {
+    padding: 12px;
+  }
+} 

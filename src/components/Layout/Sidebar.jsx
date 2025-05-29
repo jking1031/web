@@ -249,17 +249,7 @@ const Sidebar = ({ collapsed, onMenuClick }) => {
       label: 'API管理',
       onClick: () => handleNavigate('/api-management'),
     });
-
-    // 已删除的菜单项，注释掉
-    // menuItems.push({
-    //   key: 'query-management',
-    //   icon: <DatabaseOutlined />,
-    //   label: '查询管理',
-    //   onClick: () => handleNavigate('/query-management'),
-    // });
-    
   }
-
   return (
     <Sider
       collapsible

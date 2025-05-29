@@ -2,473 +2,594 @@
   {
     "id": "forms-api-flow",
     "type": "tab",
-    "label": "Forms API",
+    "label": "表单数据管理系统",
     "disabled": false,
-    "info": "Flow for handling form management and submissions via API",
+    "info": "处理表单创建、管理、提交和验证的API流程",
     "env": []
   },
   {
-    "id": "forms-get-all",
-    "type": "http in",
-    "z": "forms-api-flow",
-    "name": "Get All Forms",
-    "url": "/api/forms",
-    "method": "get",
-    "upload": false,
-    "swaggerDoc": "",
-    "x": 120,
-    "y": 80,
-    "wires": [
-      [
-        "forms-get-all-function"
-      ]
-    ]
+    "id": "mysql-config",
+    "type": "mysql-config",
+    "name": "FormDB",
+    "host": "localhost",
+    "port": "3306",
+    "db": "zziot_forms",
+    "user": "root",
+    "pass": "password"
   },
   {
-    "id": "forms-get-all-function",
+    "id": "cors-headers",
     "type": "function",
     "z": "forms-api-flow",
-    "name": "Process Get All Forms",
-    "func": "// Get forms from context or database\nconst storedForms = global.get('forms') || [];\n\n// Return success response\nmsg.payload = {\n    success: true,\n    message: `Successfully retrieved ${storedForms.length} forms`,\n    data: storedForms\n};\n\nreturn msg;",
+    "name": "设置CORS和通用响应头",
+    "func": "// 设置CORS头\nmsg.headers = {\n    'Access-Control-Allow-Origin': '*',\n    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',\n    'Access-Control-Allow-Headers': 'Content-Type, Authorization',\n    'Content-Type': 'application/json'\n};\nreturn msg;",
     "outputs": 1,
     "noerr": 0,
     "initialize": "",
     "finalize": "",
     "libs": [],
-    "x": 360,
-    "y": 80,
-    "wires": [
-      [
-        "forms-get-all-response"
-      ]
-    ]
+    "x": 380,
+    "y": 60,
+    "wires": [["forms-api-router"]]
   },
   {
-    "id": "forms-get-all-response",
-    "type": "http response",
-    "z": "forms-api-flow",
-    "name": "Return Forms List",
-    "statusCode": "",
-    "headers": {
-      "content-type": "application/json"
-    },
-    "x": 600,
-    "y": 80,
-    "wires": []
-  },
-  {
-    "id": "forms-get-by-id",
+    "id": "forms-api-router",
     "type": "http in",
     "z": "forms-api-flow",
-    "name": "Get Form By ID",
-    "url": "/api/forms/:id",
+    "name": "表单API入口",
+    "url": "/api/forms/:id?/:action?",
     "method": "get",
     "upload": false,
     "swaggerDoc": "",
+    "x": 120,
+    "y": 60,
+    "wires": [["api-method-router"]]
+  },
+  {
+    "id": "api-method-router",
+    "type": "switch",
+    "z": "forms-api-flow",
+    "name": "路由不同的API方法",
+    "property": "req.method",
+    "propertyType": "msg",
+    "rules": [
+      { "t": "eq", "v": "GET", "vt": "str" },
+      { "t": "eq", "v": "POST", "vt": "str" },
+      { "t": "eq", "v": "PUT", "vt": "str" },
+      { "t": "eq", "v": "DELETE", "vt": "str" },
+      { "t": "eq", "v": "OPTIONS", "vt": "str" }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 5,
+    "x": 160,
+    "y": 120,
+    "wires": [
+      ["get-router"],
+      ["post-router"],
+      ["put-router"],
+      ["delete-router"],
+      ["handle-options"]
+    ]
+  },
+  {
+    "id": "get-router",
+    "type": "switch",
+    "z": "forms-api-flow",
+    "name": "GET请求路由",
+    "property": "req.params.action",
+    "propertyType": "msg",
+    "rules": [
+      { "t": "null" },
+      { "t": "eq", "v": "submissions", "vt": "str" },
+      { "t": "eq", "v": "verify-submission", "vt": "str" }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 3,
+    "x": 320,
+    "y": 120,
+    "wires": [
+      ["get-forms-handler"],
+      ["get-submissions-handler"],
+      ["verify-submission-handler"]
+    ]
+  },
+  {
+    "id": "post-router",
+    "type": "switch",
+    "z": "forms-api-flow",
+    "name": "POST请求路由",
+    "property": "req.params.action",
+    "propertyType": "msg",
+    "rules": [
+      { "t": "null" },
+      { "t": "eq", "v": "submit", "vt": "str" }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 2,
+    "x": 320,
+    "y": 180,
+    "wires": [
+      ["create-form-handler"],
+      ["submit-form-handler"]
+    ]
+  },
+  {
+    "id": "put-router",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "检查表单ID",
+    "func": "if (!msg.req.params.id) {\n    msg.statusCode = 400;\n    msg.payload = { \n        success: false, \n        message: '更新表单需要提供ID参数' \n    };\n    return [null, msg];\n}\nreturn [msg, null];",
+    "outputs": 2,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 240,
+    "wires": [
+      ["update-form-handler"],
+      ["cors-headers"]
+    ]
+  },
+  {
+    "id": "delete-router",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "检查表单ID",
+    "func": "if (!msg.req.params.id) {\n    msg.statusCode = 400;\n    msg.payload = { \n        success: false, \n        message: '删除表单需要提供ID参数' \n    };\n    return [null, msg];\n}\nreturn [msg, null];",
+    "outputs": 2,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 300,
+    "wires": [
+      ["delete-form-handler"],
+      ["cors-headers"]
+    ]
+  },
+  {
+    "id": "handle-options",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "处理OPTIONS请求",
+    "func": "msg.statusCode = 200;\nmsg.payload = {};\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 330,
+    "y": 360,
+    "wires": [["cors-headers"]]
+  },
+  {
+    "id": "get-forms-handler",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "处理表单获取请求",
+    "func": "// 设置SQL查询\nif (msg.req.params.id) {\n    msg.topic = \"SELECT * FROM forms WHERE id = ?\"\n    msg.params = [msg.req.params.id];\n} else {\n    msg.topic = \"SELECT * FROM forms ORDER BY updatedAt DESC\"\n}\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 520,
+    "y": 120,
+    "wires": [["get-forms-query"]]
+  },
+  {
+    "id": "get-forms-query",
+    "type": "mysql",
+    "z": "forms-api-flow",
+    "name": "查询表单数据",
+    "mysqlConfig": "mysql-config",
+    "query": "",
+    "queryType": "msg.topic",
+    "queryParamType": "msg.params",
+    "x": 720,
+    "y": 120,
+    "wires": [["format-forms-response"]]
+  },
+  {
+    "id": "format-forms-response",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "格式化表单响应",
+    "func": "// 判断是单个表单还是列表\nif (msg.req.params.id) {\n    // 单个表单\n    if (msg.payload && msg.payload.length > 0) {\n        msg.payload = {\n            success: true,\n            message: \"获取表单成功\",\n            data: msg.payload[0]\n        };\n    } else {\n        msg.statusCode = 404;\n        msg.payload = {\n            success: false,\n            message: \"表单不存在\",\n            data: null\n        };\n    }\n} else {\n    // 表单列表\n    msg.payload = {\n        success: true,\n        message: \"获取表单列表成功\",\n        data: msg.payload\n    };\n}\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 940,
+    "y": 120,
+    "wires": [["http-response"]]
+  },
+  {
+    "id": "get-submissions-handler",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "处理提交记录获取",
+    "func": "if (!msg.req.params.id) {\n    msg.statusCode = 400;\n    msg.payload = { \n        success: false, \n        message: '获取提交记录需要提供表单ID' \n    };\n    return [null, msg];\n}\n\n// 设置SQL查询\nmsg.topic = \"SELECT * FROM form_submissions WHERE formId = ? ORDER BY submittedAt DESC\";\nmsg.params = [msg.req.params.id];\n\nreturn [msg, null];",
+    "outputs": 2,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 530,
+    "y": 180,
+    "wires": [
+      ["get-submissions-query"],
+      ["cors-headers"]
+    ]
+  },
+  {
+    "id": "get-submissions-query",
+    "type": "mysql",
+    "z": "forms-api-flow",
+    "name": "查询提交记录",
+    "mysqlConfig": "mysql-config",
+    "query": "",
+    "queryType": "msg.topic",
+    "queryParamType": "msg.params",
+    "x": 730,
+    "y": 180,
+    "wires": [["format-submissions-response"]]
+  },
+  {
+    "id": "format-submissions-response",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "格式化提交记录响应",
+    "func": "// 解析JSON数据字段\nif (msg.payload && Array.isArray(msg.payload)) {\n    msg.payload.forEach(submission => {\n        if (submission.data && typeof submission.data === 'string') {\n            try {\n                submission.data = JSON.parse(submission.data);\n            } catch (e) {\n                // 保持原样\n            }\n        }\n    });\n}\n\nmsg.payload = {\n    success: true,\n    message: \"获取提交记录成功\",\n    data: msg.payload\n};\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 950,
+    "y": 180,
+    "wires": [["http-response"]]
+  },
+  {
+    "id": "verify-submission-handler",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "处理提交验证请求",
+    "func": "if (!msg.req.params.id) {\n    msg.statusCode = 400;\n    msg.payload = { \n        success: false, \n        message: '验证提交需要提供表单ID' \n    };\n    return [null, msg];\n}\n\n// 设置SQL查询 - 获取最近的提交记录\nmsg.topic = \"SELECT * FROM form_submissions WHERE formId = ? ORDER BY submittedAt DESC LIMIT 1\";\nmsg.params = [msg.req.params.id];\n\nreturn [msg, null];",
+    "outputs": 2,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 530,
+    "y": 240,
+    "wires": [
+      ["verify-submission-query"],
+      ["cors-headers"]
+    ]
+  },
+  {
+    "id": "verify-submission-query",
+    "type": "mysql",
+    "z": "forms-api-flow",
+    "name": "查询最近提交",
+    "mysqlConfig": "mysql-config",
+    "query": "",
+    "queryType": "msg.topic",
+    "queryParamType": "msg.params",
+    "x": 730,
+    "y": 240,
+    "wires": [["format-verification-response"]]
+  },
+  {
+    "id": "format-verification-response",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "格式化验证响应",
+    "func": "if (msg.payload && msg.payload.length > 0) {\n    const submission = msg.payload[0];\n    \n    // 解析数据字段\n    if (submission.data && typeof submission.data === 'string') {\n        try {\n            submission.data = JSON.parse(submission.data);\n        } catch (e) {\n            // 保持原样\n        }\n    }\n    \n    msg.payload = {\n        success: true,\n        message: \"验证成功，找到提交记录\",\n        data: {\n            found: true,\n            submission: submission\n        }\n    };\n} else {\n    msg.payload = {\n        success: true,\n        message: \"未找到提交记录\",\n        data: {\n            found: false\n        }\n    };\n}\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 950,
+    "y": 240,
+    "wires": [["http-response"]]
+  },
+  {
+    "id": "create-form-handler",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "处理表单创建",
+    "func": "const formData = msg.payload;\n\n// 验证必填字段\nif (!formData.title || !formData.embedUrl) {\n    msg.statusCode = 400;\n    msg.payload = {\n        success: false,\n        message: \"表单标题和嵌入URL为必填项\"\n    };\n    return [null, msg];\n}\n\n// 准备数据库插入\nconst now = new Date().toISOString();\nconst id = 'form_' + Date.now();\n\n// 设置SQL插入语句\nmsg.topic = `INSERT INTO forms (id, title, embedUrl, embedCode, embedType, description, status, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;\n\nmsg.params = [\n    id,\n    formData.title,\n    formData.embedUrl,\n    formData.embedCode || '',\n    formData.embedType || 'link',\n    formData.description || '',\n    formData.status || 'active',\n    now,\n    now\n];\n\n// 保存原始数据用于返回\nmsg.formData = {\n    id: id,\n    title: formData.title,\n    embedUrl: formData.embedUrl,\n    embedCode: formData.embedCode || '',\n    embedType: formData.embedType || 'link',\n    description: formData.description || '',\n    status: formData.status || 'active',\n    createdAt: now,\n    updatedAt: now\n};\n\nreturn [msg, null];",
+    "outputs": 2,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 520,
+    "y": 300,
+    "wires": [
+      ["create-form-query"],
+      ["cors-headers"]
+    ]
+  },
+  {
+    "id": "create-form-query",
+    "type": "mysql",
+    "z": "forms-api-flow",
+    "name": "插入表单数据",
+    "mysqlConfig": "mysql-config",
+    "query": "",
+    "queryType": "msg.topic",
+    "queryParamType": "msg.params",
+    "x": 730,
+    "y": 300,
+    "wires": [["handle-form-create-response"]]
+  },
+  {
+    "id": "handle-form-create-response",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "处理创建响应",
+    "func": "if (msg.payload && msg.payload.affectedRows > 0) {\n    msg.statusCode = 201; // Created\n    msg.payload = {\n        success: true,\n        message: \"表单创建成功\",\n        data: msg.formData\n    };\n} else {\n    msg.statusCode = 500;\n    msg.payload = {\n        success: false,\n        message: \"表单创建失败\",\n        error: \"数据库操作错误\"\n    };\n}\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 940,
+    "y": 300,
+    "wires": [["http-response"]]
+  },
+  {
+    "id": "update-form-handler",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "处理表单更新",
+    "func": "const formId = msg.req.params.id;\nconst formData = msg.payload;\n\n// 验证必填字段\nif (!formData.title || !formData.embedUrl) {\n    msg.statusCode = 400;\n    msg.payload = {\n        success: false,\n        message: \"表单标题和嵌入URL为必填项\"\n    };\n    return [null, msg];\n}\n\n// 准备数据库更新\nconst now = new Date().toISOString();\n\n// 设置SQL更新语句\nmsg.topic = `UPDATE forms SET title = ?, embedUrl = ?, embedCode = ?, embedType = ?, description = ?, status = ?, updatedAt = ? WHERE id = ?`;\n\nmsg.params = [\n    formData.title,\n    formData.embedUrl,\n    formData.embedCode || '',\n    formData.embedType || 'link',\n    formData.description || '',\n    formData.status || 'active',\n    now,\n    formId\n];\n\n// 保存原始数据用于返回\nmsg.formData = {\n    id: formId,\n    title: formData.title,\n    embedUrl: formData.embedUrl,\n    embedCode: formData.embedCode || '',\n    embedType: formData.embedType || 'link',\n    description: formData.description || '',\n    status: formData.status || 'active',\n    updatedAt: now\n};\n\nreturn [msg, null];",
+    "outputs": 2,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 520,
+    "y": 360,
+    "wires": [
+      ["update-form-query"],
+      ["cors-headers"]
+    ]
+  },
+  {
+    "id": "update-form-query",
+    "type": "mysql",
+    "z": "forms-api-flow",
+    "name": "更新表单数据",
+    "mysqlConfig": "mysql-config",
+    "query": "",
+    "queryType": "msg.topic",
+    "queryParamType": "msg.params",
+    "x": 730,
+    "y": 360,
+    "wires": [["handle-form-update-response"]]
+  },
+  {
+    "id": "handle-form-update-response",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "处理更新响应",
+    "func": "if (msg.payload && msg.payload.affectedRows > 0) {\n    msg.statusCode = 200; // OK\n    msg.payload = {\n        success: true,\n        message: \"表单更新成功\",\n        data: msg.formData\n    };\n} else {\n    msg.statusCode = 404;\n    msg.payload = {\n        success: false,\n        message: \"表单不存在或更新失败\",\n        error: \"数据库操作错误\"\n    };\n}\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 940,
+    "y": 360,
+    "wires": [["http-response"]]
+  },
+  {
+    "id": "delete-form-handler",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "处理表单删除",
+    "func": "const formId = msg.req.params.id;\n\n// 设置SQL删除语句\nmsg.topic = `DELETE FROM forms WHERE id = ?`;\nmsg.params = [formId];\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 520,
+    "y": 420,
+    "wires": [["delete-form-query"]]
+  },
+  {
+    "id": "delete-form-query",
+    "type": "mysql",
+    "z": "forms-api-flow",
+    "name": "删除表单数据",
+    "mysqlConfig": "mysql-config",
+    "query": "",
+    "queryType": "msg.topic",
+    "queryParamType": "msg.params",
+    "x": 730,
+    "y": 420,
+    "wires": [["handle-form-delete-response"]]
+  },
+  {
+    "id": "handle-form-delete-response",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "处理删除响应",
+    "func": "if (msg.payload && msg.payload.affectedRows > 0) {\n    msg.statusCode = 200; // OK\n    msg.payload = {\n        success: true,\n        message: \"表单删除成功\"\n    };\n} else {\n    msg.statusCode = 404;\n    msg.payload = {\n        success: false,\n        message: \"表单不存在或删除失败\"\n    };\n}\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 940,
+    "y": 420,
+    "wires": [["http-response"]]
+  },
+  {
+    "id": "submit-form-handler",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "处理表单提交",
+    "func": "const formId = msg.req.params.id;\nconst formData = msg.payload;\n\nif (!formId) {\n    msg.statusCode = 400;\n    msg.payload = {\n        success: false,\n        message: \"提交表单数据需要提供表单ID\"\n    };\n    return [null, msg];\n}\n\n// 准备提交数据\nconst now = new Date().toISOString();\nconst submissionId = 'submission_' + Date.now();\n\n// 将表单数据转换为JSON字符串\nlet dataJson;\ntry {\n    if (typeof formData === 'object') {\n        dataJson = JSON.stringify(formData);\n    } else {\n        dataJson = JSON.stringify({rawData: formData});\n    }\n} catch (e) {\n    dataJson = JSON.stringify({error: \"数据格式错误\", message: e.message});\n}\n\n// 设置SQL插入语句\nmsg.topic = `INSERT INTO form_submissions (id, formId, data, submittedBy, submittedAt, status) VALUES (?, ?, ?, ?, ?, ?)`;\n\nconst submittedBy = msg.req.headers['x-user-id'] || 'anonymous';\n\nmsg.params = [\n    submissionId,\n    formId,\n    dataJson,\n    submittedBy,\n    now,\n    'processed'\n];\n\n// 保存原始数据用于返回\nmsg.submissionData = {\n    id: submissionId,\n    formId: formId,\n    data: formData,\n    submittedBy: submittedBy,\n    submittedAt: now,\n    status: 'processed'\n};\n\nreturn [msg, null];",
+    "outputs": 2,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 520,
+    "y": 480,
+    "wires": [
+      ["submit-form-query"],
+      ["cors-headers"]
+    ]
+  },
+  {
+    "id": "submit-form-query",
+    "type": "mysql",
+    "z": "forms-api-flow",
+    "name": "保存表单提交数据",
+    "mysqlConfig": "mysql-config",
+    "query": "",
+    "queryType": "msg.topic",
+    "queryParamType": "msg.params",
+    "x": 740,
+    "y": 480,
+    "wires": [["handle-form-submit-response"]]
+  },
+  {
+    "id": "handle-form-submit-response",
+    "type": "function",
+    "z": "forms-api-flow",
+    "name": "处理提交响应",
+    "func": "if (msg.payload && msg.payload.affectedRows > 0) {\n    msg.statusCode = 201; // Created\n    msg.payload = {\n        success: true,\n        message: \"表单提交成功\",\n        data: msg.submissionData\n    };\n} else {\n    msg.statusCode = 500;\n    msg.payload = {\n        success: false,\n        message: \"表单提交失败\",\n        error: \"数据库操作错误\"\n    };\n}\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 940,
+    "y": 480,
+    "wires": [["http-response"]]
+  },
+  {
+    "id": "http-response",
+    "type": "http response",
+    "z": "forms-api-flow",
+    "name": "HTTP响应",
+    "statusCode": "",
+    "headers": {},
+    "x": 1200,
+    "y": 300,
+    "wires": []
+  },
+  {
+    "id": "init-db",
+    "type": "inject",
+    "z": "forms-api-flow",
+    "name": "初始化数据库",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": true,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
     "x": 130,
-    "y": 140,
-    "wires": [
-      [
-        "forms-get-by-id-function"
-      ]
-    ]
+    "y": 540,
+    "wires": [["create-tables"]]
   },
   {
-    "id": "forms-get-by-id-function",
+    "id": "create-tables",
     "type": "function",
     "z": "forms-api-flow",
-    "name": "Process Get Form By ID",
-    "func": "// Get form ID from request parameters\nconst formId = msg.req.params.id;\n\n// Get forms from context or database\nconst storedForms = global.get('forms') || [];\n\n// Find the requested form\nconst form = storedForms.find(form => form.id === formId);\n\nif (!form) {\n    msg.payload = {\n        success: false,\n        message: `Form with ID ${formId} not found`\n    };\n    msg.statusCode = 404;\n    return msg;\n}\n\n// Return success response\nmsg.payload = {\n    success: true,\n    message: 'Form found',\n    data: form\n};\n\nreturn msg;",
+    "name": "创建数据库表",
+    "func": "// 创建表单表\nmsg.topic = `\nCREATE TABLE IF NOT EXISTS forms (\n    id VARCHAR(50) PRIMARY KEY,\n    title VARCHAR(255) NOT NULL,\n    embedUrl TEXT NOT NULL,\n    embedCode TEXT,\n    embedType VARCHAR(50) DEFAULT 'link',\n    description TEXT,\n    status VARCHAR(20) DEFAULT 'active',\n    createdAt DATETIME,\n    updatedAt DATETIME\n);\n`;\n\nreturn msg;",
     "outputs": 1,
     "noerr": 0,
     "initialize": "",
     "finalize": "",
     "libs": [],
-    "x": 360,
-    "y": 140,
-    "wires": [
-      [
-        "forms-get-by-id-response"
-      ]
-    ]
+    "x": 300,
+    "y": 540,
+    "wires": [["create-forms-table"]]
   },
   {
-    "id": "forms-get-by-id-response",
-    "type": "http response",
+    "id": "create-forms-table",
+    "type": "mysql",
     "z": "forms-api-flow",
-    "name": "Return Form",
-    "statusCode": "",
-    "headers": {
-      "content-type": "application/json"
-    },
-    "x": 590,
-    "y": 140,
-    "wires": []
+    "name": "创建forms表",
+    "mysqlConfig": "mysql-config",
+    "query": "",
+    "queryType": "msg.topic",
+    "queryParamType": "msg.params",
+    "x": 480,
+    "y": 540,
+    "wires": [["create-submissions-table"]]
   },
   {
-    "id": "forms-create",
-    "type": "http in",
-    "z": "forms-api-flow",
-    "name": "Create Form",
-    "url": "/api/forms",
-    "method": "post",
-    "upload": false,
-    "swaggerDoc": "",
-    "x": 120,
-    "y": 200,
-    "wires": [
-      [
-        "forms-create-function"
-      ]
-    ]
-  },
-  {
-    "id": "forms-create-function",
+    "id": "create-submissions-table",
     "type": "function",
     "z": "forms-api-flow",
-    "name": "Process Create Form",
-    "func": "// Get form data from request\nconst formData = msg.payload;\n\n// Validate required fields\nif (!formData.title || !formData.embedUrl) {\n    msg.payload = {\n        success: false,\n        message: 'Title and embed URL are required'\n    };\n    msg.statusCode = 400;\n    return msg;\n}\n\n// Get existing forms\nconst storedForms = global.get('forms') || [];\n\n// Create new form with unique ID and timestamp\nconst newForm = {\n    id: Date.now().toString(),\n    title: formData.title,\n    embedUrl: formData.embedUrl,\n    description: formData.description || '',\n    status: formData.status || 'active',\n    createdAt: new Date().toISOString(),\n    updatedAt: new Date().toISOString()\n};\n\n// Add to forms array and save to global context\nstoredForms.push(newForm);\nglobal.set('forms', storedForms);\n\n// Return success response\nmsg.payload = {\n    success: true,\n    message: 'Form created successfully',\n    data: newForm\n};\n\nreturn msg;",
+    "name": "创建提交表",
+    "func": "// 创建表单提交表\nmsg.topic = `\nCREATE TABLE IF NOT EXISTS form_submissions (\n    id VARCHAR(50) PRIMARY KEY,\n    formId VARCHAR(50) NOT NULL,\n    data TEXT NOT NULL,\n    submittedBy VARCHAR(255) DEFAULT 'anonymous',\n    submittedAt DATETIME,\n    status VARCHAR(20) DEFAULT 'pending',\n    FOREIGN KEY (formId) REFERENCES forms(id) ON DELETE CASCADE\n);\n`;\n\nreturn msg;",
     "outputs": 1,
     "noerr": 0,
     "initialize": "",
     "finalize": "",
     "libs": [],
-    "x": 350,
-    "y": 200,
-    "wires": [
-      [
-        "forms-create-response"
-      ]
-    ]
+    "x": 660,
+    "y": 540,
+    "wires": [["create-submissions-table-query"]]
   },
   {
-    "id": "forms-create-response",
-    "type": "http response",
+    "id": "create-submissions-table-query",
+    "type": "mysql",
     "z": "forms-api-flow",
-    "name": "Return Created Form",
-    "statusCode": "",
-    "headers": {
-      "content-type": "application/json"
-    },
-    "x": 610,
-    "y": 200,
-    "wires": []
+    "name": "创建form_submissions表",
+    "mysqlConfig": "mysql-config",
+    "query": "",
+    "queryType": "msg.topic",
+    "queryParamType": "msg.params",
+    "x": 900,
+    "y": 540,
+    "wires": [["log-db-init"]]
   },
   {
-    "id": "forms-update",
-    "type": "http in",
+    "id": "log-db-init",
+    "type": "debug",
     "z": "forms-api-flow",
-    "name": "Update Form",
-    "url": "/api/forms/:id",
-    "method": "put",
-    "upload": false,
-    "swaggerDoc": "",
-    "x": 120,
-    "y": 260,
-    "wires": [
-      [
-        "forms-update-function"
-      ]
-    ]
-  },
-  {
-    "id": "forms-update-function",
-    "type": "function",
-    "z": "forms-api-flow",
-    "name": "Process Update Form",
-    "func": "// Get form ID from request parameters\nconst formId = msg.req.params.id;\n\n// Get form data from request\nconst formData = msg.payload;\n\n// Get existing forms\nconst storedForms = global.get('forms') || [];\n\n// Find the form to update\nconst formIndex = storedForms.findIndex(form => form.id === formId);\n\nif (formIndex === -1) {\n    msg.payload = {\n        success: false,\n        message: `Form with ID ${formId} not found`\n    };\n    msg.statusCode = 404;\n    return msg;\n}\n\n// Update form with new data\nconst updatedForm = {\n    ...storedForms[formIndex],\n    title: formData.title || storedForms[formIndex].title,\n    embedUrl: formData.embedUrl || storedForms[formIndex].embedUrl,\n    description: formData.description !== undefined ? formData.description : storedForms[formIndex].description,\n    status: formData.status || storedForms[formIndex].status,\n    updatedAt: new Date().toISOString()\n};\n\n// Update the form in the array\nstoredForms[formIndex] = updatedForm;\n\n// Save updated forms to global context\nglobal.set('forms', storedForms);\n\n// Return success response\nmsg.payload = {\n    success: true,\n    message: 'Form updated successfully',\n    data: updatedForm\n};\n\nreturn msg;",
-    "outputs": 1,
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 350,
-    "y": 260,
-    "wires": [
-      [
-        "forms-update-response"
-      ]
-    ]
-  },
-  {
-    "id": "forms-update-response",
-    "type": "http response",
-    "z": "forms-api-flow",
-    "name": "Return Updated Form",
-    "statusCode": "",
-    "headers": {
-      "content-type": "application/json"
-    },
-    "x": 610,
-    "y": 260,
-    "wires": []
-  },
-  {
-    "id": "forms-delete",
-    "type": "http in",
-    "z": "forms-api-flow",
-    "name": "Delete Form",
-    "url": "/api/forms/:id",
-    "method": "delete",
-    "upload": false,
-    "swaggerDoc": "",
-    "x": 120,
-    "y": 320,
-    "wires": [
-      [
-        "forms-delete-function"
-      ]
-    ]
-  },
-  {
-    "id": "forms-delete-function",
-    "type": "function",
-    "z": "forms-api-flow",
-    "name": "Process Delete Form",
-    "func": "// Get form ID from request parameters\nconst formId = msg.req.params.id;\n\n// Get existing forms\nconst storedForms = global.get('forms') || [];\n\n// Find the form to delete\nconst formIndex = storedForms.findIndex(form => form.id === formId);\n\nif (formIndex === -1) {\n    msg.payload = {\n        success: false,\n        message: `Form with ID ${formId} not found`\n    };\n    msg.statusCode = 404;\n    return msg;\n}\n\n// Remove the form from the array\nstoredForms.splice(formIndex, 1);\n\n// Save updated forms to global context\nglobal.set('forms', storedForms);\n\n// Also remove form submissions\nconst storedSubmissions = global.get('formSubmissions') || {};\ndelete storedSubmissions[formId];\nglobal.set('formSubmissions', storedSubmissions);\n\n// Return success response\nmsg.payload = {\n    success: true,\n    message: 'Form deleted successfully'\n};\n\nreturn msg;",
-    "outputs": 1,
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 350,
-    "y": 320,
-    "wires": [
-      [
-        "forms-delete-response"
-      ]
-    ]
-  },
-  {
-    "id": "forms-delete-response",
-    "type": "http response",
-    "z": "forms-api-flow",
-    "name": "Return Delete Result",
-    "statusCode": "",
-    "headers": {
-      "content-type": "application/json"
-    },
-    "x": 610,
-    "y": 320,
-    "wires": []
-  },
-  {
-    "id": "forms-submit",
-    "type": "http in",
-    "z": "forms-api-flow",
-    "name": "Submit Form",
-    "url": "/api/forms/:id/submit",
-    "method": "post",
-    "upload": false,
-    "swaggerDoc": "",
-    "x": 120,
-    "y": 380,
-    "wires": [
-      [
-        "forms-submit-function"
-      ]
-    ]
-  },
-  {
-    "id": "forms-submit-function",
-    "type": "function",
-    "z": "forms-api-flow",
-    "name": "Process Form Submission",
-    "func": "// Get form ID from request parameters\nconst formId = msg.req.params.id;\n\n// Get form data from request\nconst formData = msg.payload;\n\n// Get existing forms to verify form exists\nconst storedForms = global.get('forms') || [];\nconst form = storedForms.find(form => form.id === formId);\n\nif (!form) {\n    msg.payload = {\n        success: false,\n        message: `Form with ID ${formId} not found`\n    };\n    msg.statusCode = 404;\n    return msg;\n}\n\n// Get existing submissions\nconst storedSubmissions = global.get('formSubmissions') || {};\n\n// Initialize array for this form if it doesn't exist\nif (!storedSubmissions[formId]) {\n    storedSubmissions[formId] = [];\n}\n\n// Create new submission entry\nconst newSubmission = {\n    id: Date.now().toString(),\n    formId: formId,\n    data: formData,\n    submittedBy: msg.req.headers['x-user-id'] || 'anonymous',\n    submittedAt: new Date().toISOString(),\n    status: 'pending'\n};\n\n// Add to submissions and save to global context\nstoredSubmissions[formId].push(newSubmission);\nglobal.set('formSubmissions', storedSubmissions);\n\n// Set the submission for further processing\nmsg.submission = newSubmission;\n\n// Return success response\nmsg.payload = {\n    success: true,\n    message: 'Form submitted successfully',\n    data: {\n        submissionId: newSubmission.id,\n        timestamp: newSubmission.submittedAt\n    }\n};\n\nreturn [msg, msg];",
-    "outputs": 2,
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 350,
-    "y": 380,
-    "wires": [
-      [
-        "forms-submit-response"
-      ],
-      [
-        "forms-process-submission"
-      ]
-    ]
-  },
-  {
-    "id": "forms-submit-response",
-    "type": "http response",
-    "z": "forms-api-flow",
-    "name": "Return Submission Result",
-    "statusCode": "",
-    "headers": {
-      "content-type": "application/json"
-    },
-    "x": 630,
-    "y": 380,
-    "wires": []
-  },
-  {
-    "id": "forms-process-submission",
-    "type": "function",
-    "z": "forms-api-flow",
-    "name": "Process Submission Data",
-    "func": "// Get the submission from the message\nconst submission = msg.submission;\n\n// Perform any additional processing here\n// For example, sending data to external systems, transforming data, etc.\n\n// Update submission status to processed\nconst storedSubmissions = global.get('formSubmissions') || {};\nconst formSubmissions = storedSubmissions[submission.formId] || [];\n\nconst submissionIndex = formSubmissions.findIndex(sub => sub.id === submission.id);\nif (submissionIndex !== -1) {\n    formSubmissions[submissionIndex].status = 'processed';\n    storedSubmissions[submission.formId] = formSubmissions;\n    global.set('formSubmissions', storedSubmissions);\n}\n\n// Log the processed submission\nnode.log(`Processed form submission: ${submission.id} for form: ${submission.formId}`);\n\nreturn msg;",
-    "outputs": 1,
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 630,
-    "y": 440,
-    "wires": [
-      []
-    ]
-  },
-  {
-    "id": "forms-get-submissions",
-    "type": "http in",
-    "z": "forms-api-flow",
-    "name": "Get Form Submissions",
-    "url": "/api/forms/:id/submissions",
-    "method": "get",
-    "upload": false,
-    "swaggerDoc": "",
-    "x": 140,
-    "y": 500,
-    "wires": [
-      [
-        "forms-get-submissions-function"
-      ]
-    ]
-  },
-  {
-    "id": "forms-get-submissions-function",
-    "type": "function",
-    "z": "forms-api-flow",
-    "name": "Process Get Submissions",
-    "func": "// Get form ID from request parameters\nconst formId = msg.req.params.id;\n\n// Get stored submissions\nconst storedSubmissions = global.get('formSubmissions') || {};\nconst formSubmissions = storedSubmissions[formId] || [];\n\n// Return success response\nmsg.payload = {\n    success: true,\n    message: `Successfully retrieved ${formSubmissions.length} submissions`,\n    data: formSubmissions\n};\n\nreturn msg;",
-    "outputs": 1,
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 390,
-    "y": 500,
-    "wires": [
-      [
-        "forms-get-submissions-response"
-      ]
-    ]
-  },
-  {
-    "id": "forms-get-submissions-response",
-    "type": "http response",
-    "z": "forms-api-flow",
-    "name": "Return Submissions",
-    "statusCode": "",
-    "headers": {
-      "content-type": "application/json"
-    },
-    "x": 620,
-    "y": 500,
-    "wires": []
-  },
-  {
-    "id": "forms-webhook-endpoint",
-    "type": "http in",
-    "z": "forms-api-flow",
-    "name": "表单Webhook接收端点",
-    "url": "/api/forms/webhook/:formId",
-    "method": "post",
-    "upload": false,
-    "swaggerDoc": "",
-    "x": 140,
-    "y": 560,
-    "wires": [
-      [
-        "forms-webhook-process"
-      ]
-    ]
-  },
-  {
-    "id": "forms-webhook-process",
-    "type": "function",
-    "z": "forms-api-flow",
-    "name": "处理Webhook数据",
-    "func": "// 获取表单ID\nconst formId = msg.req.params.formId;\n\n// 获取表单数据\nconst formData = msg.payload;\n\n// 获取webhook密钥(如果有)\nconst webhookKey = msg.req.headers['x-webhook-key'];\n\n// 获取已有表单\nconst storedForms = global.get('forms') || [];\nconst form = storedForms.find(form => form.id === formId);\n\n// 验证表单存在\nif (!form) {\n    msg.payload = {\n        success: false,\n        message: `表单ID ${formId} 不存在`\n    };\n    msg.statusCode = 404;\n    return msg;\n}\n\n// 验证webhook密钥(如果表单配置了webhookKey)\nif (form.webhookKey && form.webhookKey !== webhookKey) {\n    msg.payload = {\n        success: false,\n        message: 'Webhook密钥验证失败'\n    };\n    msg.statusCode = 401;\n    return msg;\n}\n\n// 获取现有提交\nconst storedSubmissions = global.get('formSubmissions') || {};\n\n// 初始化该表单的提交数组\nif (!storedSubmissions[formId]) {\n    storedSubmissions[formId] = [];\n}\n\n// 添加新提交\nconst submission = {\n    id: Date.now().toString(),\n    formId: formId,\n    data: formData,\n    submittedBy: 'webhook',\n    submittedAt: new Date().toISOString(),\n    status: 'pending',\n    source: 'webhook'\n};\n\nstoredSubmissions[formId].push(submission);\nglobal.set('formSubmissions', storedSubmissions);\n\n// 设置提交数据用于后续处理\nmsg.submission = submission;\n\n// 返回成功响应\nmsg.payload = {\n    success: true,\n    message: '通过Webhook接收的表单数据已成功保存',\n    submissionId: submission.id\n};\n\nreturn [msg, msg];",
-    "outputs": 2,
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 370,
-    "y": 560,
-    "wires": [
-      [
-        "forms-webhook-response"
-      ],
-      [
-        "forms-process-submission"
-      ]
-    ]
-  },
-  {
-    "id": "forms-webhook-response",
-    "type": "http response",
-    "z": "forms-api-flow",
-    "name": "返回Webhook结果",
-    "statusCode": "",
-    "headers": {
-      "content-type": "application/json"
-    },
-    "x": 630,
-    "y": 560,
-    "wires": []
-  },
-  {
-    "id": "forms-update-webhook-key",
-    "type": "http in",
-    "z": "forms-api-flow",
-    "name": "更新Webhook密钥",
-    "url": "/api/forms/:id/webhook-key",
-    "method": "patch",
-    "upload": false,
-    "swaggerDoc": "",
-    "x": 140,
-    "y": 620,
-    "wires": [
-      [
-        "forms-update-webhook-key-function"
-      ]
-    ]
-  },
-  {
-    "id": "forms-update-webhook-key-function",
-    "type": "function",
-    "z": "forms-api-flow",
-    "name": "处理Webhook密钥更新",
-    "func": "// 获取表单ID\nconst formId = msg.req.params.id;\n\n// 获取新的webhook密钥\nconst { webhookKey } = msg.payload;\n\n// 获取已有表单\nconst storedForms = global.get('forms') || [];\nconst formIndex = storedForms.findIndex(form => form.id === formId);\n\n// 验证表单存在\nif (formIndex === -1) {\n    msg.payload = {\n        success: false,\n        message: `表单ID ${formId} 不存在`\n    };\n    msg.statusCode = 404;\n    return msg;\n}\n\n// 更新webhook密钥\nstoredForms[formIndex] = {\n    ...storedForms[formIndex],\n    webhookKey,\n    updatedAt: new Date().toISOString()\n};\n\n// 保存更新后的表单\nglobal.set('forms', storedForms);\n\n// 返回成功响应\nmsg.payload = {\n    success: true,\n    message: 'Webhook密钥已更新',\n    data: {\n        id: formId,\n        webhookKey\n    }\n};\n\nreturn msg;",
-    "outputs": 1,
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 390,
-    "y": 620,
-    "wires": [
-      [
-        "forms-update-webhook-key-response"
-      ]
-    ]
-  },
-  {
-    "id": "forms-update-webhook-key-response",
-    "type": "http response",
-    "z": "forms-api-flow",
-    "name": "返回Webhook密钥更新结果",
-    "statusCode": "",
-    "headers": {
-      "content-type": "application/json"
-    },
-    "x": 650,
-    "y": 620,
+    "name": "数据库初始化完成",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1120,
+    "y": 540,
     "wires": []
   }
 ] 

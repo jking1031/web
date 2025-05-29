@@ -29,16 +29,10 @@ const Reports = lazy(() => import('./pages/Reports/Reports'));
 const ReportForm5000 = lazy(() => import('./pages/Reports/ReportForm5000'));
 const ReportFormSludge = lazy(() => import('./pages/Reports/ReportFormSludge'));
 const ReportFormPumpStation = lazy(() => import('./pages/Reports/ReportFormPumpStation'));
-const ReportQuery = lazy(() => import('./pages/Reports/ReportQuery'));
+const ReportQuery = lazy(() => import('./features/dataCenter/pages/DailyReportPage'));
 
 // 表单管理系统组件导入
 const FormSubmissionVerify = lazy(() => import('./features/dataEntry/pages/FormSubmissionVerify'));
-
-// 原有的数据填报页面（保留作为备用）
-//const LabData = lazy(() => import('./pages/LabData/LabData'));
-//const LabDataEntry = lazy(() => import('./pages/LabData/LabDataEntry'));
-//const SludgeDataEntry = lazy(() => import('./pages/LabData/SludgeDataEntry'));
-//const AODataEntry = lazy(() => import('./pages/LabData/AODataEntry'));
 
 const TicketList = lazy(() => import('./pages/Tickets/TicketList'));
 const TicketDetail = lazy(() => import('./pages/Tickets/TicketDetail'));

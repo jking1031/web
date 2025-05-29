@@ -81,6 +81,11 @@ export const checkAdminStatusAPI = async (userInfo) => {
  */
 export const fetchUserRoles = async (userId, forceRefresh = false) => {
   try {
+    if (!userId) {
+      console.error('获取用户角色失败: 缺少用户ID');
+      return [];
+    }
+    
     // 首先尝试从缓存获取角色信息，除非强制刷新
     if (!forceRefresh) {
       try {
@@ -101,16 +106,27 @@ export const fetchUserRoles = async (userId, forceRefresh = false) => {
       }
     }
 
-    // 从API获取角色信息
-    const response = await axios.get(`${API_ENDPOINTS.USER_ROLES}?userId=${userId}`);
+    // 从API获取角色信息 - 确保在URL和headers中都传递userId
+    const response = await axios.get(API_ENDPOINTS.USER_ROLES, {
+      params: { userId },
+      headers: {
+        'Content-Type': 'application/json',
+        'user-id': userId
+      }
+    });
     
     let roles = [];
+    
+    // 处理各种可能的响应格式
     if (response.data && Array.isArray(response.data)) {
       roles = response.data;
     } else if (response.data && response.data.roles && Array.isArray(response.data.roles)) {
       roles = response.data.roles;
     }
 
+    // 确保检测角色名称格式为 [{"name":"管理员"}] 或 [{"name":"部门管理员"}]
+    console.log('获取到的用户角色:', roles);
+    
     // 缓存角色信息
     try {
       localStorage.setItem('userRoles_cache', JSON.stringify({

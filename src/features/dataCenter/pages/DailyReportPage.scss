@@ -1,0 +1,17 @@
+.daily-report-page {
+  padding: 24px;
+  background-color: #f0f2f5;
+  min-height: calc(100vh - 64px);
+  
+  .report-content {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+}
+
+// 响应式调整
+@media (max-width: 768px) {
+  .daily-report-page {
+    padding: 12px;
+  }
+} 
