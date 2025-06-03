@@ -13,7 +13,8 @@ import {
   Spin, 
   Empty,
   Alert,
-  message
+  message,
+  Tooltip
 } from 'antd';
 import { 
   DownloadOutlined, 
@@ -22,7 +23,8 @@ import {
   LeftOutlined,
   RightOutlined,
   EyeOutlined,
-  CameraOutlined
+  CameraOutlined,
+  DownloadOutlined as DownloadIcon
 } from '@ant-design/icons';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -82,21 +84,37 @@ const DailyReportViewer = ({ report, onDownload, loading, onBack }) => {
     setImageViewerVisible(true);
   };
 
+  // 处理下载图片
+  const handleDownloadImage = async (url) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `日报图片_${new Date().getTime()}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+      message.success('图片下载成功');
+    } catch (error) {
+      console.error('下载图片失败:', error);
+      message.error('下载图片失败，请稍后重试');
+    }
+  };
+
   // 解析图片URLs - 改进版本
   const getImageUrls = () => {
     try {
-      // 如果没有图片链接，返回空数组
       if (!report.imagesurl) return [];
       
-      // 如果已经是数组，直接返回
       if (Array.isArray(report.imagesurl)) {
         return report.imagesurl;
       }
       
-      // 处理字符串情况
       const urlString = report.imagesurl;
       
-      // 检查是否看起来像JSON数组字符串 (以 [ 开头)
       if (urlString.trim().startsWith('[')) {
         try {
           return JSON.parse(urlString);
@@ -105,12 +123,10 @@ const DailyReportViewer = ({ report, onDownload, loading, onBack }) => {
         }
       }
       
-      // 如果是逗号分隔的字符串，拆分为数组
       if (urlString.includes(',')) {
         return urlString.split(',').map(url => url.trim());
       }
       
-      // 否则作为单个URL处理
       return [urlString];
     } catch (e) {
       console.error('解析图片URL失败', e);
@@ -145,20 +161,18 @@ const DailyReportViewer = ({ report, onDownload, loading, onBack }) => {
     try {
       setPdfGenerating(true);
       
-      // 确保隐藏操作按钮
       const actionButtons = reportRef.current.querySelector('.report-actions');
       const originalDisplay = actionButtons ? actionButtons.style.display : 'flex';
       if (actionButtons) {
         actionButtons.style.display = 'none';
       }
       
-      // 捕获HTML内容为画布
       const canvas = await html2canvas(reportRef.current, {
-        scale: 2, // 更高的缩放以获得更好的质量
-        useCORS: true, // 允许加载跨域图片
+        scale: 3,
+        useCORS: true,
         logging: false,
+        allowTaint: true,
         onclone: (document) => {
-          // 可以在这里对克隆的DOM进行额外修改
           const clonedContent = document.querySelector('.print-container');
           if (clonedContent) {
             clonedContent.style.padding = '20px';
@@ -167,21 +181,17 @@ const DailyReportViewer = ({ report, onDownload, loading, onBack }) => {
         }
       });
       
-      // 计算PDF尺寸
-      const imgWidth = 210; // A4宽度，单位毫米
-      const pageHeight = 297; // A4高度，单位毫米
+      const imgWidth = 210;
+      const pageHeight = 297;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       let heightLeft = imgHeight;
       
-      // 创建PDF
       const pdf = new jsPDF('p', 'mm', 'a4');
       let position = 0;
       
-      // 添加第一页
       pdf.addImage(canvas, 'PNG', 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
       
-      // 如果内容超过一页，添加更多页
       while (heightLeft > 0) {
         position = heightLeft - imgHeight;
         pdf.addPage();
@@ -189,12 +199,10 @@ const DailyReportViewer = ({ report, onDownload, loading, onBack }) => {
         heightLeft -= pageHeight;
       }
       
-      // 下载PDF
       const reportDate = report.date ? new Date(report.date).toISOString().split('T')[0] : 'unknown-date';
       const fileName = `日报_${getReportTitle()}_${reportDate}.pdf`;
       pdf.save(fileName);
       
-      // 恢复操作按钮显示
       if (actionButtons) {
         actionButtons.style.display = originalDisplay;
       }
@@ -243,77 +251,89 @@ const DailyReportViewer = ({ report, onDownload, loading, onBack }) => {
         <div className="report-header">
           <Title level={2} className="report-title">{getReportTitle()}</Title>
           <Divider className="report-divider" />
-          <Tag color="blue" className="report-date-tag">报告日期: {formatDate(report.date)}</Tag>
-          {report.operator && <Tag color="green" className="report-operator-tag">操作员: {report.operator}</Tag>}
+          <Space size="middle">
+            <Tag color="blue" className="report-date-tag">报告日期: {formatDate(report.date)}</Tag>
+            {report.operator && <Tag color="green" className="report-operator-tag">操作员: {report.operator}</Tag>}
+          </Space>
         </div>
 
-        <div className="report-section">
-          <Title level={4} className="section-title">
-            <span className="section-icon">💧</span> 进出水情况
-          </Title>
-          <Descriptions 
-            bordered 
-            column={{ xxl: 4, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }}
-            className="report-descriptions"
-            size="middle"
-          >
-            <Descriptions.Item label="进水流量">{report.inflow || '-'} m³</Descriptions.Item>
-            <Descriptions.Item label="出水流量">{report.outflow || '-'} m³</Descriptions.Item>
-            <Descriptions.Item label="进水水质情况" span={2}>{report.in_quality || '-'}</Descriptions.Item>
-            <Descriptions.Item label="出水水质情况" span={2}>{report.out_quality || '-'}</Descriptions.Item>
-            <Descriptions.Item label="水质异常" span={2}>
-              {report.water_quality_anomalies || '无'}
-            </Descriptions.Item>
-          </Descriptions>
-        </div>
+        <Row gutter={[24, 24]}>
+          <Col xs={24} lg={12}>
+            <div className="report-section">
+              <Title level={4} className="section-title">
+                <span className="section-icon">💧</span> 进出水情况
+              </Title>
+              <Descriptions 
+                bordered 
+                column={1}
+                className="report-descriptions"
+                size="middle"
+              >
+                <Descriptions.Item label="进水流量">{report.inflow || '-'} m³</Descriptions.Item>
+                <Descriptions.Item label="出水流量">{report.outflow || '-'} m³</Descriptions.Item>
+                <Descriptions.Item label="进水水质情况">{report.in_quality || '-'}</Descriptions.Item>
+                <Descriptions.Item label="出水水质情况">{report.out_quality || '-'}</Descriptions.Item>
+                <Descriptions.Item label="水质异常">
+                  {report.water_quality_anomalies || '无'}
+                </Descriptions.Item>
+              </Descriptions>
+            </div>
+          </Col>
 
-        <div className="report-section">
-          <Title level={4} className="section-title">
-            <span className="section-icon">⚙️</span> 设备运行情况
-          </Title>
-          <Descriptions 
-            bordered 
-            column={{ xxl: 4, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }}
-            className="report-descriptions"
-            size="middle"
-          >
-            <Descriptions.Item label="设备状态" span={2}>{report.equipment_status || '-'}</Descriptions.Item>
-            <Descriptions.Item label="设备故障" span={2}>
-              {report.equipment_issues || '无'}
-            </Descriptions.Item>
-          </Descriptions>
-        </div>
+          <Col xs={24} lg={12}>
+            <div className="report-section">
+              <Title level={4} className="section-title">
+                <span className="section-icon">⚙️</span> 设备运行情况
+              </Title>
+              <Descriptions 
+                bordered 
+                column={1}
+                className="report-descriptions"
+                size="middle"
+              >
+                <Descriptions.Item label="设备状态">{report.equipment_status || '-'}</Descriptions.Item>
+                <Descriptions.Item label="设备故障">
+                  {report.equipment_issues || '无'}
+                </Descriptions.Item>
+              </Descriptions>
+            </div>
+          </Col>
 
-        <div className="report-section">
-          <Title level={4} className="section-title">
-            <span className="section-icon">🧪</span> 药剂投加情况
-          </Title>
-          <Descriptions 
-            bordered 
-            column={{ xxl: 4, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }}
-            className="report-descriptions"
-            size="middle"
-          >
-            <Descriptions.Item label="碳源投加量">{report.carbon_source || '-'} L</Descriptions.Item>
-            <Descriptions.Item label="除磷剂投加量">{report.phosphorus_removal || '-'} L</Descriptions.Item>
-            <Descriptions.Item label="消毒剂投加量">{report.disinfectant || '-'} L</Descriptions.Item>
-            <Descriptions.Item label="药剂效果">{report.chemical_effect || '-'}</Descriptions.Item>
-          </Descriptions>
-        </div>
+          <Col xs={24} lg={12}>
+            <div className="report-section">
+              <Title level={4} className="section-title">
+                <span className="section-icon">🧪</span> 药剂投加情况
+              </Title>
+              <Descriptions 
+                bordered 
+                column={1}
+                className="report-descriptions"
+                size="middle"
+              >
+                <Descriptions.Item label="碳源投加量">{report.carbon_source || '-'} L</Descriptions.Item>
+                <Descriptions.Item label="除磷剂投加量">{report.phosphorus_removal || '-'} L</Descriptions.Item>
+                <Descriptions.Item label="消毒剂投加量">{report.disinfectant || '-'} L</Descriptions.Item>
+                <Descriptions.Item label="药剂效果">{report.chemical_effect || '-'}</Descriptions.Item>
+              </Descriptions>
+            </div>
+          </Col>
 
-        <div className="report-section">
-          <Title level={4} className="section-title">
-            <span className="section-icon">🏭</span> 污泥处理
-          </Title>
-          <Descriptions 
-            bordered 
-            column={{ xxl: 4, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }}
-            className="report-descriptions"
-            size="middle"
-          >
-            <Descriptions.Item label="产泥量">{report.sludge_quantity || '-'} 吨</Descriptions.Item>
-          </Descriptions>
-        </div>
+          <Col xs={24} lg={12}>
+            <div className="report-section">
+              <Title level={4} className="section-title">
+                <span className="section-icon">🏭</span> 污泥处理
+              </Title>
+              <Descriptions 
+                bordered 
+                column={1}
+                className="report-descriptions"
+                size="middle"
+              >
+                <Descriptions.Item label="产泥量">{report.sludge_quantity || '-'} 吨</Descriptions.Item>
+              </Descriptions>
+            </div>
+          </Col>
+        </Row>
 
         {report.other_notes && (
           <div className="report-section">
@@ -341,31 +361,45 @@ const DailyReportViewer = ({ report, onDownload, loading, onBack }) => {
                     <Card 
                       hoverable 
                       className="image-card"
+                      bodyStyle={{ padding: '8px' }}
                       cover={
                         <div className="image-container">
-                          <Image
-                            src={img}
-                            alt={`现场图片 ${index + 1}`}
-                            className="report-image"
-                            preview={false}
-                            fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3PTWBSGcbGzM6GCKqlIBRV0dHRJFarQ0eUT8LH4BnRU0NHR0UEFVdIlFRV7TzRksomPY8uykTk/zewQfKw/9znv4yvJynLv4uLiV2dBoDiBf4qP3/ARuCRABEFAoBEgghggQAQZQKAnYEaQBAQaASKIAQJEkAEEegJmBElAoBEgghggQAQZQKAnYEaQBAQaASKIAQJEkAEEegJmBElAoBEgghggQAQZQKAnYEaQBAQaASKIAQJEkAEEegJmBElAoBEgghgg"
-                          />
-                          <div 
-                            className="image-overlay" 
-                            onClick={() => handleViewImage(img)}
-                          >
-                            <div className="overlay-content">
-                              <Button 
-                                type="primary" 
-                                shape="circle" 
-                                icon={<EyeOutlined />} 
-                              />
-                            </div>
+                          <div style={{ width: '100%', height: '300px', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
+                            <Image
+                              src={img}
+                              alt={`现场图片 ${index + 1}`}
+                              className="report-image"
+                              preview={false}
+                              loading="lazy"
+                              placeholder={<div style={{ width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#f0f2f5' }}><Spin /></div>}
+                              fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3PTWBSGcbGzM6GCKqlIBRV0dHRJFarQ0eUT8LH4BnRU0NHR0UEFVdIlFRV7TzRksomPY8uykTk/zewQfKw/9znv4yvJynLv4uLiV2dBoDiBf4qP3/ARuCRABEFAoBEgghggQAQZQKAnYEaQBAQaASKIAQJEkAEEegJmBElAoBEgghggQAQZQKAnYEaQBAQaASKIAQJEkAEEegJmBElAoBEgghggQAQZQKAnYEaQBAQaASKIAQJEkAEEegJmBElAoBEgghggQAQZQKAnYEaQBAQaASKIAQJEkAEEegJmBElAoBEgghgg"
+                              style={{ objectFit: 'contain', width: '280px', height: '280px', display: 'block' }}
+                            />
+                          </div>
+                          <div className="image-overlay">
+                            <Space>
+                              <Tooltip title="查看大图">
+                                <Button 
+                                  type="primary" 
+                                  shape="circle" 
+                                  icon={<EyeOutlined />} 
+                                  onClick={() => handleViewImage(img)}
+                                />
+                              </Tooltip>
+                              <Tooltip title="下载图片">
+                                <Button 
+                                  type="primary" 
+                                  shape="circle" 
+                                  icon={<DownloadIcon />} 
+                                  onClick={() => handleDownloadImage(img)}
+                                />
+                              </Tooltip>
+                            </Space>
                           </div>
                         </div>
                       }
                     >
-                      <Card.Meta title={`图片 ${index + 1}`} />
+                      <div className="image-title">图片 {index + 1}</div>
                     </Card>
                   </Col>
                 ))}
@@ -382,6 +416,39 @@ const DailyReportViewer = ({ report, onDownload, loading, onBack }) => {
             visible: imageViewerVisible,
             onVisibleChange: (vis) => setImageViewerVisible(vis),
             current: images.indexOf(currentImage),
+            countRender: (current, total) => `${current} / ${total}`,
+            toolbarRender: (_, { current, total }) => (
+              <div className="custom-image-preview-toolbar">
+                <Space>
+                  <Button 
+                    type="primary" 
+                    shape="circle" 
+                    icon={<LeftOutlined />} 
+                    onClick={() => {
+                      const newIndex = (current - 1 + total) % total;
+                      setCurrentImage(images[newIndex]);
+                    }}
+                  />
+                  <span>{current + 1} / {total}</span>
+                  <Button 
+                    type="primary" 
+                    shape="circle" 
+                    icon={<RightOutlined />} 
+                    onClick={() => {
+                      const newIndex = (current + 1) % total;
+                      setCurrentImage(images[newIndex]);
+                    }}
+                  />
+                </Space>
+                <Button
+                  type="primary"
+                  icon={<DownloadIcon />}
+                  onClick={() => handleDownloadImage(images[current])}
+                >
+                  下载图片
+                </Button>
+              </div>
+            ),
           }}
         >
           {images.map((img, index) => (

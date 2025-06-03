@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>表单通信测试</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .debug-panel {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #f0f0f0;
+      border-radius: 4px;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+    .log-item {
+      margin: 5px 0;
+      padding: 5px;
+      border-bottom: 1px solid #ddd;
+    }
+    .success {
+      color: green;
+    }
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>表单通信测试</h1>
+    
+    <div class="form-group">
+      <label for="name">姓名</label>
+      <input type="text" id="name" name="name" placeholder="请输入姓名">
+    </div>
+    
+    <div class="form-group">
+      <label for="date">日期</label>
+      <input type="text" id="date" name="date" placeholder="日/月/年" value="01/06/2023">
+    </div>
+    
+    <div class="form-group">
+      <label for="comment">备注</label>
+      <textarea id="comment" name="comment" rows="4" placeholder="请输入备注"></textarea>
+    </div>
+    
+    <button id="submitBtn">提交表单</button>
+    <button id="testMsgBtn">测试消息</button>
+    <button id="clearLogsBtn">清除日志</button>
+    
+    <div class="debug-panel" id="debugPanel">
+      <h3>调试日志</h3>
+      <div id="logContainer"></div>
+    </div>
+  </div>
+
+  <script>
+    // 日志函数
+    function log(message, type = 'info') {
+      const logContainer = document.getElementById('logContainer');
+      const logItem = document.createElement('div');
+      logItem.className = `log-item ${type}`;
+      logItem.textContent = `[${new Date().toISOString()}] ${message}`;
+      logContainer.appendChild(logItem);
+      console.log(`[${type}]`, message);
+      
+      // 滚动到底部
+      logContainer.scrollTop = logContainer.scrollHeight;
+    }
+
+    // 添加事件监听器
+    document.addEventListener('DOMContentLoaded', () => {
+      log('页面加载完成，准备就绪');
+      
+      // 监听来自父窗口的消息
+      window.addEventListener('message', (event) => {
+        log(`收到来自 ${event.origin} 的消息:`, 'info');
+        try {
+          const messageStr = JSON.stringify(event.data, null, 2);
+          log(messageStr);
+        } catch (error) {
+          log(`消息解析错误: ${error.message}`, 'error');
+        }
+        
+        // 如果是测试连接消息，回复
+        if (event.data && event.data.type === 'test-connection') {
+          log('收到测试连接消息，发送回复');
+          try {
+            event.source.postMessage({
+              type: 'test-connection-response',
+              status: 'success',
+              time: new Date().toISOString()
+            }, event.origin);
+            log('回复消息已发送', 'success');
+          } catch (error) {
+            log(`回复消息发送失败: ${error.message}`, 'error');
+          }
+        }
+      });
+      
+      // 表单提交按钮
+      document.getElementById('submitBtn').addEventListener('click', () => {
+        log('点击了提交按钮');
+        
+        try {
+          // 收集表单数据
+          const formData = {
+            name: document.getElementById('name').value || '测试用户',
+            date: document.getElementById('date').value || '01/06/2023',
+            comment: document.getElementById('comment').value || '测试备注'
+          };
+          
+          log(`表单数据: ${JSON.stringify(formData)}`);
+          
+          // 发送到父窗口
+          log('尝试发送表单提交消息到父窗口...');
+          window.parent.postMessage({
+            type: 'form-submission',
+            formData: formData
+          }, '*');
+          
+          log('表单提交消息已发送', 'success');
+        } catch (error) {
+          log(`发送消息失败: ${error.message}`, 'error');
+        }
+      });
+      
+      // 测试消息按钮
+      document.getElementById('testMsgBtn').addEventListener('click', () => {
+        log('点击了测试消息按钮');
+        
+        try {
+          log('尝试发送测试消息到父窗口...');
+          window.parent.postMessage({
+            type: 'test-message',
+            time: new Date().toISOString(),
+            data: {
+              test: true,
+              message: '这是一个测试消息'
+            }
+          }, '*');
+          
+          log('测试消息已发送', 'success');
+        } catch (error) {
+          log(`发送测试消息失败: ${error.message}`, 'error');
+        }
+      });
+      
+      // 清除日志按钮
+      document.getElementById('clearLogsBtn').addEventListener('click', () => {
+        document.getElementById('logContainer').innerHTML = '';
+        log('日志已清除', 'info');
+      });
+      
+      // 通知父窗口iframe已加载
+      try {
+        log('通知父窗口iframe已加载');
+        window.parent.postMessage({
+          type: 'iframe-loaded',
+          time: new Date().toISOString()
+        }, '*');
+      } catch (error) {
+        log(`通知父窗口失败: ${error.message}`, 'error');
+      }
+    });
+  </script>
+</body>
+</html> 

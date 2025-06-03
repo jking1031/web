@@ -8,6 +8,9 @@ import styles from '../styles/FormModule.module.scss';
 const { Title, Text, Paragraph } = Typography;
 const { Panel } = Collapse;
 
+const DEBUG = true; // 启用调试日志
+const logDebug = (...args) => DEBUG && console.log('[FormPreview]', ...args);
+
 const FormPreview = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -58,9 +61,28 @@ const FormPreview = () => {
 
   // Set up message listener for form submissions
   useEffect(() => {
+    logDebug('设置消息事件监听器');
+    
     const handleMessage = async (event) => {
+      // 添加详细的调试日志
+      logDebug('收到消息事件:', {
+        origin: event.origin,
+        dataType: typeof event.data,
+        hasData: !!event.data,
+        eventType: event.data?.type,
+        time: new Date().toISOString()
+      });
+      
+      // 如果消息数据存在，打印更详细的信息
+      if (event.data) {
+        logDebug('消息数据详情:', JSON.stringify(event.data, null, 2));
+      }
+      
       // 确保form已加载
-      if (!form || !form.embedUrl) return;
+      if (!form || !form.embedUrl) {
+        logDebug('表单未加载，忽略消息', { form: !!form, embedUrl: form?.embedUrl });
+        return;
+      }
       
       // 记录所有接收到的消息事件用于调试
       setDebugInfo(prev => ({
@@ -77,8 +99,10 @@ const FormPreview = () => {
         let formOrigin;
         try {
           formOrigin = new URL(form.embedUrl).origin;
+          logDebug('表单域名解析成功:', formOrigin);
         } catch (error) {
           console.error('Invalid URL:', form.embedUrl);
+          logDebug('表单URL无效:', form.embedUrl, error);
           setDebugInfo(prev => ({
             ...prev,
             error: {
@@ -90,10 +114,12 @@ const FormPreview = () => {
         }
         
         // 记录源域名匹配情况
-        console.log(`消息来源: ${event.origin}, 表单域名: ${formOrigin}`);
+        logDebug(`消息来源: ${event.origin}, 表单域名: ${formOrigin}`);
         
         // 处理所有消息，但记录匹配情况
         const isOriginMatch = event.origin === formOrigin;
+        logDebug('源域名匹配情况:', { isMatch: isOriginMatch });
+        
         setDebugInfo(prev => ({
           ...prev,
           originMatch: {
@@ -105,18 +131,31 @@ const FormPreview = () => {
         
         // 检查是否是表单提交消息
         if (event.data && event.data.type === 'form-submission') {
+          logDebug('收到表单提交消息, formData:', event.data.formData);
+          
           // 记录表单数据
           setDebugInfo(prev => ({
             ...prev,
             formData: event.data.formData
           }));
           
+          // 检查表单数据是否有效
+          if (!event.data.formData) {
+            logDebug('表单数据为空或无效');
+            message.error('表单数据无效，请重新填写');
+            return;
+          }
+          
           // 尝试提交数据到后端
           try {
-            console.log(`正在提交表单数据到后端...`);
+            logDebug(`正在提交表单数据到后端...表单ID: ${id}`);
+            logDebug(`API URL: /api/forms/${id}/submit`);
+            logDebug('提交数据:', event.data.formData);
+            
             const response = await formService.submitFormData(id, event.data.formData);
             
             // 记录API响应
+            logDebug('API响应:', response);
             setDebugInfo(prev => ({
               ...prev,
               apiResponse: response
@@ -125,16 +164,29 @@ const FormPreview = () => {
             message.success('表单提交成功');
             setFormSubmitted(true);
             
+            // 添加延迟，确保数据已经处理完成
+            logDebug('等待2秒，确保数据处理完成...');
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
             // 显示验证结果模态框
             if (window.innerWidth >= 768) {
               // 较大屏幕上打开验证模态框
+              logDebug('打开验证模态框');
               setVerifyModalVisible(true);
             } else {
               // 小屏幕上打开新窗口
+              logDebug('在新窗口中打开验证页面');
               openVerificationInNewWindow();
             }
           } catch (submitError) {
             console.error('提交表单数据错误:', submitError);
+            logDebug('提交表单数据错误:', {
+              message: submitError.message,
+              status: submitError.response?.status,
+              responseData: submitError.response?.data,
+              stack: submitError.stack
+            });
+            
             message.error('表单提交失败');
             
             setDebugInfo(prev => ({
@@ -143,14 +195,23 @@ const FormPreview = () => {
                 ...prev.error,
                 submitError: {
                   message: submitError.message,
-                  response: submitError.response?.data
+                  response: submitError.response?.data,
+                  status: submitError.response?.status,
+                  stack: submitError.stack
                 }
               }
             }));
           }
+        } else {
+          logDebug('收到非表单提交消息，忽略');
         }
       } catch (error) {
         console.error('处理表单提交错误:', error);
+        logDebug('处理消息事件出错:', {
+          message: error.message,
+          stack: error.stack
+        });
+        
         message.error('表单提交处理失败');
         
         setDebugInfo(prev => ({
@@ -169,9 +230,10 @@ const FormPreview = () => {
     window.addEventListener('message', handleMessage);
     
     return () => {
+      logDebug('移除消息事件监听器');
       window.removeEventListener('message', handleMessage);
     };
-  }, [form, id, navigate]);
+  }, [form, id]);
 
   const loadForm = async () => {
     try {
@@ -363,6 +425,89 @@ const FormPreview = () => {
     injectEmbedScript();
   }, [form]);
 
+  // 在组件内添加一个辅助函数来检查iframe是否加载完成
+  useEffect(() => {
+    if (!form || !form.embedUrl) return;
+    
+    logDebug('监控iframe加载');
+    
+    const checkIframe = () => {
+      const iframe = document.querySelector('iframe');
+      if (iframe) {
+        logDebug('找到iframe元素');
+        
+        // 监听iframe加载完成事件
+        iframe.onload = () => {
+          logDebug('iframe 加载完成');
+          setDebugInfo(prev => ({
+            ...prev,
+            iframeLoaded: true,
+            iframeLoadTime: new Date().toISOString()
+          }));
+          
+          // 尝试向iframe发送消息，测试通信是否正常
+          try {
+            logDebug('向iframe发送测试消息');
+            iframe.contentWindow.postMessage({
+              type: 'test-connection',
+              from: 'parent'
+            }, '*');
+          } catch (error) {
+            logDebug('向iframe发送消息失败:', error);
+          }
+        };
+        
+        // 检查iframe是否已经加载完成
+        if (iframe.contentDocument && 
+            iframe.contentDocument.readyState === 'complete') {
+          logDebug('iframe已经加载完成');
+          setDebugInfo(prev => ({
+            ...prev,
+            iframeLoaded: true,
+            iframeLoadTime: new Date().toISOString()
+          }));
+        }
+      } else {
+        logDebug('未找到iframe元素，将在500ms后重试');
+        setTimeout(checkIframe, 500);
+      }
+    };
+    
+    checkIframe();
+  }, [form]);
+
+  // 在页面底部添加调试面板
+  const renderDebugPanel = () => {
+    if (!DEBUG) return null;
+    
+    return (
+      <div style={{ 
+        position: 'fixed', 
+        bottom: 0, 
+        right: 0, 
+        padding: '10px',
+        background: 'rgba(0,0,0,0.7)', 
+        color: 'white',
+        fontSize: '12px',
+        maxWidth: '300px',
+        maxHeight: '200px',
+        overflow: 'auto',
+        zIndex: 9999
+      }}>
+        <h3>调试信息</h3>
+        <div>
+          <p>表单ID: {id}</p>
+          <p>表单已加载: {form ? '是' : '否'}</p>
+          <p>已提交: {formSubmitted ? '是' : '否'}</p>
+          <p>消息事件数: {debugInfo.messageEvents?.length || 0}</p>
+          <button onClick={() => console.log('调试信息:', debugInfo)}>
+            在控制台打印调试信息
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '80px 0' }}>
@@ -551,6 +696,9 @@ const FormPreview = () => {
           title="表单验证"
         />
       </Modal>
+
+      {/* 添加调试面板 */}
+      {renderDebugPanel()}
     </div>
   );
 };

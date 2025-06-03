@@ -26,7 +26,6 @@ import {
   App,
   List,
   Progress,
-  Badge,
 } from 'antd';
 import {
   LoginOutlined,
@@ -74,7 +73,6 @@ const WebDAVFileManager = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [uploadModalVisible, setUploadModalVisible] = useState(false);
   const [uploadFiles, setUploadFiles] = useState([]);
-  const [isAdminMode, setIsAdminMode] = useState(false);
   const [settingsDrawerVisible, setSettingsDrawerVisible] = useState(false);
   const [webdavStatus, setWebdavStatus] = useState({
     configured: false,
@@ -110,19 +108,11 @@ const WebDAVFileManager = () => {
             username,
             hasPassword: !!password,
           });
-          
-          // 如果启用了记住连接，可以尝试自动连接
-          // 如果需要自动连接可以取消下面的注释
-          // handleConnect(connectionData);
         }
       } catch (error) {
         console.error('无法加载保存的连接信息', error);
       }
     }
-    
-    // 检查用户是否为管理员（实际项目中可从用户会话或权限系统获取）
-    // 这里仅为演示，设为true表示当前用户是管理员
-    setIsAdminMode(localStorage.getItem('is_admin') === 'true');
   }, [connectionForm]);
 
   // 添加页面关闭时断开连接的机制
@@ -417,12 +407,6 @@ const WebDAVFileManager = () => {
     setUploadFiles(files);
   };
   
-  // 切换管理员模式
-  const toggleAdminMode = (checked) => {
-    setIsAdminMode(checked);
-    localStorage.setItem('user_is_admin', checked ? 'true' : 'false');
-  };
-
   // 获取文件图标
   const getFileIcon = (fileName, isDirectory) => {
     if (isDirectory) {
@@ -727,51 +711,32 @@ const WebDAVFileManager = () => {
                   连接到网盘
                 </Button>
                 
-                {isAdminMode && (
-                  <Button
-                    icon={<SettingOutlined />}
-                    onClick={() => setSettingsDrawerVisible(true)}
-                  >
-                    修改配置
-                  </Button>
-                )}
+                <Button
+                  icon={<SettingOutlined />}
+                  onClick={() => setSettingsDrawerVisible(true)}
+                >
+                  修改配置
+                </Button>
               </div>
             </div>
           ) : (
             <div className="webdav-status-not-configured">
               <Alert
                 message="网盘未配置"
-                description="您的共享网盘还未配置，请联系管理员或使用管理员权限进行配置。"
+                description="请点击下方按钮配置您的共享网盘连接信息。"
                 type="warning"
                 showIcon
                 icon={<ExclamationCircleOutlined />}
               />
               
-              {isAdminMode && (
-                <Button
-                  type="primary"
-                  icon={<SettingOutlined />}
-                  onClick={() => setSettingsDrawerVisible(true)}
-                  style={{ marginTop: 16 }}
-                >
-                  配置网盘
-                </Button>
-              )}
-            </div>
-          )}
-          
-          {isAdminMode && (
-            <div className="admin-mode-switch">
-              <Divider />
-              <Space>
-                <Switch 
-                  checked={isAdminMode} 
-                  onChange={toggleAdminMode} 
-                  checkedChildren="管理员模式" 
-                  unCheckedChildren="用户模式"
-                />
-                <Text type="secondary">切换到{isAdminMode ? '用户' : '管理员'}模式</Text>
-              </Space>
+              <Button
+                type="primary"
+                icon={<SettingOutlined />}
+                onClick={() => setSettingsDrawerVisible(true)}
+                style={{ marginTop: 16 }}
+              >
+                配置网盘
+              </Button>
             </div>
           )}
         </div>
@@ -785,11 +750,6 @@ const WebDAVFileManager = () => {
         open={settingsDrawerVisible}
         width={420}
         styles={{ body: { padding: '24px' } }}
-        extra={
-          <Space>
-            <Tag color="blue">管理员设置</Tag>
-          </Space>
-        }
       >
         <Form
           form={connectionForm}
@@ -1000,12 +960,7 @@ const WebDAVFileManager = () => {
   // 修改上传文件对话框部分
   const renderUploadModal = () => (
     <Modal
-      title={
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <UploadOutlined style={{ marginRight: 10, fontSize: 20 }} /> 
-          上传文件至 {currentPath || '根目录'}
-        </div>
-      }
+      title="上传文件"
       open={uploadModalVisible}
       onOk={handleUpload}
       onCancel={() => {
@@ -1018,18 +973,15 @@ const WebDAVFileManager = () => {
         setUploadFiles([]);
         setUploadProgress({});
       }}
-      okText={uploadingStatus ? '上传中...' : '上传'}
+      okText="上传"
       cancelText="取消"
       okButtonProps={{ 
         disabled: uploadFiles.length === 0 || uploadingStatus,
-        loading: uploadingStatus,
-        icon: <UploadOutlined />
+        loading: uploadingStatus
       }}
       cancelButtonProps={{ disabled: uploadingStatus }}
       className="nextcloud-modal"
-      width={650}
-      destroyOnClose={true}
-      maskClosable={!uploadingStatus}
+      width={600}
     >
       <Dragger
         multiple
@@ -1047,16 +999,13 @@ const WebDAVFileManager = () => {
         </p>
         <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
         <p className="ant-upload-hint">
-          支持单个或批量上传 {currentPath ? `至 "${currentPath}"` : '至根目录'}
+          支持单个或批量上传
         </p>
       </Dragger>
       
       {uploadFiles.length > 0 && (
         <div className="upload-file-list">
-          <Divider plain>
-            <Badge count={uploadFiles.length} style={{ backgroundColor: '#0082c9' }} /> 
-            已选择文件
-          </Divider>
+          <Divider plain>已选择 {uploadFiles.length} 个文件</Divider>
           <List
             size="small"
             dataSource={uploadFiles}
@@ -1064,30 +1013,21 @@ const WebDAVFileManager = () => {
               <List.Item>
                 <div className="upload-file-item">
                   <Space>
-                    {getFileIcon(file.name, false)}
-                    <span className="upload-filename" title={file.name}>{file.name}</span>
-                    <span style={{ color: '#999', fontSize: '12px' }}>
-                      {(file.size / 1024).toFixed(0)} KB
-                    </span>
+                    <FileOutlined />
+                    <span className="upload-filename">{file.name}</span>
                   </Space>
-                  {uploadProgress[file.name] ? (
+                  {uploadProgress[file.name] && (
                     <Progress 
                       percent={uploadProgress[file.name].percent} 
                       size="small" 
                       status={uploadProgress[file.name].status}
                       style={{ marginLeft: 8, flex: 1 }}
-                      format={percent => {
-                        if (uploadProgress[file.name].status === 'success') return '完成';
-                        if (uploadProgress[file.name].status === 'exception') return '失败';
-                        return `${percent}%`;
-                      }}
                     />
-                  ) : (
-                    <span style={{ color: '#aaa', fontSize: '12px', marginLeft: 8 }}>等待上传</span>
                   )}
                 </div>
               </List.Item>
             )}
+            style={{ maxHeight: '200px', overflow: 'auto' }}
           />
         </div>
       )}

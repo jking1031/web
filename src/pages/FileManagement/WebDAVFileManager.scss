@@ -344,65 +344,6 @@ $markdown-color: #00bcd4;  // 青色 - Markdown
   
   .ant-modal-header {
     border-radius: 12px 12px 0 0;
-    padding: 16px 24px;
-    background-color: $nextcloud-blue;
-    border-bottom: none;
-    
-    .ant-modal-title {
-      color: white;
-      font-weight: 600;
-      font-size: 18px;
-    }
-  }
-  
-  .ant-modal-close {
-    color: rgba(255, 255, 255, 0.85);
-    
-    &:hover {
-      color: white;
-      background-color: rgba(255, 255, 255, 0.15);
-    }
-  }
-  
-  .ant-modal-body {
-    padding: 24px;
-  }
-  
-  .ant-modal-footer {
-    border-top: 1px solid $nextcloud-border;
-    padding: 16px 24px;
-    
-    .ant-btn {
-      border-radius: 6px;
-      height: 40px;
-      padding: 0 20px;
-      font-size: 14px;
-      
-      &-primary {
-        background-color: $nextcloud-blue;
-        border-color: $nextcloud-blue;
-        box-shadow: 0 4px 12px rgba(0, 130, 201, 0.25);
-        
-        &:hover, &:focus {
-          background-color: $nextcloud-light-blue;
-          border-color: $nextcloud-light-blue;
-        }
-        
-        &[disabled] {
-          opacity: 0.65;
-          box-shadow: none;
-        }
-      }
-      
-      &-default {
-        border-color: #d9d9d9;
-        
-        &:hover, &:focus {
-          color: $nextcloud-blue;
-          border-color: $nextcloud-blue;
-        }
-      }
-    }
   }
   
   .nextcloud-input {
@@ -420,58 +361,34 @@ $markdown-color: #00bcd4;  // 青色 - Markdown
   border: 2px dashed $nextcloud-border;
   border-radius: 12px;
   transition: all 0.3s ease;
-  padding: 28px;
-  background-color: #fafbfc;
+  padding: 24px;
   
   &:hover {
     border-color: $nextcloud-blue;
-    background-color: rgba(0, 130, 201, 0.03);
-  }
-  
-  &.ant-upload-drag-hover {
-    border-color: $nextcloud-light-blue;
-    background-color: rgba(0, 130, 201, 0.08);
   }
   
   .nextcloud-upload-icon {
     color: $nextcloud-blue;
-    font-size: 52px;
-    transition: transform 0.3s ease;
-  }
-  
-  &:hover .nextcloud-upload-icon {
-    transform: translateY(-4px);
+    font-size: 48px;
   }
   
   .ant-upload-text {
-    font-size: 18px;
-    margin: 16px 0 8px;
-    color: rgba(0, 0, 0, 0.85);
-    font-weight: 500;
+    font-size: 16px;
+    margin: 12px 0;
   }
   
   .ant-upload-hint {
     color: rgba(0, 0, 0, 0.45);
-    font-size: 14px;
-  }
-  
-  .ant-upload-btn {
-    padding: 16px;
   }
 }
 
 // 上传文件列表样式
 .upload-file-list {
-  margin-top: 24px;
-  background-color: #fafafa;
-  border-radius: 8px;
-  padding: 8px;
+  margin-top: 16px;
   
   .ant-divider {
-    margin: 12px 0 16px;
+    margin: 16px 0;
     color: rgba(0, 0, 0, 0.45);
-    font-size: 14px;
-    font-weight: normal;
   }
   
   .upload-file-item {
@@ -479,77 +396,16 @@ $markdown-color: #00bcd4;  // 青色 - Markdown
     align-items: center;
     width: 100%;
     
-    .anticon-file {
-      font-size: 16px;
-      color: $nextcloud-blue;
-      margin-right: 4px;
-    }
-    
     .upload-filename {
-      max-width: 220px;
+      max-width: 200px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      color: rgba(0, 0, 0, 0.85);
-      font-size: 14px;
-    }
-  }
-  
-  .ant-list {
-    max-height: 220px;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    
-    &::-webkit-scrollbar {
-      width: 6px;
-    }
-    
-    &::-webkit-scrollbar-track {
-      background: #f1f1f1;
-      border-radius: 3px;
-    }
-    
-    &::-webkit-scrollbar-thumb {
-      background: #ccc;
-      border-radius: 3px;
-      
-      &:hover {
-        background: #aaa;
-      }
     }
   }
   
   .ant-list-item {
-    padding: 10px 12px;
-    border-radius: 6px;
-    transition: background-color 0.3s ease;
-    border-bottom: none !important;
-    margin-bottom: 4px;
-    
-    &:hover {
-      background-color: rgba(0, 0, 0, 0.02);
-    }
-  }
-  
-  .ant-progress {
-    margin-left: 12px !important;
-    flex: 1;
-    
-    &-bg {
-      transition: all 0.3s cubic-bezier(0.78, 0.14, 0.15, 0.86);
-    }
-    
-    &-status-success .ant-progress-bg {
-      background-color: $success-color;
-    }
-    
-    &-status-exception .ant-progress-bg {
-      background-color: $error-color;
-    }
-    
-    &-status-active .ant-progress-bg::before {
-      animation-duration: 2s;
-    }
+    padding: 8px 0;
   }
 }
 

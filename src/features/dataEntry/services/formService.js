@@ -24,6 +24,10 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// 在文件顶部添加调试工具
+const DEBUG = true; // 启用调试日志
+const logDebug = (...args) => DEBUG && console.log('[FormService]', ...args);
+
 export const formService = {
   // Get all forms from Node-RED
   getForms: async () => {
@@ -185,11 +189,83 @@ export const formService = {
 
   // Submit form data to Node-RED backend
   submitFormData: async (formId, formData) => {
+    if (!formId) {
+      const error = new Error('提交表单数据需要提供表单ID');
+      logDebug('错误: 缺少表单ID', error);
+      throw error;
+    }
+
+    if (!formData || typeof formData !== 'object') {
+      const error = new Error('提交表单数据无效');
+      logDebug('错误: 表单数据无效', error);
+      throw error;
+    }
+
     try {
-      const response = await apiClient.post(`/api/forms/${formId}/submit`, formData);
+      logDebug(`开始提交表单数据到后端，表单ID: ${formId}`);
+      logDebug(`API请求URL: ${API_BASE_URL}/api/forms/${formId}/submit`);
+      logDebug('表单数据:', JSON.stringify(formData, null, 2));
+      
+      const startTime = new Date();
+      logDebug(`开始请求时间: ${startTime.toISOString()}`);
+      
+      // 添加超时和重试机制
+      const response = await apiClient.post(`/api/forms/${formId}/submit`, formData, {
+        timeout: 10000, // 10秒超时
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Request-ID': `form_submit_${Date.now()}`
+        }
+      });
+      
+      const endTime = new Date();
+      const duration = endTime - startTime;
+      logDebug(`请求完成时间: ${endTime.toISOString()}, 耗时: ${duration}ms`);
+      
+      // 记录响应详情
+      logDebug('API响应状态:', response.status);
+      logDebug('API响应头:', response.headers);
+      logDebug('API响应数据:', response.data);
+      
+      // 存储最近提交的表单数据，方便验证
+      try {
+        sessionStorage.setItem(`lastSubmitted_${formId}`, JSON.stringify({
+          timestamp: new Date().toISOString(),
+          data: formData,
+          response: response.data
+        }));
+        logDebug('表单提交数据已保存到会话存储');
+      } catch (storageError) {
+        logDebug('无法保存表单提交数据到会话存储:', storageError);
+      }
+      
       return response.data;
     } catch (error) {
-      console.error('Failed to submit form data:', error);
+      logDebug('提交表单数据失败:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        config: error.config,
+        stack: error.stack
+      });
+      
+      // 将错误信息存储在会话存储中以便调试
+      try {
+        sessionStorage.setItem(`lastSubmitError_${formId}`, JSON.stringify({
+          timestamp: new Date().toISOString(),
+          error: {
+            message: error.message,
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data
+          },
+          formData: formData
+        }));
+      } catch (storageError) {
+        logDebug('无法保存错误信息到会话存储:', storageError);
+      }
+      
       throw error;
     }
   },
@@ -208,7 +284,7 @@ export const formService = {
   // 验证表单提交是否成功写入数据库
   verifyFormSubmission: async (formId) => {
     if (!formId) {
-      console.error('未提供表单ID，无法验证提交状态');
+      logDebug('错误: 未提供表单ID，无法验证提交状态');
       return {
         success: false,
         message: '未提供表单ID',
@@ -216,63 +292,89 @@ export const formService = {
       };
     }
     
-    console.log(`正在验证表单提交状态，表单ID: ${formId}`);
-    console.log(`API请求URL: ${API_BASE_URL}/api/forms/${formId}/verify-submission`);
+    // 从会话存储中获取最近提交的数据
+    let lastSubmitted = null;
+    try {
+      const storedData = sessionStorage.getItem(`lastSubmitted_${formId}`);
+      if (storedData) {
+        lastSubmitted = JSON.parse(storedData);
+        logDebug('从会话存储中检索到最近提交的数据:', lastSubmitted);
+      }
+    } catch (storageError) {
+      logDebug('从会话存储中读取数据失败:', storageError);
+    }
     
     try {
-      // 记录请求开始时间
+      logDebug(`正在验证表单提交状态，表单ID: ${formId}`);
+      logDebug(`API请求URL: ${API_BASE_URL}/api/forms/${formId}/verify-submission`);
+      
       const startTime = new Date();
-      console.log(`开始请求时间: ${startTime.toISOString()}`);
+      logDebug(`开始请求时间: ${startTime.toISOString()}`);
       
-      const response = await apiClient.get(`/api/forms/${formId}/verify-submission`);
+      // 添加超时和请求ID
+      const response = await apiClient.get(`/api/forms/${formId}/verify-submission`, {
+        timeout: 8000, // 8秒超时
+        headers: {
+          'X-Request-ID': `form_verify_${Date.now()}`
+        }
+      });
       
-      // 记录请求结束时间和耗时
       const endTime = new Date();
       const duration = endTime - startTime;
-      console.log(`请求完成时间: ${endTime.toISOString()}, 耗时: ${duration}ms`);
+      logDebug(`请求完成时间: ${endTime.toISOString()}, 耗时: ${duration}ms`);
       
-      // 记录响应数据
-      console.log('API响应状态:', response.status);
-      console.log('API响应数据:', response.data);
+      // 记录响应详情
+      logDebug('API响应状态:', response.status);
+      logDebug('API响应数据:', response.data);
+      
+      // 添加会话存储中的最近提交数据到响应中
+      if (lastSubmitted) {
+        response.data.lastSubmitted = lastSubmitted;
+      }
       
       return response.data;
     } catch (error) {
-      console.error('验证表单提交失败:', error);
+      logDebug('验证表单提交失败:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        stack: error.stack
+      });
       
-      // 详细记录错误信息
-      if (error.response) {
-        // 服务器响应了，但状态码不在2xx范围内
-        console.error('错误状态码:', error.response.status);
-        console.error('错误响应数据:', error.response.data);
-        console.error('错误响应头:', error.response.headers);
-        
-        return {
-          success: false,
-          message: `服务器返回错误: ${error.response.status}`,
-          details: `错误详情: ${JSON.stringify(error.response.data)}`,
-          errorResponse: error.response.data
-        };
-      } else if (error.request) {
-        // 请求已发送但没有收到响应
-        console.error('没有收到响应:', error.request);
-        
-        return {
-          success: false,
-          message: '服务器无响应',
-          details: '请求已发送，但未收到服务器响应，请检查网络连接或服务器状态',
-          errorType: 'no_response'
-        };
-      } else {
-        // 请求配置有问题
-        console.error('请求错误:', error.message);
-        
-        return {
-          success: false,
-          message: '请求配置错误',
-          details: `错误信息: ${error.message}`,
-          errorType: 'request_setup'
-        };
-      }
+      // 构建错误响应
+      return {
+        success: false,
+        message: `验证表单提交失败: ${error.message}`,
+        details: `错误详情: ${error.response?.data?.message || error.message}`,
+        error: {
+          status: error.response?.status,
+          message: error.message
+        },
+        lastSubmitted: lastSubmitted
+      };
+    }
+  },
+
+  // 添加webhook处理相关方法
+  getWebhookInfo: async (formId) => {
+    try {
+      const response = await apiClient.get(`/api/forms/${formId}/webhook-info`);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to get webhook info:', error);
+      throw error;
+    }
+  },
+
+  // 检查表单数据是否存在重复
+  checkDuplicateSubmission: async (formId, submissionData) => {
+    try {
+      const response = await apiClient.post(`/api/forms/${formId}/check-duplicate`, submissionData);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to check duplicate submission:', error);
+      throw error;
     }
   },
 };
@@ -283,4 +385,4 @@ function extractUrlFromIframe(iframeCode) {
   
   const srcMatch = iframeCode.match(/src=["']([^"']+)["']/i);
   return srcMatch ? srcMatch[1] : '';
-} 
+}
